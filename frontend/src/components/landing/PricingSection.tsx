@@ -44,14 +44,14 @@ const plans = [
 
 export default function PricingSection() {
 	return (
-		<section id="pricing" className="py-[100px] px-8 bg-white">
-			<SectionHeader
-				badge="💸 Pricing"
-				title="Simple pricing for learners"
-				description="Choose a plan that fits your preparation goals — from free practice to pro features for serious exam prep."
-			/>
+			<section id="pricing" className="py-[100px] px-8 bg-white fade-in-section">
+				<SectionHeader
+					badge="💰 Pricing"
+					title="Affordable Plans for Every Student"
+					description="Choose the plan that fits your needs and budget. Cancel anytime."
+				/>
 
-			<div className="max-w-[1200px] mx-auto grid md:grid-cols-3 gap-8">
+				<div className="max-w-[1200px] mx-auto grid md:grid-cols-3 gap-8">
 				{plans.map((plan) => (
 					<div
 						key={plan.id}

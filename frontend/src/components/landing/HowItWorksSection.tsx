@@ -28,7 +28,7 @@ export default function HowItWorksSection() {
   return (
     <section 
       id="how-it-works" 
-      className="py-[100px] px-8 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] relative overflow-hidden"
+      className="py-[100px] px-8 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] relative overflow-hidden fade-in-section"
     >
       {/* Background Pattern */}
       <div className="absolute top-0 left-0 right-0 bottom-0 bg-[radial-gradient(circle_at_20%_50%,rgba(255,255,255,0.1)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />

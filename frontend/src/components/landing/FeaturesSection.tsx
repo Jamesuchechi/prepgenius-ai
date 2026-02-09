@@ -36,7 +36,7 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="py-[100px] px-8 bg-white">
+    <section id="features" className="py-[100px] px-8 bg-white fade-in-section">
       <SectionHeader 
         badge="✨ Features"
         title="Everything You Need to Excel"

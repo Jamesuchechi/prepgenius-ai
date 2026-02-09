@@ -3,7 +3,7 @@ import Button from '@/components/ui/Button'
 
 export default function CTASection() {
   return (
-    <section className="py-[100px] px-8 bg-gradient-to-br from-[#0D0D0D] to-[#1A1A1A] relative overflow-hidden">
+    <section className="py-[100px] px-8 bg-gradient-to-br from-[#0D0D0D] to-[#1A1A1A] relative overflow-hidden fade-in-section">
       {/* Background Decoration */}
       <div className="absolute top-[-50%] right-[-20%] w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(255,107,53,0.2)_0%,transparent_70%)] rounded-full" />
 

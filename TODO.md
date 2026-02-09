@@ -6,10 +6,12 @@
 
 ## 🎯 PHASE 1: FOUNDATION & MVP (Weeks 1-4)
 
+
+
 ### TODO #1: Project Setup & Infrastructure
 **Status**: 🔴 Not Started  
 **Priority**: CRITICAL  
-**Estimated Time**: 2-3 days
+**Estimated Time**: 
 
 - [ ] Initialize Git repository
 - [ ] Set up project structure (backend/frontend folders)
@@ -30,7 +32,7 @@
 ### TODO #2: User Authentication System
 **Status**: 🔴 Not Started  
 **Priority**: CRITICAL  
-**Estimated Time**: 3-4 days
+**Estimated Time**: 
 
 **Backend Tasks:**
 - [ ] Create `accounts` app in Django

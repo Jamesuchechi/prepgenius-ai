@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content p {
+            margin: 15px 0;
+            color: #555;
+        }
+        .greeting {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .verify-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 14px 40px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        .verify-button:hover {
+            transform: scale(1.05);
+        }
+        .info-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #1e3c72;
+            padding: 15px;
+            margin: 25px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .info-box strong {
+            color: #1e3c72;
+        }
+        .divider {
+            height: 1px;
+            background-color: #eee;
+            margin: 30px 0;
+        }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+            color: #999;
+            border-top: 1px solid #eee;
+        }
+        .footer p {
+            margin: 8px 0;
+        }
+        .footer a {
+            color: #1e3c72;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="icon">✉️</div>
+            <h1>Verify Your Email</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">Hi {{ user_name }},</p>
+            
+            <p>Welcome to <strong>PrepGenius</strong>! We're thrilled to have you on board.</p>
+            
+            <p>To get started, please verify your email address by clicking the button below:</p>
+
+            <!-- CTA Button -->
+            <div class="button-container">
+                <a href="{{ verification_url }}" class="verify-button">Verify Email Address</a>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <strong>⏱️ This link expires in {{ expires_in_hours }} hours</strong><br>
+                If you need a new verification link, you can request one on the login page.
+            </div>
+
+            <!-- Fallback Text -->
+            <p>If the button doesn't work, copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px; color: #666;">
+                {{ verification_url }}
+            </p>
+
+            <!-- Divider -->
+            <div class="divider"></div>
+
+            <!-- Additional Info -->
+            <p style="font-size: 14px; color: #666;">
+                Once verified, you'll be able to:
+            </p>
+            <ul style="font-size: 14px; color: #666; margin-left: 20px;">
+                <li>Access personalized study plans</li>
+                <li>Track your exam preparation progress</li>
+                <li>Join study groups</li>
+                <li>Get expert tutoring support</li>
+            </ul>
+
+            <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                Questions? Contact our support team at <a href="mailto:support@prepgenius.com" style="color: #1e3c72; text-decoration: none;">support@prepgenius.com</a>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2026 PrepGenius. All rights reserved.</p>
+            <p>
+                <a href="https://prepgenius.com/privacy">Privacy Policy</a> • 
+                <a href="https://prepgenius.com/terms">Terms of Service</a>
+            </p>
+            <p>123 Education Street, Lagos, Nigeria</p>
+        </div>
+    </div>
+</body>
+</html>

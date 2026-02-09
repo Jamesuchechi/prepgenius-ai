@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { LayoutClient } from '@/components/LayoutClient'
 
 export const metadata: Metadata = {
   title: 'PrepGenius AI - Master Your Exams with AI-Powered Learning',
@@ -20,8 +21,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className="bg-white text-black">
+        <LayoutClient>{children}</LayoutClient>
+      </body>
     </html>
   )
 }
