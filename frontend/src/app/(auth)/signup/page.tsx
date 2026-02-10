@@ -95,6 +95,7 @@ export default function SignUpPage() {
       await signup({
         email: formData.email,
         password: formData.password,
+        password_confirm: formData.confirmPassword,
         first_name: firstName,
         last_name: lastName,
         exam_targets: [examTarget],

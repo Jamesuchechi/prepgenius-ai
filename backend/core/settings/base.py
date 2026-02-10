@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent.parent / ".env")
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -235,6 +235,33 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@prepgenius.ai")
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+
+
+# ============================================================================
+# AI CONFIGURATION
+# ============================================================================
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/v1")
+GROQ_TIMEOUT = int(os.getenv("GROQ_TIMEOUT", 60))
+
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")
+HUGGINGFACE_MODEL = os.getenv("HUGGINGFACE_MODEL", "")
+HUGGINGFACE_BASE_URL = os.getenv("HUGGINGFACE_BASE_URL", "https://api.huggingface.co/v1")
+HUGGINGFACE_TIMEOUT = int(os.getenv("HUGGINGFACE_TIMEOUT", 60))
+
+COHERE_API_KEY = os.getenv("COHERE_API_KEY", "")
+COHERE_MODEL = os.getenv("COHERE_MODEL", "")
+COHERE_BASE_URL = os.getenv("COHERE_BASE_URL", "https://api.cohere.com/v1")
+COHERE_TIMEOUT = int(os.getenv("COHERE_TIMEOUT", 60))
+
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
+MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "")
+MISTRAL_BASE_URL = os.getenv("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
+MISTRAL_TIMEOUT = int(os.getenv("MISTRAL_TIMEOUT", 60))
+
 
 # ============================================================================
 # CELERY SETTINGS

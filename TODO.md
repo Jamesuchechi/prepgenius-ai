@@ -121,8 +121,11 @@ POST /api/users/me/subjects/  (select subjects)
 - [ ] Create `questions` app
 - [ ] Design models: Question, Answer, QuestionAttempt
 - [ ] Set up AI service layer (ai_services/)
-- [ ] Implement Gemini API client (free tier)
-- [ ] Implement OpenAI API client (fallback)
+- [ ] Implement Groq API client (free tier)
+- [ ] Implement Mistral API client (fallback)
+- [ ] Implement HuggingFace API client (fallback)
+- [ ] Implement Cohere API client (fallback)
+- [ ] Implement Question choice(true or false, multiple choice, theory, fill in the blanks, match the following, ordering, writing(or solving))
 - [ ] Create prompt templates for question generation
 - [ ] Build question generation endpoint with difficulty levels
 - [ ] Implement question caching system (Redis)
@@ -133,12 +136,17 @@ POST /api/users/me/subjects/  (select subjects)
 **Prompt Engineering:**
 - [ ] Write prompt for multiple-choice questions
 - [ ] Write prompt for theory questions
+- [ ] Write prompt for true or false questions
+- [ ] Write prompt for fill in the blanks questions
+- [ ] Write prompt for match the following questions
+- [ ] Write prompt for ordering questions
+- [ ] Write prompt for writing(or solving) questions
 - [ ] Write prompt for step-by-step explanations
 - [ ] Test and refine prompts for JAMB-style accuracy
 
 **Frontend Tasks:**
 - [ ] Create practice question interface
-- [ ] Build question card component (MCQ, Theory)
+- [ ] Build question card component (MCQ, Theory, True or False, Fill in the Blanks, Match the Following, Ordering, Writing(or Solving))
 - [ ] Implement answer submission flow
 - [ ] Create results page with explanations
 - [ ] Add loading states for AI generation

@@ -42,6 +42,7 @@ interface AuthState {
 export interface SignupData {
   email: string
   password: string
+  password_confirm: string
   first_name: string
   last_name: string
   exam_targets: string[]
@@ -73,6 +74,29 @@ const clearTokensFromStorage = () => {
   document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
 }
 
+// Helper to extract error message
+const getErrorMessage = (error: any): string => {
+  if (typeof error === 'string') return error
+  if (error.detail) return error.detail
+  if (error.message) return error.message
+
+  // Handle DRF field errors
+  if (typeof error === 'object') {
+    const messages: string[] = []
+    Object.keys(error).forEach(key => {
+      const value = error[key]
+      if (Array.isArray(value)) {
+        messages.push(`${key}: ${value.join(', ')}`)
+      } else if (typeof value === 'string') {
+        messages.push(`${key}: ${value}`)
+      }
+    })
+    if (messages.length > 0) return messages.join('\n')
+  }
+
+  return 'An unexpected error occurred'
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -95,7 +119,7 @@ export const useAuthStore = create<AuthState>()(
 
           if (!response.ok) {
             const error = await response.json()
-            throw new Error(error.detail || error.message || 'Login failed')
+            throw new Error(getErrorMessage(error))
           }
 
           const data = await response.json()
@@ -132,7 +156,7 @@ export const useAuthStore = create<AuthState>()(
 
           if (!response.ok) {
             const error = await response.json()
-            throw new Error(error.detail || error.message || 'Registration failed')
+            throw new Error(getErrorMessage(error))
           }
 
           const responseData = await response.json()

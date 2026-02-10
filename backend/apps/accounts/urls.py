@@ -17,12 +17,14 @@ urlpatterns = [
     path('', include(router.urls)),
     
     # Authentication endpoints
-    path('auth/register/', UserRegistrationView.as_view(), name='register'),
-    path('auth/login/', UserLoginView.as_view(), name='login'),
-    path('auth/google/', GoogleLoginView.as_view(), name='google_login'),
-    path('auth/logout/', UserLogoutView.as_view(), name='logout'),
-    path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('auth/verify-email/', EmailVerificationView.as_view(), name='verify_email'),
-    path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
-    path('auth/password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    # Authentication endpoints
+    path('register/', UserRegistrationView.as_view(), name='register'),
+    path('login/', UserLoginView.as_view(), name='login'),
+    path('google/', GoogleLoginView.as_view(), name='google_login'),
+    path('logout/', UserLogoutView.as_view(), name='logout'),
+    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('verify-email/', EmailVerificationView.as_view(), name='verify_email'),
+    path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
+    path('password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+
 ]

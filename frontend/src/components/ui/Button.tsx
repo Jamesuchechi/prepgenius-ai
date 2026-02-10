@@ -6,15 +6,17 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary'
   href?: string
   onClick?: () => void
+  disabled?: boolean
   className?: string
   fullWidth?: boolean
 }
 
-export default function Button({ 
-  children, 
-  variant = 'primary', 
-  href, 
+export default function Button({
+  children,
+  variant = 'primary',
+  href,
   onClick,
+  disabled = false,
   className = '',
   fullWidth = false
 }: ButtonProps) {
@@ -22,8 +24,10 @@ export default function Button({
     px-7 py-3 rounded-full font-semibold transition-all duration-300 
     cursor-pointer border-none text-base inline-block text-center
     ${fullWidth ? 'w-full' : ''}
+    ${disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
   `
-  
+
+
   const variantStyles = {
     primary: `
       bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] 
@@ -47,8 +51,9 @@ export default function Button({
   }
 
   return (
-    <button onClick={onClick} className={combinedStyles}>
+    <button onClick={onClick} disabled={disabled} className={combinedStyles}>
       {children}
     </button>
   )
+
 }
