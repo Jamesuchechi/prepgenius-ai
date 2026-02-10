@@ -54,6 +54,13 @@
 - [ ] Add authentication state management (Zustand)
 - [ ] Create user profile page
 
+Connect to Django backend API
+Implement JWT authentication
+Add CSRF protection
+Secure password validation
+Add rate limiting
+Implement session management
+Add 2FA option
 **API Endpoints:**
 ```
 POST /api/auth/register/
@@ -74,7 +81,7 @@ PATCH /api/users/me/
 ### TODO #3: Subject & Exam Type Setup
 **Status**: 🔴 Not Started  
 **Priority**: HIGH  
-**Estimated Time**: 2 days
+**Estimated Time**: 
 
 **Backend Tasks:**
 - [ ] Create `content` app
@@ -99,6 +106,7 @@ GET /api/subjects/:id/topics/
 GET /api/topics/:id/subtopics/
 POST /api/users/me/subjects/  (select subjects)
 ```
+
 
 **Deliverables**: Content structure with JAMB/WAEC syllabus data
 

@@ -1,1 +1,375 @@
-'use client'\n\nimport { useState } from 'react'\nimport Link from 'next/link'\nimport { useRouter } from 'next/navigation'\nimport { useAuthStore } from '@/store/authStore'\nimport Button from '@/components/ui/Button'\nimport { SignUpPayload } from '@/types/user'\n\ninterface FormErrors {\n  [key: string]: string\n}\n\nexport default function SignUpPage() {\n  const router = useRouter()\n  const { register, isLoading, error, clearError } = useAuthStore()\n  const [formData, setFormData] = useState<SignUpPayload>({\n    email: '',\n    first_name: '',\n    last_name: '',\n    password: '',\n    password_confirm: '',\n    student_type: 'individual',\n    exam_targets: ['jamb'],\n  })\n  const [errors, setErrors] = useState<FormErrors>({})\n  const [agreedToTerms, setAgreedToTerms] = useState(false)\n\n  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {\n    const { name, value, type } = e.target\n    setFormData((prev) => ({\n      ...prev,\n      [name]: name === 'exam_targets' ? [value] : value,\n    }))\n    setErrors((prev) => ({ ...prev, [name]: '' }))\n    clearError()\n  }\n\n  const validateForm = (): boolean => {\n    const newErrors: FormErrors = {}\n\n    if (!formData.email) newErrors.email = 'Email is required'\n    else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(formData.email))\n      newErrors.email = 'Invalid email format'\n\n    if (!formData.first_name) newErrors.first_name = 'First name is required'\n    if (!formData.last_name) newErrors.last_name = 'Last name is required'\n\n    if (!formData.password) newErrors.password = 'Password is required'\n    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters'\n\n    if (formData.password !== formData.password_confirm)\n      newErrors.password_confirm = 'Passwords do not match'\n\n    if (!agreedToTerms) newErrors.terms = 'You must agree to terms'\n\n    setErrors(newErrors)\n    return Object.keys(newErrors).length === 0\n  }\n\n  const handleSubmit = async (e: React.FormEvent) => {\n    e.preventDefault()\n    if (!validateForm()) return\n\n    try {\n      await register(formData)\n      router.push('/auth/verify-email')\n    } catch (err) {\n      // Error handled by store\n    }\n  }\n\n  return (\n    <div className=\"min-h-screen flex items-center justify-center px-4 py-12\">\n      <div className=\"w-full max-w-md\">\n        <div className=\"text-center mb-8\">\n          <h1 className=\"font-display text-4xl font-bold text-[var(--black)] mb-2\">\n            Create Account\n          </h1>\n          <p className=\"text-[var(--gray-dark)]\">\n            Join PrepGenius AI to ace your exams\n          </p>\n        </div>\n\n        {error && (\n          <div className=\"mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm\">\n            {error}\n          </div>\n        )}\n\n        <form onSubmit={handleSubmit} className=\"space-y-4\">\n          {/* Name Fields */}\n          <div className=\"grid grid-cols-2 gap-4\">\n            <div>\n              <label className=\"block text-sm font-medium text-[var(--black)] mb-2\">\n                First Name\n              </label>\n              <input\n                type=\"text\"\n                name=\"first_name\"\n                value={formData.first_name}\n                onChange={handleChange}\n                disabled={isLoading}\n                className=\"w-full px-4 py-2 rounded-lg border-2 border-transparent bg-[var(--gray)] focus:border-[var(--blue)] focus:outline-none disabled:opacity-50\"\n              />\n              {errors.first_name && <p className=\"text-red-500 text-sm mt-1\">{errors.first_name}</p>}\n            </div>\n            <div>\n              <label className=\"block text-sm font-medium text-[var(--black)] mb-2\">\n                Last Name\n              </label>\n              <input\n                type=\"text\"\n                name=\"last_name\"\n                value={formData.last_name}\n                onChange={handleChange}\n                disabled={isLoading}\n                className=\"w-full px-4 py-2 rounded-lg border-2 border-transparent bg-[var(--gray)] focus:border-[var(--blue)] focus:outline-none disabled:opacity-50\"\n              />\n              {errors.last_name && <p className=\"text-red-500 text-sm mt-1\">{errors.last_name}</p>}\n            </div>\n          </div>\n\n          {/* Email */}\n          <div>\n            <label className=\"block text-sm font-medium text-[var(--black)] mb-2\">Email</label>\n            <input\n              type=\"email\"\n              name=\"email\"\n              value={formData.email}\n              onChange={handleChange}\n              disabled={isLoading}\n              className={`w-full px-4 py-2 rounded-lg border-2 ${\n                errors.email ? 'border-red-500' : 'border-transparent'\n              } bg-[var(--gray)] focus:border-[var(--blue)] focus:outline-none disabled:opacity-50`}\n            />\n            {errors.email && <p className=\"text-red-500 text-sm mt-1\">{errors.email}</p>}\n          </div>\n\n          {/* Student Type */}\n          <div>\n            <label className=\"block text-sm font-medium text-[var(--black)] mb-2\">Student Type</label>\n            <select\n              name=\"student_type\"\n              value={formData.student_type}\n              onChange={handleChange}\n              disabled={isLoading}\n              className=\"w-full px-4 py-2 rounded-lg border-2 border-transparent bg-[var(--gray)] focus:border-[var(--blue)] focus:outline-none disabled:opacity-50\"\n            >\n              <option value=\"individual\">Individual Student</option>\n              <option value=\"institutional\">Institutional Student</option>\n            </select>\n          </div>\n\n          {/* Exam Target */}\n          <div>\n            <label className=\"block text-sm font-medium text-[var(--black)] mb-2\">Primary Exam</label>\n            <select\n              name=\"exam_targets\"\n              value={formData.exam_targets?.[0] || 'jamb'}\n              onChange={handleChange}\n              disabled={isLoading}\n              className=\"w-full px-4 py-2 rounded-lg border-2 border-transparent bg-[var(--gray)] focus:border-[var(--blue)] focus:outline-none disabled:opacity-50\"\n            >\n              <option value=\"jamb\">JAMB</option>\n              <option value=\"waec\">WAEC</option>\n              <option value=\"neco\">NECO</option>\n            </select>\n          </div>\n\n          {/* Password */}\n          <div>\n            <label className=\"block text-sm font-medium text-[var(--black)] mb-2\">Password</label>\n            <input\n              type=\"password\"\n              name=\"password\"\n              value={formData.password}\n              onChange={handleChange}\n              disabled={isLoading}\n              placeholder=\"Min. 8 characters\"\n              className={`w-full px-4 py-2 rounded-lg border-2 ${\n                errors.password ? 'border-red-500' : 'border-transparent'\n              } bg-[var(--gray)] focus:border-[var(--blue)] focus:outline-none disabled:opacity-50`}\n            />\n            {errors.password && <p className=\"text-red-500 text-sm mt-1\">{errors.password}</p>}\n          </div>\n\n          {/* Confirm Password */}\n          <div>\n            <label className=\"block text-sm font-medium text-[var(--black)] mb-2\">Confirm Password</label>\n            <input\n              type=\"password\"\n              name=\"password_confirm\"\n              value={formData.password_confirm}\n              onChange={handleChange}\n              disabled={isLoading}\n              className={`w-full px-4 py-2 rounded-lg border-2 ${\n                errors.password_confirm ? 'border-red-500' : 'border-transparent'\n              } bg-[var(--gray)] focus:border-[var(--blue)] focus:outline-none disabled:opacity-50`}\n            />\n            {errors.password_confirm && <p className=\"text-red-500 text-sm mt-1\">{errors.password_confirm}</p>}\n          </div>\n\n          {/* Terms Checkbox */}\n          <div className=\"flex items-start gap-3\">\n            <input\n              type=\"checkbox\"\n              id=\"terms\"\n              checked={agreedToTerms}\n              onChange={(e) => {\n                setAgreedToTerms(e.target.checked)\n                setErrors((prev) => ({ ...prev, terms: '' }))\n              }}\n              disabled={isLoading}\n              className=\"mt-1\"\n            />\n            <label htmlFor=\"terms\" className=\"text-sm text-[var(--gray-dark)]\">\n              I agree to the{' '}\n              <a href=\"#\" className=\"text-[var(--blue)] hover:underline\">\n                Terms of Service\n              </a>{' '}\n              and{' '}\n              <a href=\"#\" className=\"text-[var(--blue)] hover:underline\">\n                Privacy Policy\n              </a>\n            </label>\n          </div>\n          {errors.terms && <p className=\"text-red-500 text-sm\">{errors.terms}</p>}\n\n          {/* Submit */}\n          <Button variant=\"primary\" type=\"submit\" disabled={isLoading} className=\"w-full py-3 text-lg\" >\n            {isLoading ? 'Creating account...' : 'Create Account'}\n          </Button>\n        </form>\n\n        <p className=\"text-center text-[var(--gray-dark)] mt-6\">\n          Already have an account?{' '}\n          <Link\n            href=\"/auth/signin\"\n            className=\"text-[var(--blue)] font-semibold hover:text-[var(--orange)]\"\n          >\n            Sign In\n          </Link>\n        </p>\n      </div>\n    </div>\n  )\n}\n"
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/store/authStore'
+import GoogleLoginButton from '@/components/auth/GoogleLoginButton'
+
+const examTypes = ['JAMB', 'WAEC', 'NECO', 'GCE', 'NABTEB']
+const subjects = [
+  'Mathematics', 'English', 'Physics', 'Chemistry', 'Biology',
+  'Economics', 'Government', 'Literature', 'Commerce', 'Accounting'
+]
+
+export default function SignUpPage() {
+  const router = useRouter()
+  const { signup, isLoading, error: authError, clearError, isAuthenticated } = useAuthStore()
+  const [step, setStep] = useState(1)
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    examType: '',
+    subjects: [] as string[],
+    agreeToTerms: false
+  })
+  const [error, setError] = useState('')
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard')
+    }
+  }, [isAuthenticated, router])
+
+  // Sync auth store error with local error
+  useEffect(() => {
+    if (authError) {
+      setError(authError)
+    }
+  }, [authError])
+
+  const handleSubjectToggle = (subject: string) => {
+    setFormData(prev => ({
+      ...prev,
+      subjects: prev.subjects.includes(subject)
+        ? prev.subjects.filter(s => s !== subject)
+        : [...prev.subjects, subject]
+    }))
+  }
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (!formData.fullName || !formData.email || !formData.password) {
+        setError('Please fill in all fields')
+        return
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match')
+        return
+      }
+      if (formData.password.length < 8) {
+        setError('Password must be at least 8 characters')
+        return
+      }
+    }
+    setError('')
+    setStep(2)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.examType || formData.subjects.length === 0) {
+      setError('Please select your exam type and at least one subject')
+      return
+    }
+    if (!formData.agreeToTerms) {
+      setError('Please agree to the terms and conditions')
+      return
+    }
+
+    setError('')
+    clearError()
+
+    try {
+      // Split full name into first and last name
+      const nameParts = formData.fullName.trim().split(' ')
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.slice(1).join(' ') || nameParts[0] || ''
+
+      // Map exam type to lowercase for backend
+      const examTarget = formData.examType.toLowerCase()
+
+      await signup({
+        email: formData.email,
+        password: formData.password,
+        first_name: firstName,
+        last_name: lastName,
+        exam_targets: [examTarget],
+        subjects: formData.subjects
+      })
+
+      // Redirect to dashboard on success
+      router.push('/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.')
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex relative overflow-hidden bg-white">
+      {/* Left Side - Visual */}
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] relative overflow-hidden">
+        {/* Background Decorations */}
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl animate-[float_20s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] bg-[var(--blue)]/20 rounded-full blur-3xl animate-[float_15s_ease-in-out_infinite_reverse]" />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-white text-center">
+          <div className="max-w-md animate-[fadeInUp_0.8s_ease-out]">
+            <div className="mb-8">
+              <div className="inline-block p-4 bg-white/10 backdrop-blur-lg rounded-2xl mb-6">
+                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="font-display text-4xl font-extrabold mb-4">
+              Start Your Journey to Excellence
+            </h2>
+            <p className="text-white/90 text-lg leading-relaxed mb-8">
+              Create your free account and get instant access to personalized study plans, practice questions, and AI tutoring.
+            </p>
+
+            {/* Features */}
+            <div className="space-y-4 text-left">
+              {['Unlimited practice questions', 'Personalized study plans', '24/7 AI tutor access', 'Performance analytics'].map((feature, idx) => (
+                <div key={idx} className="flex items-center gap-3 bg-white/10 backdrop-blur-lg rounded-xl p-3">
+                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-white/90">{feature}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="flex-1 flex items-center justify-center px-8 py-12 relative z-10">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 mb-8 group">
+            <div className="w-12 h-12 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-xl flex items-center justify-center text-2xl -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+              🎓
+            </div>
+            <span className="font-display text-3xl font-extrabold text-[var(--blue)]">PrepGenius</span>
+          </Link>
+
+          <div className="grid grid-cols-1 gap-4 mb-6">
+            <GoogleLoginButton />
+          </div>
+          {/* Progress Steps */}
+          <div className="flex items-center gap-2 mb-8">
+            <div className={`flex-1 h-2 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-[var(--orange)]' : 'bg-gray-200'}`} />
+            <div className={`flex-1 h-2 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-[var(--orange)]' : 'bg-gray-200'}`} />
+          </div>
+
+          {/* Header */}
+          <div className="mb-8 animate-[fadeInUp_0.6s_ease-out]">
+            <h1 className="font-display text-4xl font-extrabold text-[var(--black)] mb-3">
+              {step === 1 ? 'Create Account' : 'Personalize Your Learning'}
+            </h1>
+            <p className="text-[var(--gray-dark)] text-lg">
+              {step === 1 ? 'Get started with your free account' : 'Select your exam and subjects'}
+            </p>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg animate-[fadeInUp_0.3s_ease-out]">
+              {error}
+            </div>
+          )}
+
+          {/* Step 1: Basic Info */}
+          {step === 1 && (
+            <div className="space-y-6 animate-[fadeInUp_0.6s_ease-out]">
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-semibold text-[var(--black)] mb-2">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors duration-300 text-[var(--black)]"
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-[var(--black)] mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors duration-300 text-[var(--black)]"
+                  placeholder="student@example.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-semibold text-[var(--black)] mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors duration-300 text-[var(--black)]"
+                  placeholder="At least 8 characters"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-[var(--black)] mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors duration-300 text-[var(--black)]"
+                  placeholder="Re-enter password"
+                  required
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleNext}
+                className="w-full bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white py-4 rounded-xl font-semibold text-lg shadow-[0_4px_20px_rgba(255,107,53,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,107,53,0.4)] transition-all duration-300"
+              >
+                Continue
+              </button>
+            </div>
+          )}
+
+          {/* Step 2: Exam & Subjects */}
+          {step === 2 && (
+            <form onSubmit={handleSubmit} className="space-y-6 animate-[fadeInUp_0.6s_ease-out]">
+              <div>
+                <label className="block text-sm font-semibold text-[var(--black)] mb-3">
+                  Which exam are you preparing for?
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {examTypes.map((exam) => (
+                    <button
+                      key={exam}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, examType: exam })}
+                      className={`py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${formData.examType === exam
+                        ? 'bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white shadow-lg scale-105'
+                        : 'bg-gray-100 text-[var(--black)] hover:bg-gray-200'
+                        }`}
+                    >
+                      {exam}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[var(--black)] mb-3">
+                  Select your subjects (max 4)
+                </label>
+                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto p-1">
+                  {subjects.map((subject) => (
+                    <button
+                      key={subject}
+                      type="button"
+                      onClick={() => handleSubjectToggle(subject)}
+                      disabled={formData.subjects.length >= 4 && !formData.subjects.includes(subject)}
+                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 ${formData.subjects.includes(subject)
+                        ? 'bg-[var(--blue)] text-white'
+                        : 'bg-gray-100 text-[var(--black)] hover:bg-gray-200'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {subject}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-sm text-[var(--gray-dark)] mt-2">
+                  {formData.subjects.length}/4 subjects selected
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={formData.agreeToTerms}
+                  onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })}
+                  className="mt-1 w-4 h-4 text-[var(--orange)] border-gray-300 rounded focus:ring-[var(--orange)] focus:ring-2"
+                />
+                <label htmlFor="terms" className="text-sm text-[var(--gray-dark)]">
+                  I agree to PrepGenius's{' '}
+                  <Link href="/terms" className="text-[var(--orange)] hover:underline">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" className="text-[var(--orange)] hover:underline">
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 px-6 py-4 border-2 border-gray-200 rounded-xl font-semibold text-[var(--black)] hover:bg-gray-50 transition-all duration-300"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-[2] bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white py-4 rounded-xl font-semibold text-lg shadow-[0_4px_20px_rgba(255,107,53,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,107,53,0.4)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Creating account...
+                    </span>
+                  ) : (
+                    'Create Account'
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Sign In Link */}
+          <p className="mt-8 text-center text-[var(--gray-dark)]">
+            Already have an account?{' '}
+            <Link
+              href="/signin"
+              className="text-[var(--orange)] hover:text-[var(--orange-dark)] font-semibold transition-colors"
+            >
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}

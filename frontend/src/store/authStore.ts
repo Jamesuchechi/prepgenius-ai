@@ -1,1 +1,283 @@
-import { create } from 'zustand'\nimport { persist } from 'zustand/middleware'\nimport {\n  User,\n  AuthTokens,\n  LoginPayload,\n  SignUpPayload,\n  ChangePasswordPayload,\n  PasswordResetRequest,\n  PasswordResetConfirm,\n  EmailVerification,\n} from '@/types/user'\nimport { authAPI, userAPI } from '@/lib/api'\n\ninterface AuthState {\n  // State\n  user: User | null\n  tokens: AuthTokens | null\n  isLoading: boolean\n  error: string | null\n  isAuthenticated: boolean\n\n  // Actions\n  register: (payload: SignUpPayload) => Promise<void>\n  login: (payload: LoginPayload) => Promise<void>\n  logout: () => Promise<void>\n  verifyEmail: (payload: EmailVerification) => Promise<void>\n  requestPasswordReset: (payload: PasswordResetRequest) => Promise<void>\n  confirmPasswordReset: (payload: PasswordResetConfirm) => Promise<void>\n  changePassword: (payload: ChangePasswordPayload) => Promise<void>\n  updateProfile: (payload: Partial<User>) => Promise<void>\n  getCurrentUser: () => Promise<void>\n  setTokens: (tokens: AuthTokens) => void\n  setUser: (user: User | null) => void\n  clearError: () => void\n  reset: () => void\n}\n\nexport const useAuthStore = create<AuthState>(\n  persist(\n    (set, get) => ({\n      // Initial state\n      user: null,\n      tokens: null,\n      isLoading: false,\n      error: null,\n      isAuthenticated: false,\n\n      // Register\n      register: async (payload: SignUpPayload) => {\n        set({ isLoading: true, error: null })\n        try {\n          const response = await authAPI.register(payload)\n          set({\n            user: response.user,\n            tokens: response.tokens,\n            isAuthenticated: true,\n            isLoading: false,\n          })\n        } catch (error: any) {\n          const errorMessage =\n            error.response?.data?.detail ||\n            error.response?.data?.email?.[0] ||\n            error.response?.data?.password?.[0] ||\n            'Registration failed'\n          set({ error: errorMessage, isLoading: false })\n          throw error\n        }\n      },\n\n      // Login\n      login: async (payload: LoginPayload) => {\n        set({ isLoading: true, error: null })\n        try {\n          const response = await authAPI.login(payload)\n          set({\n            user: response.user,\n            tokens: response.tokens,\n            isAuthenticated: true,\n            isLoading: false,\n          })\n        } catch (error: any) {\n          const errorMessage =\n            error.response?.data?.detail || 'Login failed'\n          set({ error: errorMessage, isLoading: false })\n          throw error\n        }\n      },\n\n      // Logout\n      logout: async () => {\n        set({ isLoading: true, error: null })\n        try {\n          const { tokens } = get()\n          if (tokens?.refresh) {\n            await authAPI.logout(tokens.refresh)\n          }\n          set({\n            user: null,\n            tokens: null,\n            isAuthenticated: false,\n            isLoading: false,\n          })\n          localStorage.removeItem('access_token')\n          localStorage.removeItem('refresh_token')\n        } catch (error: any) {\n          const errorMessage = error.response?.data?.detail || 'Logout failed'\n          set({ error: errorMessage, isLoading: false })\n          throw error\n        }\n      },\n\n      // Verify email\n      verifyEmail: async (payload: EmailVerification) => {\n        set({ isLoading: true, error: null })\n        try {\n          const response = await authAPI.verifyEmail(payload)\n          set({\n            user: response.user,\n            isLoading: false,\n          })\n        } catch (error: any) {\n          const errorMessage =\n            error.response?.data?.detail ||\n            error.response?.data?.token?.[0] ||\n            'Email verification failed'\n          set({ error: errorMessage, isLoading: false })\n          throw error\n        }\n      },\n\n      // Request password reset\n      requestPasswordReset: async (payload: PasswordResetRequest) => {\n        set({ isLoading: true, error: null })\n        try {\n          await authAPI.requestPasswordReset(payload)\n          set({ isLoading: false })\n        } catch (error: any) {\n          const errorMessage =\n            error.response?.data?.detail ||\n            error.response?.data?.email?.[0] ||\n            'Password reset request failed'\n          set({ error: errorMessage, isLoading: false })\n          throw error\n        }\n      },\n\n      // Confirm password reset\n      confirmPasswordReset: async (payload: PasswordResetConfirm) => {\n        set({ isLoading: true, error: null })\n        try {\n          await authAPI.confirmPasswordReset(payload)\n          set({ isLoading: false })\n        } catch (error: any) {\n          const errorMessage =\n            error.response?.data?.detail ||\n            error.response?.data?.token?.[0] ||\n            'Password reset confirmation failed'\n          set({ error: errorMessage, isLoading: false })\n          throw error\n        }\n      },\n\n      // Change password\n      changePassword: async (payload: ChangePasswordPayload) => {\n        set({ isLoading: true, error: null })\n        try {\n          await userAPI.changePassword(payload)\n          set({ isLoading: false })\n        } catch (error: any) {\n          const errorMessage =\n            error.response?.data?.detail ||\n            error.response?.data?.old_password?.[0] ||\n            'Password change failed'\n          set({ error: errorMessage, isLoading: false })\n          throw error\n        }\n      },\n\n      // Update profile\n      updateProfile: async (payload: Partial<User>) => {\n        set({ isLoading: true, error: null })\n        try {\n          const updatedUser = await userAPI.updateProfile(payload)\n          set({\n            user: updatedUser,\n            isLoading: false,\n          })\n        } catch (error: any) {\n          const errorMessage = error.response?.data?.detail || 'Profile update failed'\n          set({ error: errorMessage, isLoading: false })\n          throw error\n        }\n      },\n\n      // Get current user\n      getCurrentUser: async () => {\n        set({ isLoading: true, error: null })\n        try {\n          const user = await userAPI.getCurrentUser()\n          set({\n            user,\n            isAuthenticated: true,\n            isLoading: false,\n          })\n        } catch (error: any) {\n          set({ isLoading: false, isAuthenticated: false })\n          throw error\n        }\n      },\n\n      // Set tokens\n      setTokens: (tokens: AuthTokens) => {\n        set({ tokens, isAuthenticated: true })\n        localStorage.setItem('access_token', tokens.access)\n        localStorage.setItem('refresh_token', tokens.refresh)\n      },\n\n      // Set user\n      setUser: (user: User | null) => {\n        set({ user })\n      },\n\n      // Clear error\n      clearError: () => {\n        set({ error: null })\n      },\n\n      // Reset all state\n      reset: () => {\n        set({\n          user: null,\n          tokens: null,\n          isLoading: false,\n          error: null,\n          isAuthenticated: false,\n        })\n        localStorage.removeItem('access_token')\n        localStorage.removeItem('refresh_token')\n      },\n    }),\n    {\n      name: 'auth-storage',\n      partialize: (state) => ({\n        user: state.user,\n        tokens: state.tokens,\n        isAuthenticated: state.isAuthenticated,\n      }),\n    }\n  )\n)\n"
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+export interface User {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  phone_number?: string
+  profile_picture?: string
+  bio?: string
+  student_type: string
+  grade_level?: string
+  exam_targets: string[]
+  is_email_verified: boolean
+  created_at: string
+  last_login_date?: string
+}
+
+interface AuthTokens {
+  access: string
+  refresh: string
+}
+
+interface AuthState {
+  user: User | null
+  tokens: AuthTokens | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  error: string | null
+
+  // Actions
+  login: (email: string, password: string) => Promise<void>
+  signup: (data: SignupData) => Promise<void>
+  logout: () => Promise<void>
+  refreshToken: () => Promise<void>
+  setUser: (user: User) => void
+  clearError: () => void
+  checkAuth: () => Promise<void>
+}
+
+export interface SignupData {
+  email: string
+  password: string
+  first_name: string
+  last_name: string
+  exam_targets: string[]
+  subjects?: string[]
+}
+
+// Helper functions for token management
+const setTokensInStorage = (tokens: AuthTokens) => {
+  localStorage.setItem('access_token', tokens.access)
+  localStorage.setItem('refresh_token', tokens.refresh)
+
+  // Also set in cookies for middleware
+  document.cookie = `token=${tokens.access}; path=/; max-age=${60 * 60 * 24 * 7}` // 7 days
+}
+
+const getTokensFromStorage = (): AuthTokens | null => {
+  const access = localStorage.getItem('access_token')
+  const refresh = localStorage.getItem('refresh_token')
+
+  if (access && refresh) {
+    return { access, refresh }
+  }
+  return null
+}
+
+const clearTokensFromStorage = () => {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      tokens: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+
+      login: async (email: string, password: string) => {
+        set({ isLoading: true, error: null })
+
+        try {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+          const response = await fetch(`${API_URL}/auth/login/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          })
+
+          if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.detail || error.message || 'Login failed')
+          }
+
+          const data = await response.json()
+
+          // Store tokens
+          setTokensInStorage(data.tokens)
+
+          set({
+            user: data.user,
+            tokens: data.tokens,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          })
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error.message || 'An error occurred during login'
+          })
+          throw error
+        }
+      },
+
+      signup: async (data: SignupData) => {
+        set({ isLoading: true, error: null })
+
+        try {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+          const response = await fetch(`${API_URL}/auth/register/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          })
+
+          if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.detail || error.message || 'Registration failed')
+          }
+
+          const responseData = await response.json()
+
+          // Store tokens
+          setTokensInStorage(responseData.tokens)
+
+          set({
+            user: responseData.user,
+            tokens: responseData.tokens,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          })
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error.message || 'An error occurred during registration'
+          })
+          throw error
+        }
+      },
+
+      logout: async () => {
+        const { tokens } = get()
+
+        try {
+          if (tokens?.refresh) {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+            await fetch(`${API_URL}/auth/logout/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokens.access}`
+              },
+              body: JSON.stringify({ refresh: tokens.refresh })
+            })
+          }
+        } catch (error) {
+          console.error('Logout error:', error)
+        } finally {
+          // Clear tokens regardless of API call success
+          clearTokensFromStorage()
+          set({
+            user: null,
+            tokens: null,
+            isAuthenticated: false,
+            error: null
+          })
+        }
+      },
+
+      refreshToken: async () => {
+        const { tokens } = get()
+
+        if (!tokens?.refresh) {
+          throw new Error('No refresh token available')
+        }
+
+        try {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+          const response = await fetch(`${API_URL}/auth/refresh/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh: tokens.refresh })
+          })
+
+          if (!response.ok) {
+            throw new Error('Token refresh failed')
+          }
+
+          const data = await response.json()
+          const newTokens = {
+            access: data.access,
+            refresh: tokens.refresh
+          }
+
+          setTokensInStorage(newTokens)
+          set({ tokens: newTokens })
+        } catch (error) {
+          // If refresh fails, logout user
+          await get().logout()
+          throw error
+        }
+      },
+
+      setUser: (user: User) => {
+        set({ user })
+      },
+
+      clearError: () => {
+        set({ error: null })
+      },
+
+      checkAuth: async () => {
+        const tokens = getTokensFromStorage()
+
+        if (!tokens) {
+          set({ isAuthenticated: false, user: null, tokens: null })
+          return
+        }
+
+        try {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+          const response = await fetch(`${API_URL}/users/me/`, {
+            headers: {
+              'Authorization': `Bearer ${tokens.access}`
+            }
+          })
+
+          if (!response.ok) {
+            // Try to refresh token
+            await get().refreshToken()
+            // Retry with new token
+            const newTokens = get().tokens
+            if (newTokens) {
+              const retryResponse = await fetch(`${API_URL}/users/me/`, {
+                headers: {
+                  'Authorization': `Bearer ${newTokens.access}`
+                }
+              })
+
+              if (retryResponse.ok) {
+                const user = await retryResponse.json()
+                set({ user, tokens: newTokens, isAuthenticated: true })
+                return
+              }
+            }
+            throw new Error('Authentication failed')
+          }
+
+          const user = await response.json()
+          set({ user, tokens, isAuthenticated: true })
+        } catch (error) {
+          clearTokensFromStorage()
+          set({ user: null, tokens: null, isAuthenticated: false })
+        }
+      }
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated
+      })
+    }
+  )
+)

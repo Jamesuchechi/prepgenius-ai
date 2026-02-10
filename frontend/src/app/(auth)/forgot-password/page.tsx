@@ -1,59 +1,25 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { confirmPasswordReset } from '@/lib/api'
+import { requestPasswordReset } from '@/lib/api'
 
-export default function ResetPasswordPage() {
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const token = searchParams.get('token')
-
-    const [formData, setFormData] = useState({
-        newPassword: '',
-        confirmPassword: ''
-    })
+export default function ForgotPasswordPage() {
+    const [email, setEmail] = useState('')
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState('')
     const [isSuccess, setIsSuccess] = useState(false)
-
-    useEffect(() => {
-        if (!token) {
-            setError('Invalid or missing reset token')
-        }
-    }, [token])
+    const [error, setError] = useState('')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        setIsLoading(true)
         setError('')
 
-        if (formData.newPassword !== formData.confirmPassword) {
-            setError('Passwords do not match')
-            return
-        }
-
-        if (formData.newPassword.length < 8) {
-            setError('Password must be at least 8 characters')
-            return
-        }
-
-        if (!token) {
-            setError('Invalid reset token')
-            return
-        }
-
-        setIsLoading(true)
-
         try {
-            await confirmPasswordReset(token, formData.newPassword)
+            await requestPasswordReset(email)
             setIsSuccess(true)
-            // Redirect to signin after 2 seconds
-            setTimeout(() => {
-                router.push('/signin')
-            }, 2000)
         } catch (err: any) {
-            setError(err.message || 'Failed to reset password. The link may have expired.')
+            setError(err.message || 'Failed to send reset link. Please try again.')
         } finally {
             setIsLoading(false)
         }
@@ -69,16 +35,17 @@ export default function ResetPasswordPage() {
                         </svg>
                     </div>
                     <h2 className="font-display text-2xl font-bold text-[var(--black)] mb-3">
-                        Password Reset Successful!
+                        Check Your Email
                     </h2>
                     <p className="text-[var(--gray-dark)] mb-6">
-                        Your password has been successfully reset. Redirecting you to sign in...
+                        We've sent a password reset link to <strong>{email}</strong>.
+                        Please check your inbox and follow the instructions.
                     </p>
                     <Link
                         href="/signin"
                         className="inline-block w-full bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white py-3 rounded-xl font-semibold hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
                     >
-                        Go to Sign In
+                        Back to Sign In
                     </Link>
                 </div>
             </div>
@@ -100,10 +67,10 @@ export default function ResetPasswordPage() {
                     {/* Header */}
                     <div className="mb-6 text-center">
                         <h1 className="font-display text-3xl font-extrabold text-[var(--black)] mb-2">
-                            Set New Password
+                            Forgot Password?
                         </h1>
                         <p className="text-[var(--gray-dark)]">
-                            Enter your new password below
+                            No worries! Enter your email and we'll send you a reset link.
                         </p>
                     </div>
 
@@ -117,42 +84,26 @@ export default function ResetPasswordPage() {
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="newPassword" className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                New Password
+                            <label htmlFor="email" className="block text-sm font-semibold text-[var(--black)] mb-2">
+                                Email Address
                             </label>
                             <input
-                                type="password"
-                                id="newPassword"
-                                value={formData.newPassword}
-                                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                                type="email"
+                                id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors"
-                                placeholder="Min. 8 characters"
-                                required
-                                minLength={8}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                Confirm Password
-                            </label>
-                            <input
-                                type="password"
-                                id="confirmPassword"
-                                value={formData.confirmPassword}
-                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors"
-                                placeholder="Confirm new password"
+                                placeholder="student@example.com"
                                 required
                             />
                         </div>
 
                         <button
                             type="submit"
-                            disabled={isLoading || !token}
+                            disabled={isLoading}
                             className="w-full bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white py-4 rounded-xl font-semibold text-lg shadow-[0_4px_20px_rgba(255,107,53,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,107,53,0.4)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isLoading ? 'Resetting Password...' : 'Reset Password'}
+                            {isLoading ? 'Sending...' : 'Send Reset Link'}
                         </button>
                     </form>
 

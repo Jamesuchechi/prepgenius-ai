@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { LayoutClient } from '@/components/LayoutClient'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'PrepGenius AI - Master Your Exams with AI-Powered Learning',
@@ -25,6 +26,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       </head>
       <body className="bg-white text-black">
         <LayoutClient>{children}</LayoutClient>

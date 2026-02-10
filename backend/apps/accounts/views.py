@@ -299,6 +299,89 @@ class UserLogoutView(views.APIView):
             )
         except Exception as e:
             return Response(
-                {'detail': str(e)},
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class GoogleLoginView(generics.GenericAPIView):
+    """Google OAuth login endpoint."""
+    
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """Verify Google token and authenticate/create user."""
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+        
+        token = request.data.get('token')
+        
+        if not token:
+            return Response(
+                {'error': 'Token is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Verify token with Google
+            # Note: In production, verify against GOOGLE_CLIENT_ID
+            idinfo = id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID
+            )
+            
+            # Get user info from token
+            email = idinfo['email']
+            first_name = idinfo.get('given_name', '')
+            last_name = idinfo.get('family_name', '')
+            profile_picture = idinfo.get('picture', '')
+            
+            # Check if user exists or create new one
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'is_email_verified': True,  # Google verified
+                    'student_type': 'individual',
+                    'username': email
+                }
+            )
+            
+            # If user exists but is not verified, verify them since they used Google
+            if not created and not user.is_email_verified:
+                user.is_email_verified = True
+                user.save(update_fields=['is_email_verified'])
+            
+            # Update profile picture if not set
+            if profile_picture and not user.profile_picture:
+                # Note: We're just storing the URL here ideally, but for now we skip 
+                # saving external URL to ImageField to avoid complexity
+                pass
+            
+            # Update last login
+            user.last_login_date = timezone.now()
+            user.save(update_fields=['last_login_date'])
+            
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                'user': UserSerializer(user).data,
+                'tokens': {
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except ValueError as e:
+            return Response(
+                {'error': 'Invalid token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )

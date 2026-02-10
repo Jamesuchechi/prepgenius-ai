@@ -62,6 +62,19 @@ MIDDLEWARE = [
 ]
 
 # ============================================================================
+# URL CONFIGURATION
+# ============================================================================
+
+ROOT_URLCONF = "core.urls"
+
+# ============================================================================
+# ASGI CONFIGURATION
+# ============================================================================
+
+ASGI_APPLICATION = "core.asgi.application"
+WSGI_APPLICATION = "core.wsgi.application"
+
+# ============================================================================
 # DATABASE
 # ============================================================================
 
@@ -215,6 +228,13 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@prepgenius.ai")
+
+# ============================================================================
+# GOOGLE OAUTH SETTINGS
+# ============================================================================
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
 # ============================================================================
 # CELERY SETTINGS
