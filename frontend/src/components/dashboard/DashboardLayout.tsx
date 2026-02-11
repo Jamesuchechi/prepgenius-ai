@@ -1,44 +1,23 @@
 'use client'
 
 import React, { useState } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useAuthStore } from '@/store/authStore'
+import Sidebar from '@/components/layout/Sidebar'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Practice', href: '/practice', icon: '📝' },
-  { name: 'Mock Exams', href: '/dashboard/exams', icon: '⏱️' },
-  { name: 'Study Plan', href: '/dashboard/study-plan', icon: '📅' },
-  { name: 'AI Tutor', href: '/dashboard/ai-tutor', icon: '🤖' },
-  { name: 'Analytics', href: '/dashboard/analytics', icon: '📈' },
-  { name: 'Profile', href: '/dashboard/profile', icon: '👤' },
-]
-
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { logout, user } = useAuthStore()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Mobile state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Desktop state
 
-  const handleLogout = async () => {
-    try {
-      await logout()
-      router.push('/')
-    } catch (error) {
-      console.error('Logout error:', error)
-      // Still redirect even if API call fails
-      router.push('/')
-    }
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Menu Button */}
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile Menu Button - Only visible on mobile */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-xl shadow-lg"
@@ -48,111 +27,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </svg>
       </button>
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 z-40
-        transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0
-      `}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-gray-200">
-            <Link href="/dashboard" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-xl flex items-center justify-center text-xl -rotate-6 group-hover:rotate-0 transition-transform duration-300">
-                🎓
-              </div>
-              <span className="font-display text-2xl font-extrabold text-[var(--blue)]">PrepGenius</span>
-            </Link>
-          </div>
-
-          {/* User Info */}
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-br from-[var(--blue)]/5 to-[var(--orange)]/5">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {user?.first_name?.[0]}{user?.last_name?.[0]}
-              </div>
-              <div>
-                <h3 className="font-semibold text-[var(--black)]">
-                  {user?.first_name} {user?.last_name}
-                </h3>
-                <p className="text-sm text-[var(--gray-dark)]">
-                  {user?.exam_targets?.[0]?.toUpperCase() || 'Student'} {new Date().getFullYear()}
-                </p>
-              </div>
-            </div>
-
-            {/* Study Streak */}
-            <div className="mt-4 p-3 bg-white rounded-lg border border-[var(--orange)]/20">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-[var(--gray-dark)]">Study Streak</span>
-                <span className="text-lg">🔥</span>
-              </div>
-              <div className="font-display text-2xl font-bold text-[var(--orange)]">7 days</div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4 overflow-y-auto">
-            <ul className="space-y-1">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href
-                return (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={`
-                        flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
-                        ${isActive
-                          ? 'bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white shadow-lg scale-105'
-                          : 'text-[var(--gray-dark)] hover:bg-gray-100 hover:text-[var(--black)]'
-                        }
-                      `}
-                    >
-                      <span className="text-xl">{item.icon}</span>
-                      <span className="font-semibold">{item.name}</span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
-
-          {/* Upgrade Banner */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-xl p-4 text-white">
-              <h4 className="font-bold mb-2">Upgrade to Pro</h4>
-              <p className="text-sm text-white/90 mb-3">Get unlimited access to all features</p>
-              <button className="w-full bg-white text-[var(--blue)] py-2 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors">
-                Upgrade Now
-              </button>
-            </div>
-          </div>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-gray-200">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
-            >
-              <span className="text-xl">🚪</span>
-              <span className="font-semibold">Logout</span>
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+      {/* Sidebar Component */}
+      <Sidebar
+        isCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        isMobileOpen={isSidebarOpen}
+        closeMobileSidebar={() => setIsSidebarOpen(false)}
+      />
 
       {/* Main Content */}
-      <main className="lg:ml-72 min-h-screen">
-        {/* Top Bar */}
+      <main
+        className={` min-h-screen w-full transition-all duration-300 ease-in-out
+          ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}
+        `}
+      >
+        {/* Top Bar - Simplified for reusability if needed, or kept here */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
           <div className="px-8 py-4 flex items-center justify-between">
             <div className="flex-1 max-w-xl">

@@ -13,6 +13,8 @@ interface AIQuizSessionProps {
 
 export default function AIQuizSession({ questions, onExit }: AIQuizSessionProps) {
     const [index, setIndex] = useState(0)
+    // Flexible answer state: could be ID (number), text (string), ordering (string[]) etc.
+    // Storing as { [questionId]: any }
     const [answers, setAnswers] = useState<Record<number, any>>({})
     const [results, setResults] = useState<Record<number, QuestionAttemptResult>>({})
     const [score, setScore] = useState(0)
@@ -22,19 +24,41 @@ export default function AIQuizSession({ questions, onExit }: AIQuizSessionProps)
     const currentQ = questions[index]
     const isLast = index === questions.length - 1
 
-    const handleMCQSelect = (id: number) => {
+    const handleAnswerUpdate = (val: any) => {
         if (results[currentQ.id]) return
-        setAnswers(prev => ({ ...prev, [currentQ.id]: { selectedAnswerId: id } }))
+        setAnswers(prev => ({ ...prev, [currentQ.id]: val }))
     }
 
     const handleCheck = async () => {
         if (loading) return
         const answer = answers[currentQ.id]
-        if (!answer) return
+        if (answer === undefined || answer === null || answer === '') return
 
         setLoading(true)
         try {
-            const res = await QuestionService.attempt(currentQ.id, answer.selectedAnswerId, answer.text)
+            // For MCQ, answer is the ID. For others it might be text or structured data.
+            // API expectation needs to be handled.
+            // Currently API expects `selected_answer_id` or `text_answer`.
+            // We might need to update API call to support other formats or serialize them.
+            // Assuming backend can handle `text_answer` for these new formats or we overload it.
+
+            // For now, let's assume we pass:
+            // MCQ -> selected_answer_id
+            // Theory/FillBlank/TrueFalse -> text_answer
+            // Matching/Ordering -> text_answer (JSON stringified)
+
+            let selectedId: number | undefined = undefined
+            let textAnswer: string | undefined = undefined
+
+            if (currentQ.question_type === 'MCQ') {
+                selectedId = answer as number
+            } else if (typeof answer === 'object') {
+                textAnswer = JSON.stringify(answer)
+            } else {
+                textAnswer = String(answer)
+            }
+
+            const res = await QuestionService.attempt(currentQ.id, selectedId, textAnswer)
             setResults(prev => ({ ...prev, [currentQ.id]: res }))
             if (res.correct) setScore(s => s + 1)
         } catch (err) {
@@ -110,9 +134,17 @@ export default function AIQuizSession({ questions, onExit }: AIQuizSessionProps)
                 <QuestionCard
                     key={currentQ.id}
                     question={currentQ}
-                    selectedAnswerId={answers[currentQ.id]?.selectedAnswerId}
-                    onMCQSelect={handleMCQSelect}
-                    onTheoryChange={(text) => setAnswers(prev => ({ ...prev, [currentQ.id]: { text } }))}
+                    selectedAnswerId={currentQ.question_type === 'MCQ' ? answers[currentQ.id] : undefined}
+                    theoryAnswer={currentQ.question_type === 'THEORY' ? answers[currentQ.id] : undefined}
+                    currentAnswer={answers[currentQ.id]}
+
+                    onMCQSelect={handleAnswerUpdate}
+                    onTheoryChange={handleAnswerUpdate}
+                    onTrueFalseSelect={handleAnswerUpdate}
+                    onFillBlankChange={handleAnswerUpdate}
+                    onMatchingUpdate={handleAnswerUpdate}
+                    onOrderingUpdate={handleAnswerUpdate}
+
                     result={results[currentQ.id]}
                 />
             </AnimatePresence>
@@ -122,7 +154,7 @@ export default function AIQuizSession({ questions, onExit }: AIQuizSessionProps)
                     <Button
                         className="h-12 px-8 text-lg"
                         onClick={handleCheck}
-                        disabled={!answers[currentQ.id] || loading}
+                        disabled={answers[currentQ.id] === undefined || loading}
                     >
                         {loading ? 'Checking...' : 'Check Answer'}
                     </Button>

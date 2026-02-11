@@ -45,3 +45,30 @@ class AIRouter:
         error_msg = f"All AI providers failed. Errors: {'; '.join(errors)}"
         logger.error(error_msg)
         raise Exception(error_msg)
+
+    def generate_topics(self, subject):
+        errors = []
+        for name, client in self.clients:
+            try:
+                if hasattr(client, 'client') and client.client is None:
+                    continue
+                
+                # HuggingFace check
+                if isinstance(client, HuggingFaceClient) and not client.api_key:
+                    continue
+
+                logger.info(f"Attempting topic generation for '{subject}' with {name}...")
+                # Ensure the client has the method before calling
+                if hasattr(client, 'generate_topics'):
+                    return client.generate_topics(subject)
+                else:
+                    logger.warning(f"{name} client does not support topic generation.")
+                
+            except Exception as e:
+                logger.warning(f"{name} failed to generate topics: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
+
+        error_msg = f"All AI providers failed to generate topics. Errors: {'; '.join(errors)}"
+        logger.error(error_msg)
+        raise Exception(error_msg)

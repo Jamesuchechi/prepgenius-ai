@@ -7,7 +7,7 @@ interface MCQViewProps {
     answers: any[]
     selectedAnswerId: number | undefined
     onSelect: (id: number) => void
-    result: { correct: boolean; explanation: string; correct_answer_id: number } | null
+    result: { correct: boolean; explanation: string; correct_answer_data?: any } | null
 }
 
 export default function MCQView({ answers, selectedAnswerId, onSelect, result }: MCQViewProps) {
@@ -15,7 +15,7 @@ export default function MCQView({ answers, selectedAnswerId, onSelect, result }:
         <div className="space-y-3">
             {answers.map((answer) => {
                 const isSelected = selectedAnswerId === answer.id
-                const isCorrect = result?.correct_answer_id === answer.id
+                const isCorrect = result?.correct_answer_data === answer.id
                 const isWrong = isSelected && result && !result.correct
 
                 let borderColor = 'border-gray-200'

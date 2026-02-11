@@ -7,7 +7,7 @@ export interface GenerateQuestionsPayload {
     exam_type_id: number
     difficulty: string
     count: number
-    question_type: 'MCQ' | 'THEORY' | 'TRUE_FALSE' | 'FILL_BLANK'
+    question_type: 'MCQ' | 'THEORY' | 'TRUE_FALSE' | 'FILL_BLANK' | 'MATCHING' | 'ORDERING'
 }
 
 export const QuestionService = {
@@ -25,7 +25,7 @@ export const QuestionService = {
     attempt: async (questionId: number, selectedAnswerId?: number, responseText?: string): Promise<QuestionAttemptResult> => {
         const payload: any = {}
         if (selectedAnswerId) payload.selected_answer_id = selectedAnswerId
-        if (responseText) payload.response_data = { text: responseText }
+        if (responseText) payload.text_answer = responseText
 
         const response = await axiosInstance.post<QuestionAttemptResult>(`/questions/${questionId}/attempt/`, payload)
         return response.data

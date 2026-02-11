@@ -15,9 +15,13 @@ class QuestionGenerationService:
         
         subject = Subject.objects.get(id=subject_id)
         topic = Topic.objects.get(id=topic_id)
-        exam_type = ExamType.objects.get(id=exam_type_id)
         
-        context = f"Exam Type: {exam_type.name}. Subject: {subject.name}. Target Audience: Nigerian students."
+        exam_type = None
+        if exam_type_id and int(exam_type_id) > 0:
+             exam_type = ExamType.objects.filter(id=exam_type_id).first()
+        
+        exam_name = exam_type.name if exam_type else "General"
+        context = f"Exam Type: {exam_name}. Subject: {subject.name}. Target Audience: Nigerian students."
         
         try:
             generated_data = self.ai_router.generate_questions(

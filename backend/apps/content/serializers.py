@@ -46,3 +46,6 @@ class SubjectListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
         fields = ['id', 'name', 'category', 'icon', 'color', 'is_core', 'topics_count']
+
+class GenerateTopicSerializer(serializers.Serializer):
+    subject = serializers.CharField(max_length=100)

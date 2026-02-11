@@ -2,76 +2,202 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuthStore } from '@/store/authStore'
 import {
     LayoutDashboard,
     BookOpen,
     GraduationCap,
     BrainCircuit,
-    Settings,
+    LineChart,
+    User,
     LogOut,
-    LineChart
+    ChevronLeft,
+    ChevronRight,
+    Search,
+    Bell,
+    Settings as SettingsIcon
 } from 'lucide-react'
-import { useAuthStore } from '@/store/authStore' // Assuming store exists
 
-export default function Sidebar() {
+interface SidebarProps {
+    isCollapsed: boolean
+    toggleSidebar: () => void
+    isMobileOpen: boolean
+    closeMobileSidebar: () => void
+}
+
+export default function Sidebar({
+    isCollapsed,
+    toggleSidebar,
+    isMobileOpen,
+    closeMobileSidebar
+}: SidebarProps) {
     const pathname = usePathname()
-    // Mock logout if store not fully functional in this context
-    const logout = () => { localStorage.clear(); window.location.href = '/signin' }
+    const router = useRouter()
+    const { logout, user } = useAuthStore()
 
-    const links = [
+    const handleLogout = async () => {
+        try {
+            await logout()
+            router.push('/')
+        } catch (error) {
+            console.error('Logout error:', error)
+            router.push('/')
+        }
+    }
+
+    const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'AI Practice', href: '/practice', icon: BrainCircuit },
-        { name: 'Exams', href: '/dashboard/exams', icon: BookOpen },
+        { name: 'Mock Exams', href: '/dashboard/exams', icon: BookOpen },
         { name: 'Study Plan', href: '/dashboard/study-plan', icon: GraduationCap },
+        { name: 'AI Tutor', href: '/dashboard/ai-tutor', icon: BrainCircuit }, // Using BrainCircuit as placeholder if robot icon not available, or import specific icon
         { name: 'Analytics', href: '/dashboard/analytics', icon: LineChart },
-        { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+        { name: 'Profile', href: '/dashboard/profile', icon: User },
     ]
 
     return (
-        <aside className="w-64 bg-white border-r border-gray-100 min-h-screen flex flex-col fixed left-0 top-0 bottom-0 z-50">
-            <div className="p-8">
-                <Link href="/dashboard" className="flex items-center gap-2 group">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-xl flex items-center justify-center text-xl -rotate-6 group-hover:rotate-0 transition-transform duration-300">
-                        🎓
-                    </div>
-                    <span className="font-display text-xl font-extrabold text-[var(--blue)]">PrepGenius</span>
-                </Link>
-            </div>
+        <>
+            {/* Mobile Overlay */}
+            {isMobileOpen && (
+                <div
+                    className="lg:hidden fixed inset-0 bg-black/50 z-30"
+                    onClick={closeMobileSidebar}
+                />
+            )}
 
-            <nav className="flex-1 px-4 space-y-2">
-                {links.map((link) => {
-                    const isActive = pathname === link.href || pathname?.startsWith(link.href + '/')
-                    const Icon = link.icon
-
-                    return (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`
-                flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium
-                ${isActive
-                                    ? 'bg-indigo-50 text-indigo-600 shadow-sm'
-                                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                }
-              `}
-                        >
-                            <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
-                            {link.name}
+            {/* Sidebar */}
+            <aside className={`
+                fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-40
+                transform transition-all duration-300 ease-in-out
+                ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+                lg:translate-x-0
+                ${isCollapsed ? 'lg:w-20' : 'lg:w-72'}
+                w-72
+            `}>
+                <div className="flex flex-col h-full overflow-hidden">
+                    {/* Logo */}
+                    <div className={`p-6 border-b border-gray-200 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+                        <Link href="/dashboard" className="flex items-center gap-2 group overflow-hidden">
+                            <div className="min-w-[2.5rem] w-10 h-10 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-xl flex items-center justify-center text-xl -rotate-6 group-hover:rotate-0 transition-transform duration-300">
+                                🎓
+                            </div>
+                            {!isCollapsed && (
+                                <span className="font-display text-2xl font-extrabold text-[var(--blue)] whitespace-nowrap transition-opacity duration-300">
+                                    PrepGenius
+                                </span>
+                            )}
                         </Link>
-                    )
-                })}
-            </nav>
+                        {/* Desktop Collapse Toggle - Only visible on desktop and when expanded (optional design choice, here putting it in header or separate) */}
+                    </div>
 
-            <div className="p-4 border-t border-gray-100">
-                <button
-                    onClick={logout}
-                    className="flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 font-medium"
-                >
-                    <LogOut className="w-5 h-5" />
-                    Sign Out
-                </button>
-            </div>
-        </aside>
+                    {/* Toggle Button (Desktop Only) - Absolute positioned to be on the border */}
+                    <button
+                        onClick={toggleSidebar}
+                        className="hidden lg:flex absolute -right-3 top-24 bg-white border border-gray-200 rounded-full p-1.5 hover:bg-gray-50 text-gray-500 hover:text-[var(--blue)] shadow-sm z-50 transition-colors"
+                        title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    >
+                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                    </button>
+
+                    {/* User Info */}
+                    <div className={`
+                         border-b border-gray-200 bg-gradient-to-br from-[var(--blue)]/5 to-[var(--orange)]/5
+                         transition-all duration-300 overflow-hidden
+                         ${isCollapsed ? 'p-4' : 'p-6'}
+                    `}>
+                        <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
+                            <div className="min-w-[3rem] w-12 h-12 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                {user?.first_name?.[0]}{user?.last_name?.[0]}
+                            </div>
+                            {!isCollapsed && (
+                                <div className="overflow-hidden">
+                                    <h3 className="font-semibold text-[var(--black)] truncate">
+                                        {user?.first_name} {user?.last_name}
+                                    </h3>
+                                    <p className="text-sm text-[var(--gray-dark)] truncate">
+                                        {user?.exam_targets?.[0]?.toUpperCase() || 'Student'} {new Date().getFullYear()}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Study Streak */}
+                        {!isCollapsed && (
+                            <div className="mt-4 p-3 bg-white rounded-lg border border-[var(--orange)]/20 overflow-hidden">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-sm font-medium text-[var(--gray-dark)]">Study Streak</span>
+                                    <span className="text-lg">🔥</span>
+                                </div>
+                                <div className="font-display text-2xl font-bold text-[var(--orange)]">7 days</div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Navigation */}
+                    <nav className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
+                        <ul className="space-y-1">
+                            {navigation.map((item) => {
+                                const isActive = pathname === item.href
+                                return (
+                                    <li key={item.name}>
+                                        <Link
+                                            href={item.href}
+                                            className={`
+                                                flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
+                                                ${isActive
+                                                    ? 'bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white shadow-lg'
+                                                    : 'text-[var(--gray-dark)] hover:bg-gray-100 hover:text-[var(--black)]'
+                                                }
+                                                ${isCollapsed ? 'justify-center px-2' : ''}
+                                            `}
+                                            title={isCollapsed ? item.name : undefined}
+                                        >
+                                            <span className={`text-xl ${isCollapsed ? '' : 'min-w-[1.5rem]'}`}>
+                                                {/* Use component if it's a component, otherwise render icon */}
+                                                <item.icon className="w-6 h-6" />
+                                            </span>
+                                            {!isCollapsed && (
+                                                <span className="font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
+                                                    {item.name}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </nav>
+
+                    {/* Upgrade Banner */}
+                    {!isCollapsed && (
+                        <div className="p-4 border-t border-gray-200">
+                            <div className="bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-xl p-4 text-white">
+                                <h4 className="font-bold mb-2">Upgrade to Pro</h4>
+                                <p className="text-sm text-white/90 mb-3">Get unlimited access to all features</p>
+                                <button className="w-full bg-white text-[var(--blue)] py-2 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors">
+                                    Upgrade Now
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Logout */}
+                    <div className="p-4 border-t border-gray-200">
+                        <button
+                            onClick={handleLogout}
+                            className={`
+                                w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300
+                                ${isCollapsed ? 'justify-center' : ''}
+                            `}
+                            title={isCollapsed ? 'Logout' : undefined}
+                        >
+                            <span className="text-xl"><LogOut className="w-6 h-6" /></span>
+                            {!isCollapsed && <span className="font-semibold">Logout</span>}
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </>
     )
 }

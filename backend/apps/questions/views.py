@@ -43,31 +43,138 @@ class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
     def attempt(self, request, pk=None):
         """
         Submit an answer for a question. 
-        Returns the result and the correct answer explanation.
+        Supports selected_answer_id for MCQ and text_answer for others.
         """
         question = self.get_object()
         selected_answer_id = request.data.get('selected_answer_id')
+        text_answer = request.data.get('text_answer')
         
-        try:
-            selected_answer = Answer.objects.get(id=selected_answer_id, question=question)
-        except Answer.DoesNotExist:
-             return Response({'error': 'Invalid answer ID for this question'}, status=status.HTTP_400_BAD_REQUEST)
+        is_correct = False
+        explanation = ""
+        
+        # 1. MCQ Handling
+        if question.question_type == 'MCQ':
+            if not selected_answer_id:
+                return Response({'error': 'selected_answer_id required for MCQ'}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                selected_answer = Answer.objects.get(id=selected_answer_id, question=question)
+                is_correct = selected_answer.is_correct
+                explanation = selected_answer.explanation if is_correct else "Incorrect."
+                # Find the correct answer for feedback
+                correct_ans = question.answers.filter(is_correct=True).first()
+                if not is_correct and correct_ans:
+                    explanation = f"Incorrect. {correct_ans.explanation}"
+            except Answer.DoesNotExist:
+                 return Response({'error': 'Invalid answer ID'}, status=status.HTTP_400_BAD_REQUEST)
 
-        is_correct = selected_answer.is_correct
+        # 2. TRUE/FALSE Handling
+        elif question.question_type == 'TRUE_FALSE':
+            if not text_answer:
+                 return Response({'error': 'text_answer required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Find the answer object that matches the text (case-insensitive)
+            # We stored "True" and "False" as Answer objects
+            selected_answer = question.answers.filter(content__iexact=str(text_answer)).first()
+            if selected_answer:
+                is_correct = selected_answer.is_correct
+                explanation = selected_answer.explanation
+                if not is_correct:
+                    correct = question.answers.filter(is_correct=True).first()
+                    if correct: explanation = f"Incorrect. {correct.explanation}"
+            else:
+                return Response({'error': 'Invalid True/False option'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. FILL_BLANK Handling
+        elif question.question_type == 'FILL_BLANK':
+             # Simple string match against the correct Answer object
+             correct_answer_obj = question.answers.filter(is_correct=True).first()
+             if correct_answer_obj:
+                 # NormalizeStrings
+                 user_ans = str(text_answer).strip().lower()
+                 correct_ans = correct_answer_obj.content.strip().lower()
+                 is_correct = (user_ans == correct_ans)
+                 explanation = correct_answer_obj.explanation
+             else:
+                 # Fallback if no answer obj
+                 is_correct = False
+                 explanation = "Error: Correct answer not found in specific database records."
+
+        # 4. MATCHING Handling
+        elif question.question_type == 'MATCHING':
+            import json
+            try:
+                user_pairs = json.loads(text_answer) if isinstance(text_answer, str) else text_answer
+                # Expected format: [{'item': 'A', 'match': 'B'}, ...]
+                # Stored in question.metadata['pairs']
+                correct_pairs = question.metadata.get('pairs', [])
+                
+                # Sort both by 'item' to compare
+                user_pairs_sorted = sorted(user_pairs, key=lambda x: x.get('item', ''))
+                correct_pairs_sorted = sorted(correct_pairs, key=lambda x: x.get('item', ''))
+                
+                # Deep compare
+                is_correct = (user_pairs_sorted == correct_pairs_sorted)
+                explanation = question.guidance or "Check the correct pairs." # Using guidance as general explanation or we could store explanation in metadata
+                
+                if not explanation and hasattr(question, 'answers'): # Check if answer obj exists
+                     ans = question.answers.first()
+                     if ans: explanation = ans.explanation
+
+            except Exception as e:
+                return Response({'error': f'Invalid JSON format for matching: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 5. ORDERING Handling
+        elif question.question_type == 'ORDERING':
+            import json
+            try:
+                user_seq = json.loads(text_answer) if isinstance(text_answer, str) else text_answer
+                correct_seq = question.metadata.get('sequence', [])
+                
+                is_correct = (user_seq == correct_seq)
+                explanation = question.guidance
+            except Exception:
+                 return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 6. THEORY (AI Grading Placeholder)
+        elif question.question_type == 'THEORY':
+            # For now, just mark complete/correct or leave for manual/AI grading later
+            # We'll return the 'model answer' for self-grading
+            correct_answer_obj = question.answers.first()
+            is_correct = True # Auto-pass for now or need AI grading
+            explanation = correct_answer_obj.explanation if correct_answer_obj else "Self-evaluate against the model answer."
         
+        # Save Attempt
+        AttemptQuestionSerializer
         attempt = QuestionAttempt.objects.create(
             user=request.user,
             question=question,
-            selected_answer=selected_answer,
-            is_correct=is_correct
+            response_data={'text': text_answer, 'id': selected_answer_id},
+            is_correct=is_correct,
+            score=1.0 if is_correct else 0.0
         )
         
-        # Return result with explanation
         return Response({
             'correct': is_correct,
-            'explanation': selected_answer.explanation if is_correct else "Incorrect.",
-            'correct_answer_id': question.answers.filter(is_correct=True).first().id
+            'explanation': explanation,
+            'correct_answer_data': self._get_correct_answer_data(question)
         })
+
+    def _get_correct_answer_data(self, question):
+        if question.question_type == 'MCQ':
+            ans = question.answers.filter(is_correct=True).first()
+            return ans.id if ans else None
+        elif question.question_type in ['TRUE_FALSE', 'FILL_BLANK']:
+             ans = question.answers.filter(is_correct=True).first()
+             return ans.content if ans else None
+        elif question.question_type == 'MATCHING':
+            return question.metadata.get('pairs')
+        elif question.question_type == 'ORDERING':
+            return question.metadata.get('sequence')
+        elif question.question_type == 'THEORY':
+             ans = question.answers.first()
+             return ans.content if ans else None
+        return None
+
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """

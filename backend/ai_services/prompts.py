@@ -6,10 +6,33 @@ class PromptTemplates:
         return "You are an expert exam question generator for Nigerian students (JAMB, WAEC, NECO). You must output ONLY valid JSON."
 
     @staticmethod
+    def get_topic_generator_prompt(subject):
+        return f"""
+        Generate a list of 15-30 or more key study topics for the subject '{subject}', tailored for Nigerian students preparing for JAMB, WAEC, and NECO exams.
+        The topics should cover the standard curriculum.
+        
+        Output schema:
+        {{
+            "topics": [
+                {{
+                    "name": "Topic Name",
+                    "description": "Brief description of the topic",
+                    "difficulty": "BEGINNER|INTERMEDIATE|ADVANCED",
+                    "estimated_hours": 2.5
+                }}
+            ]
+        }}
+        """
+
+    @staticmethod
     def get_question_prompt(topic, difficulty, count, q_type, context=""):
         base_instruction = f"""
         Generate {count} {difficulty} questions on the topic '{topic}' for {q_type} format.
-        ensure the questions are at a {difficulty} level suitable for JAMB/WAEC students.
+        Ensure the questions are at a {difficulty} level suitable for JAMB/WAEC students.
+        
+        CRITICAL: Provide a DETAILED explanation for the correct answer. 
+        Where applicable (especially for calculations), include alternative methods or shortcuts to arrive at the answer.
+        The explanation should be educational and help the student learn.
         
         Strictly follow the JSON schema below for the output.
         """

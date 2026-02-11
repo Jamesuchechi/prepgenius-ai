@@ -3,24 +3,39 @@ import { motion } from 'framer-motion'
 import { Question } from '../../lib/api'
 import MCQView from './types/MCQView'
 import TheoryView from './types/TheoryView'
+import TrueFalseView from './types/TrueFalseView'
+import FillBlankView from './types/FillBlankView'
+import MatchingView from './types/MatchingView'
+import OrderingView from './types/OrderingView'
 import { BadgeCheck, HelpCircle } from 'lucide-react'
 
 interface QuestionCardProps {
     question: Question
     selectedAnswerId?: number
     theoryAnswer?: string
+    // Generic answer storage for other types
+    currentAnswer?: any
     result: any
     onMCQSelect: (id: number) => void
     onTheoryChange: (text: string) => void
+    onTrueFalseSelect: (answer: string) => void
+    onFillBlankChange: (text: string) => void
+    onMatchingUpdate: (pairs: any[]) => void
+    onOrderingUpdate: (sequence: string[]) => void
 }
 
 export default function QuestionCard({
     question,
     selectedAnswerId,
     theoryAnswer,
+    currentAnswer,
     result,
     onMCQSelect,
-    onTheoryChange
+    onTheoryChange,
+    onTrueFalseSelect,
+    onFillBlankChange,
+    onMatchingUpdate,
+    onOrderingUpdate
 }: QuestionCardProps) {
 
     return (
@@ -37,7 +52,7 @@ export default function QuestionCard({
                     {question.content}
                 </h3>
                 <span className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-xs font-bold text-gray-500 uppercase tracking-widest">
-                    {question.question_type}
+                    {question.question_type.replace('_', ' ')}
                 </span>
             </div>
 
@@ -56,6 +71,37 @@ export default function QuestionCard({
                     <TheoryView
                         questionId={question.id}
                         onSubmit={onTheoryChange}
+                        result={result}
+                    />
+                )}
+
+                {question.question_type === 'TRUE_FALSE' && (
+                    <TrueFalseView
+                        onSelect={onTrueFalseSelect}
+                        selectedAnswer={currentAnswer}
+                        result={result}
+                    />
+                )}
+
+                {question.question_type === 'FILL_BLANK' && (
+                    <FillBlankView
+                        onSubmit={onFillBlankChange}
+                        result={result}
+                    />
+                )}
+
+                {question.question_type === 'MATCHING' && (
+                    <MatchingView
+                        metadata={question.metadata || { pairs: [] }} // Safely access metadata
+                        onUpdate={onMatchingUpdate}
+                        result={result}
+                    />
+                )}
+
+                {question.question_type === 'ORDERING' && (
+                    <OrderingView
+                        metadata={question.metadata || { sequence: [] }} // Safely access metadata
+                        onUpdate={onOrderingUpdate}
                         result={result}
                     />
                 )}

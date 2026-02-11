@@ -1,7 +1,10 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import *
 from .serializers import *
+from .services.topic_generator import TopicGenerationService
 
 class CountryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Country.objects.filter(is_active=True)
@@ -41,6 +44,20 @@ class TopicViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['subject', 'difficulty']
     search_fields = ['name', 'description']
+
+    @action(detail=False, methods=['post'])
+    def generate(self, request):
+        serializer = GenerateTopicSerializer(data=request.data)
+        if serializer.is_valid():
+            subject_name = serializer.validated_data['subject']
+            service = TopicGenerationService()
+            try:
+                topics = service.get_or_generate_topics(subject_name)
+                output_serializer = TopicSerializer(topics, many=True)
+                return Response(output_serializer.data, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class SubtopicViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Subtopic.objects.filter(is_active=True)

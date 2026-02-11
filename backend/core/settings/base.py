@@ -244,7 +244,7 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/v1")
+GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", None)
 GROQ_TIMEOUT = int(os.getenv("GROQ_TIMEOUT", 60))
 
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")

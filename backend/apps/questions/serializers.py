@@ -43,7 +43,8 @@ class GenerateQuestionSerializer(serializers.Serializer):
 
 class AttemptQuestionSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
-    selected_answer_id = serializers.IntegerField()
+    selected_answer_id = serializers.IntegerField(required=False, allow_null=True)
+    text_answer = serializers.CharField(required=False, allow_blank=True)
 
 class QuestionAttemptSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { getExamTypes, getSubjects, getTopics, ExamType, Subject, Topic } from '../../lib/api'
+import { getExamTypes, ExamType, Topic } from '../../lib/api'
 import { QuestionService, GenerateQuestionsPayload } from '../../services/questions'
+import { ContentService } from '../../services/content'
 import Button from '../ui/Button'
-import { BrainCircuit, BookOpen, Layers, Target, Wand2, Calculator } from 'lucide-react'
+import { BrainCircuit, BookOpen, Layers, Target, Wand2, Calculator, Search, Loader2 } from 'lucide-react'
 import clsx from 'clsx'
+import { toast } from 'sonner' // Assuming sonner is used or just alert
 
 interface AIGenerationFormProps {
     onQuestionsGenerated: (questions: any[]) => void
@@ -12,23 +14,24 @@ interface AIGenerationFormProps {
 
 export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationFormProps) {
     const [examTypes, setExamTypes] = useState<ExamType[]>([])
-    const [subjects, setSubjects] = useState<Subject[]>([])
+    const [subjectQuery, setSubjectQuery] = useState('')
     const [topics, setTopics] = useState<Topic[]>([])
     const [selectedExamType, setSelectedExamType] = useState<string>('')
-    const [selectedSubject, setSelectedSubject] = useState<string>('')
+    const [selectedSubjectId, setSelectedSubjectId] = useState<string>('')
     const [selectedTopic, setSelectedTopic] = useState<string>('')
     const [difficulty, setDifficulty] = useState<string>('MEDIUM')
-    const [questionType, setQuestionType] = useState<'MCQ' | 'THEORY'>('MCQ')
+    const [questionType, setQuestionType] = useState<'MCQ' | 'THEORY' | 'TRUE_FALSE' | 'FILL_BLANK' | 'MATCHING' | 'ORDERING'>('MCQ')
     const [count, setCount] = useState<number>(5)
+
     const [loading, setLoading] = useState(false)
+    const [topicsLoading, setTopicsLoading] = useState(false)
     const [initLoading, setInitLoading] = useState(true)
 
     useEffect(() => {
         async function loadData() {
             try {
-                const [exams, subs] = await Promise.all([getExamTypes(), getSubjects()])
+                const exams = await getExamTypes()
                 setExamTypes(exams)
-                setSubjects(subs)
             } catch (err) {
                 console.error("Failed to load metadata", err)
             } finally {
@@ -38,20 +41,38 @@ export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationF
         loadData()
     }, [])
 
-    useEffect(() => {
-        if (selectedSubject) {
-            getTopics(Number(selectedSubject)).then(setTopics)
-        } else {
-            setTopics([])
+    const handleLoadTopics = async (e?: React.FormEvent) => {
+        e?.preventDefault()
+        if (!subjectQuery.trim()) return
+
+        setTopicsLoading(true)
+        setTopics([])
+        setSelectedSubjectId('')
+        setSelectedTopic('')
+
+        try {
+            const fetchedTopics = await ContentService.generateTopics(subjectQuery)
+            setTopics(fetchedTopics)
+            if (fetchedTopics.length > 0) {
+                // All topics for this query belong to the same subject ID returned by backend
+                setSelectedSubjectId(String(fetchedTopics[0].subject))
+            } else {
+                alert("No topics found or generated for this subject. Try a different name.")
+            }
+        } catch (err) {
+            console.error("Failed to load topics", err)
+            alert("Failed to load topics. Please try again.")
+        } finally {
+            setTopicsLoading(false)
         }
-    }, [selectedSubject])
+    }
 
     const handleGenerate = async () => {
-        if (!selectedSubject || !selectedTopic) return
+        if (!selectedSubjectId || !selectedTopic) return
         setLoading(true)
         try {
             const payload: GenerateQuestionsPayload = {
-                subject_id: Number(selectedSubject),
+                subject_id: Number(selectedSubjectId),
                 topic_id: Number(selectedTopic),
                 exam_type_id: Number(selectedExamType),
                 difficulty,
@@ -82,24 +103,33 @@ export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationF
                 </div>
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">AI Practice Generator</h2>
-                    <p className="text-gray-500">Configure your session and let AI create the perfect test.</p>
+                    <p className="text-gray-500">Type a subject, pick a topic, and let AI create the perfect test.</p>
                 </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-                {/* Subject Selection */}
+                {/* Subject Input */}
                 <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                         <BookOpen className="w-4 h-4" /> Subject
                     </label>
-                    <select
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                        value={selectedSubject}
-                        onChange={(e) => setSelectedSubject(e.target.value)}
-                    >
-                        <option value="">Select Subject</option>
-                        {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                            placeholder="e.g. Physics, History"
+                            value={subjectQuery}
+                            onChange={(e) => setSubjectQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleLoadTopics()}
+                        />
+                        <button
+                            onClick={() => handleLoadTopics()}
+                            disabled={topicsLoading || !subjectQuery.trim()}
+                            className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-md"
+                        >
+                            {topicsLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Topic Selection */}
@@ -111,9 +141,11 @@ export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationF
                         className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all disabled:opacity-50"
                         value={selectedTopic}
                         onChange={(e) => setSelectedTopic(e.target.value)}
-                        disabled={!selectedSubject}
+                        disabled={!selectedSubjectId || topics.length === 0}
                     >
-                        <option value="">{selectedSubject ? 'Select Topic' : 'Select Subject First'}</option>
+                        <option value="">
+                            {topicsLoading ? 'Loading Topics...' : (selectedSubjectId ? 'Select a Topic' : 'Load Subject First')}
+                        </option>
                         {topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                 </div>
@@ -139,16 +171,23 @@ export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationF
                         <Wand2 className="w-4 h-4" /> Question Mode
                     </label>
                     <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl">
-                        {['MCQ', 'THEORY'].map((type) => (
+                        {[
+                            { id: 'MCQ', label: 'Multiple Choice' },
+                            { id: 'THEORY', label: 'Theory / Essay' },
+                            { id: 'TRUE_FALSE', label: 'True / False' },
+                            { id: 'FILL_BLANK', label: 'Fill in Blanks' },
+                            { id: 'MATCHING', label: 'Matching' },
+                            { id: 'ORDERING', label: 'Ordering' }
+                        ].map((type) => (
                             <button
-                                key={type}
-                                onClick={() => setQuestionType(type as any)}
+                                key={type.id}
+                                onClick={() => setQuestionType(type.id as any)}
                                 className={clsx(
                                     "p-2 rounded-lg text-sm font-medium transition-all",
-                                    questionType === type ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:bg-gray-200"
+                                    questionType === type.id ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:bg-gray-200"
                                 )}
                             >
-                                {type === 'MCQ' ? 'Multiple Choice' : 'Theory / Essay'}
+                                {type.label}
                             </button>
                         ))}
                     </div>
@@ -202,7 +241,7 @@ export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationF
                 <Button
                     fullWidth
                     className="h-14 text-lg font-bold shadow-indigo-200 shadow-lg hover:shadow-xl transition-all"
-                    disabled={!selectedSubject || !selectedTopic || loading}
+                    disabled={!selectedSubjectId || !selectedTopic || loading}
                     onClick={handleGenerate}
                 >
                     {loading ? (

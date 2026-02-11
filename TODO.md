@@ -180,7 +180,6 @@ GET  /api/questions/:id/explanation/
 ### TODO #5: Progress Tracking & Analytics
 **Status**: 🔴 Not Started  
 **Priority**: HIGH  
-**Estimated Time**: 
 
 **Backend Tasks:**
 - [ ] Create `analytics` app
@@ -229,7 +228,6 @@ POST /api/analytics/log-session/
 ### TODO #6: Basic Study Plan Generator
 **Status**: 🔴 Not Started  
 **Priority**: MEDIUM  
-**Estimated Time**: 3-4 days
 
 **Backend Tasks:**
 - [ ] Create `study_plans` app
@@ -238,7 +236,7 @@ POST /api/analytics/log-session/
 - [ ] Create daily/weekly schedule logic
 - [ ] Add exam date countdown
 - [ ] Build study plan adjustment based on performance
-- [ ] Create reminders system (optional for MVP)
+- [ ] Create reminders system 
 
 **Frontend Tasks:**
 - [ ] Create study plan page

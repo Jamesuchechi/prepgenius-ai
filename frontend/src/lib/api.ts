@@ -229,7 +229,7 @@ export interface Answer {
 export interface Question {
   id: number
   content: string
-  question_type: 'MCQ' | 'THEORY'
+  question_type: 'MCQ' | 'THEORY' | 'TRUE_FALSE' | 'FILL_BLANK' | 'MATCHING' | 'ORDERING'
   difficulty: 'EASY' | 'MEDIUM' | 'HARD'
   subject: number
   topic: number
@@ -240,7 +240,8 @@ export interface Question {
 export interface QuestionAttemptResult {
   correct: boolean
   explanation: string
-  correct_answer_id: number
+  correct_answer_id?: number
+  correct_answer_data?: any // Can be string, number, or object
 }
 
 // ... (existing Authentication and User APIs) ...
