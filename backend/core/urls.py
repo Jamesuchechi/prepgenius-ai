@@ -8,6 +8,7 @@ urlpatterns = [
     path('api/auth/', include('apps.accounts.urls', namespace='accounts')),
     path('api/content/', include('apps.content.urls')),
     path('api/questions/', include('apps.questions.urls')),
+    path('api/analytics/', include('apps.analytics.urls')),
 ]
 
 # Serve media files in development

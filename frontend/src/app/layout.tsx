@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { LayoutClient } from '@/components/LayoutClient'
+import QueryProvider from '@/components/QueryProvider'
 import Script from 'next/script'
 
 export const metadata: Metadata = {
@@ -29,7 +30,9 @@ export default function RootLayout({
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       </head>
       <body className="bg-white text-black">
-        <LayoutClient>{children}</LayoutClient>
+        <QueryProvider>
+          <LayoutClient>{children}</LayoutClient>
+        </QueryProvider>
       </body>
     </html>
   )

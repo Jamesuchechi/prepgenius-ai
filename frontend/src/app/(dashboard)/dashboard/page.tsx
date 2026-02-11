@@ -3,18 +3,23 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
-import { QuestionService, DashboardStats } from '@/services/questions'
+import { analyticsApi, ProgressTracker, TopicMastery } from '@/lib/api/analytics'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [overview, setOverview] = useState<ProgressTracker | null>(null)
+  const [mastery, setMastery] = useState<TopicMastery[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await QuestionService.getStats()
-        setStats(data)
+        const [overviewData, masteryData] = await Promise.all([
+          analyticsApi.getOverview(),
+          analyticsApi.getTopicMastery()
+        ])
+        setOverview(overviewData)
+        setMastery(masteryData)
       } catch (error) {
         console.error('Failed to fetch stats:', error)
       } finally {
@@ -54,7 +59,7 @@ export default function DashboardPage() {
               📝
             </div>
           </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{stats?.total_questions || 0}</h3>
+          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{overview?.total_questions_attempted || 0}</h3>
           <p className="text-sm text-[var(--gray-dark)]">Questions Solved</p>
         </div>
 
@@ -65,7 +70,11 @@ export default function DashboardPage() {
               🎯
             </div>
           </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{stats?.accuracy || 0}%</h3>
+          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">
+            {overview?.total_questions_attempted
+              ? Math.round((overview.total_correct_answers / overview.total_questions_attempted) * 100)
+              : 0}%
+          </h3>
           <p className="text-sm text-[var(--gray-dark)]">Accuracy Rate</p>
         </div>
 
@@ -76,7 +85,11 @@ export default function DashboardPage() {
               ⏰
             </div>
           </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{stats?.study_hours || 0}h</h3>
+          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">
+            {overview?.total_study_time_seconds
+              ? (overview.total_study_time_seconds / 3600).toFixed(1)
+              : 0}h
+          </h3>
           <p className="text-sm text-[var(--gray-dark)]">Total Study Time</p>
         </div>
 
@@ -87,8 +100,8 @@ export default function DashboardPage() {
               📊
             </div>
           </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">0</h3>
-          <p className="text-sm text-[var(--gray-dark)]">Mock Exams Taken</p>
+          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{overview?.current_streak || 0}</h3>
+          <p className="text-sm text-[var(--gray-dark)]">Day Streak</p>
         </div>
       </div>
 
@@ -188,20 +201,22 @@ export default function DashboardPage() {
           {/* Subject Progress */}
           <div className="bg-white rounded-2xl p-6 border border-gray-200 animate-[fadeInUp_0.6s_ease-out_0.5s_backwards]">
             <h3 className="font-display text-xl font-bold text-[var(--black)] mb-4">
-              Subject Mastery
+              Topic Mastery
             </h3>
             <div className="space-y-4">
-              {stats?.mastery && stats.mastery.length > 0 ? (
-                stats.mastery.map((subject, idx) => (
+              {mastery && mastery.length > 0 ? (
+                mastery.slice(0, 5).map((m: TopicMastery, idx: number) => (
                   <div key={idx}>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="font-semibold text-[var(--black)]">{subject.subject || 'Unknown'}</span>
-                      <span className="text-[var(--gray-dark)]">{subject.progress}%</span>
+                      <span className="font-semibold text-[var(--black)] truncate max-w-[150px]">
+                        {m.topic_details?.name || 'Unknown Topic'}
+                      </span>
+                      <span className="text-[var(--gray-dark)]">{Math.round(m.mastery_percentage)}%</span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className={`h-full bg-gradient-to-r from-[var(--orange)] to-[var(--orange-light)] rounded-full transition-all duration-1000`}
-                        style={{ width: `${subject.progress}%` }}
+                        style={{ width: `${m.mastery_percentage}%` }}
                       ></div>
                     </div>
                   </div>
@@ -210,6 +225,14 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-400 italic">No practice data yet. Start practicing to see stats!</p>
               )}
             </div>
+            {mastery && mastery.length > 5 && (
+              <Link
+                href="/dashboard/analytics"
+                className="mt-4 block text-center text-sm font-semibold text-[var(--blue)] hover:underline"
+              >
+                View all topics
+              </Link>
+            )}
           </div>
 
           {/* Exam Countdown */}
