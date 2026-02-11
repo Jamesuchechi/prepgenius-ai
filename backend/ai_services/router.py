@@ -1,39 +1,47 @@
-import random
-from .base import GroqClient, MistralClient, HuggingFaceClient, CohereClient
-from django.conf import settings
 
-class AIModelRouter:
+import logging
+from .groq_client import GroqClient
+from .mistral_client import MistralClient
+from .cohere_client import CohereClient
+from .huggingface_client import HuggingFaceClient
+
+logger = logging.getLogger(__name__)
+
+class AIRouter:
     def __init__(self):
-        self.clients = []
-        if settings.GROQ_API_KEY:
-            self.clients.append(GroqClient())
-        if settings.MISTRAL_API_KEY:
-            self.clients.append(MistralClient())
-        if settings.HUGGINGFACE_API_KEY:
-             self.clients.append(HuggingFaceClient())
-        if settings.COHERE_API_KEY:
-             self.clients.append(CohereClient())
-        
-        # Simple round-robin counter (not thread-safe in simple deployment but sufficient for random load balancing)
-        self.current_index = 0
+        # Initialize clients in priority order
+        self.clients = [
+            ("Groq", GroqClient()),
+            ("Mistral", MistralClient()),
+            ("Cohere", CohereClient()),
+            ("HuggingFace", HuggingFaceClient())
+        ]
 
-    def get_client(self):
-        """Returns the next client in the rotation, or random choice for now."""
-        if not self.clients:
-            return None # Or raise Error
+    def generate_questions(self, topic, difficulty, count=5, q_type="MCQ", additional_context=""):
+        errors = []
         
-        # Random selection for stateless load balancing across workers
-        return random.choice(self.clients)
+        for name, client in self.clients:
+            try:
+                # Skip clients that weren't initialized properly (e.g. missing API key)
+                # Assuming clients might be None or have internal checks
+                if hasattr(client, 'client') and client.client is None:
+                     # Check specific to how we implemented clients. 
+                     # Groq, Mistral, Cohere set self.client = None if key missing
+                     continue
+                
+                # HuggingFace check
+                if isinstance(client, HuggingFaceClient) and not client.api_key:
+                    continue
 
-    def generate_response(self, prompt: str, system_prompt: str = None) -> str:
-        """Tries to generate response from available clients, with failover."""
-        # Shuffle clients to try in random order for failover
-        shuffled_clients = list(self.clients)
-        random.shuffle(shuffled_clients)
+                logger.info(f"Attempting question generation with {name}...")
+                return client.generate_questions(topic, difficulty, count, q_type, additional_context)
+                
+            except Exception as e:
+                logger.warning(f"{name} failed: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
         
-        for client in shuffled_clients:
-            response = client.generate_response(prompt, system_prompt)
-            if response:
-                return response
-        
-        raise Exception("All AI providers failed to generate a response.")
+        # If we get here, all clients failed
+        error_msg = f"All AI providers failed. Errors: {'; '.join(errors)}"
+        logger.error(error_msg)
+        raise Exception(error_msg)

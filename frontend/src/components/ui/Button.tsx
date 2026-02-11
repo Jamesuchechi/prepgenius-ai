@@ -9,6 +9,7 @@ interface ButtonProps {
   disabled?: boolean
   className?: string
   fullWidth?: boolean
+  type?: 'button' | 'submit' | 'reset'
 }
 
 export default function Button({
@@ -18,7 +19,8 @@ export default function Button({
   onClick,
   disabled = false,
   className = '',
-  fullWidth = false
+  fullWidth = false,
+  type = 'button'
 }: ButtonProps) {
   const baseStyles = `
     px-7 py-3 rounded-full font-semibold transition-all duration-300 
@@ -51,9 +53,8 @@ export default function Button({
   }
 
   return (
-    <button onClick={onClick} disabled={disabled} className={combinedStyles}>
+    <button type={type} onClick={onClick} disabled={disabled} className={combinedStyles}>
       {children}
     </button>
   )
-
 }

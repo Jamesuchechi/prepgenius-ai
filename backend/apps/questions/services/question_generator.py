@@ -1,106 +1,122 @@
-import json
-import re
-from typing import List, Dict, Optional
-from ai_services.router import AIModelRouter
+import logging
+from typing import List
+from ai_services.router import AIRouter
 from ..models import Question, Answer
 from apps.content.models import Subject, Topic, ExamType
 
+logger = logging.getLogger(__name__)
+
 class QuestionGenerationService:
     def __init__(self):
-        self.ai_router = AIModelRouter()
+        self.ai_router = AIRouter()
 
     def generate_questions(self, subject_id: int, topic_id: int, exam_type_id: int, 
-                          difficulty: str = "MEDIUM", count: int = 5) -> List[Question]:
+                          difficulty: str = "MEDIUM", count: int = 5, question_type: str = "MCQ") -> List[Question]:
         
         subject = Subject.objects.get(id=subject_id)
         topic = Topic.objects.get(id=topic_id)
         exam_type = ExamType.objects.get(id=exam_type_id)
         
-        system_prompt = (
-            "You are an expert exam question generator for African students "
-            f"preparing for {exam_type.name}. "
-            "Output strictly in JSON format. IMPORTANT: If you use any mathematical symbols "
-            "or LaTeX, you MUST double-escape all backslashes (e.g., use \\\\frac instead of \\frac) "
-            "to ensure the JSON is valid."
-        )
-        
-        prompt = (
-            f"Generate {count} {difficulty} difficulty multiple-choice questions "
-            f"on the subject '{subject.name}', topic '{topic.name}'.\n\n"
-            "Format the output as a JSON list of objects with the following structure:\n"
-            "[\n"
-            "  {\n"
-            "    \"content\": \"Question text here\",\n"
-            "    \"options\": [\"Option A\", \"Option B\", \"Option C\", \"Option D\"],\n"
-            "    \"correct_option_index\": 0,\n"
-            "    \"explanation\": \"Detailed explanation of why the correct answer is right\"\n"
-            "  }\n"
-            "]\n"
-            "Ensure the questions are high-quality, relevant to the syllabus, and unambiguous. "
-            "Do not include any text before or after the JSON array."
-        )
-        
-        response_text = self.ai_router.generate_response(prompt, system_prompt)
-        print(f"DEBUG: Raw AI Response: {response_text}")
-        # Clean response (sometimes LMs add markdown code blocks)
-        cleaned_response = self._clean_json_response(response_text)
-        print(f"DEBUG: Cleaned Response: {cleaned_response}")
+        context = f"Exam Type: {exam_type.name}. Subject: {subject.name}. Target Audience: Nigerian students."
         
         try:
-            questions_data = json.loads(cleaned_response)
-        except json.JSONDecodeError as e:
-            print(f"DEBUG: Initial JSON parse failed: {e}")
-            # Fallback: Try to fix common JSON escaping issues (like unescaped backslashes in LaTeX)
-            try:
-                # Replace single backslashes (not part of an existing escape) with double backslashes
-                # This is a bit naive but handles the most common case of \frac, \sqrt etc.
-                fixed_json = re.sub(r'(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r'\\\\', cleaned_response)
-                print(f"DEBUG: Attempting parse with fixed JSON: {fixed_json}")
-                questions_data = json.loads(fixed_json)
-                print("DEBUG: Fixed JSON parse successful!")
-            except Exception as e2:
-                print(f"DEBUG: Fixed JSON parse also failed: {e2}")
-                raise Exception(f"Failed to parse AI response as JSON: {e}\nResponse prefix: {cleaned_response[:100]}")
-
-        created_questions = []
-        for q_data in questions_data:
-            question = Question.objects.create(
-                subject=subject,
-                topic=topic,
-                exam_type=exam_type,
-                content=q_data['content'],
-                question_type='MCQ',
-                difficulty=difficulty
+            generated_data = self.ai_router.generate_questions(
+                topic=topic.name,
+                difficulty=difficulty,
+                count=count,
+                q_type=question_type,
+                additional_context=context
             )
             
-            for index, option_text in enumerate(q_data['options']):
-                is_correct = (index == q_data['correct_option_index'])
-                Answer.objects.create(
-                    question=question,
-                    content=option_text,
-                    is_correct=is_correct,
-                    explanation=q_data['explanation'] if is_correct else ""
-                )
+            created_questions = []
             
-            created_questions.append(question)
+            # Handle potential wrapper keys like 'questions' or direct list
+            items = generated_data.get('questions', generated_data) if isinstance(generated_data, dict) else generated_data
             
-        return created_questions
+            if not isinstance(items, list):
+                logger.error(f"Unexpected data format from AI: {items}")
+                raise ValueError("AI response format error: expected list of questions")
 
-    def _clean_json_response(self, text: str) -> str:
-        """Extracts JSON content from the AI response string."""
-        text = text.strip()
+            for q_data in items:
+                question = self._create_question_from_data(q_data, subject, topic, exam_type, difficulty, question_type)
+                created_questions.append(question)
+                
+            return created_questions
+            
+        except Exception as e:
+            logger.error(f"Question generation failed: {e}")
+            raise
+
+    def _create_question_from_data(self, data, subject, topic, exam_type, difficulty, q_type):
+        question = Question.objects.create(
+            subject=subject,
+            topic=topic,
+            exam_type=exam_type,
+            content=data.get('content', 'No content provided'),
+            question_type=q_type,
+            difficulty=difficulty,
+            guidance=data.get('guidance', ''),
+            metadata=data.get('metadata', {})
+        )
+
+        if q_type == 'MCQ':
+            self._create_mcq_answers(question, data)
+        elif q_type == 'THEORY':
+             self._create_theory_answer(question, data)
+        elif q_type == 'TRUE_FALSE':
+            self._create_true_false_answer(question, data)
+        elif q_type == 'FILL_BLANK':
+            self._create_simple_answer(question, data)
+        elif q_type == 'MATCHING':
+             pass # Matching often logic handled via metadata in Question, answers might not be needed in standard way or handled differently
+        elif q_type == 'ORDERING':
+             pass # Ordering sequence stored in metadata
+             
+        return question
+
+    def _create_mcq_answers(self, question, data):
+        options = data.get('options', [])
+        correct_answer = data.get('correct_answer', '')
+        explanation = data.get('explanation', '')
         
-        # Remove markdown code blocks if present
-        if text.startswith("```"):
-            # Matches ```json or just ```
-            text = re.sub(r'^```(?:json)?\s*', '', text)
-            text = re.sub(r'\s*```$', '', text)
+        for option in options:
+            is_correct = (option == correct_answer) or (option.startswith(correct_answer) if len(correct_answer) == 1 else False) # naive check
+            # Better check: if correct_answer is an index or the full text
+            
+            # Robust check attempt
+            if str(correct_answer).isdigit():
+                 # checking by index handling if we had indices
+                 pass 
+            
+            # Simple string matching for now, assuming AI returns exact string of the option
+            is_correct = (option == correct_answer)
+
+            Answer.objects.create(
+                question=question,
+                content=option,
+                is_correct=is_correct,
+                explanation=explanation if is_correct else ""
+            )
+
+    def _create_theory_answer(self, question, data):
+        Answer.objects.create(
+            question=question,
+            content=data.get('answer', ''),
+            is_correct=True,
+            explanation=data.get('explanation', '')
+        )
+
+    def _create_true_false_answer(self, question, data):
+        correct = str(data.get('correct_answer', 'True')).lower() == 'true'
+        explanation = data.get('explanation', '')
         
-        # If there's still extra text, find the first '[' and last ']'
-        if not (text.startswith('[') and text.endswith(']')):
-            start = text.find('[')
-            end = text.rfind(']')
-            if start != -1 and end != -1:
-                text = text[start:end+1]
-        
-        return text.strip()
+        Answer.objects.create(question=question, content="True", is_correct=correct, explanation=explanation if correct else "")
+        Answer.objects.create(question=question, content="False", is_correct=not correct, explanation=explanation if not correct else "")
+
+    def _create_simple_answer(self, question, data):
+        Answer.objects.create(
+            question=question,
+            content=data.get('correct_answer', ''),
+            is_correct=True,
+            explanation=data.get('explanation', '')
+        )

@@ -115,7 +115,6 @@ POST /api/users/me/subjects/  (select subjects)
 ### TODO #4: AI Question Generation System
 **Status**: 🔴 Not Started  
 **Priority**: CRITICAL  
-**Estimated Time**: 5-7 days
 
 **Backend Tasks:**
 - [ ] Create `questions` app
@@ -181,7 +180,7 @@ GET  /api/questions/:id/explanation/
 ### TODO #5: Progress Tracking & Analytics
 **Status**: 🔴 Not Started  
 **Priority**: HIGH  
-**Estimated Time**: 4-5 days
+**Estimated Time**: 
 
 **Backend Tasks:**
 - [ ] Create `analytics` app
@@ -194,9 +193,20 @@ GET  /api/questions/:id/explanation/
 - [ ] Implement accuracy trends calculation
 
 **Frontend Tasks:**
-- [ ] Create dashboard overview page
-- [ ] Build progress charts (Recharts)
+- [ ] make sure that the dashboard(hompage) is rendering real analytics data and not placeholder data
+- [ ] Set up analytics dashboard layout
+- [ ] Create analytics dashboard page
+- [ ] Build performance overview card
 - [ ] Create topic mastery visualization
+- [ ] Add weakness detection display
+- [ ] Implement performance history timeline
+- [ ] Create study time tracker display
+- [ ] Build subject-wise performance breakdown
+- [ ] Add responsive design for mobile
+- [ ] Create analytics dashboard page
+- [ ] Build performance overview card
+- [ ] Create topic mastery visualization
+- [ ] Build progress charts (Recharts)
 - [ ] Build weakness detection display
 - [ ] Add performance history timeline
 - [ ] Create study time tracker display

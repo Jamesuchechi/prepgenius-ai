@@ -1,15 +1,40 @@
 'use client'
 
-import React from 'react'
-import DashboardLayout from '@/components/dashboard/DashboardLayout'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
+import { QuestionService, DashboardStats } from '@/services/questions'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await QuestionService.getStats()
+        setStats(data)
+      } catch (error) {
+        console.error('Failed to fetch stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--orange)]"></div>
+      </div>
+    )
+  }
 
   return (
-    <DashboardLayout>
+    <>
       {/* Welcome Section */}
       <div className="mb-8 animate-[fadeInUp_0.6s_ease-out]">
         <h1 className="font-display text-4xl font-extrabold text-[var(--black)] mb-2">
@@ -28,11 +53,8 @@ export default function DashboardPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-[var(--orange)]/10 to-[var(--orange)]/5 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
               📝
             </div>
-            <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
-              +12%
-            </span>
           </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">1,247</h3>
+          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{stats?.total_questions || 0}</h3>
           <p className="text-sm text-[var(--gray-dark)]">Questions Solved</p>
         </div>
 
@@ -42,11 +64,8 @@ export default function DashboardPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-[var(--blue)]/10 to-[var(--blue)]/5 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
               🎯
             </div>
-            <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
-              +5%
-            </span>
           </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">87%</h3>
+          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{stats?.accuracy || 0}%</h3>
           <p className="text-sm text-[var(--gray-dark)]">Accuracy Rate</p>
         </div>
 
@@ -56,12 +75,9 @@ export default function DashboardPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
               ⏰
             </div>
-            <span className="text-xs font-semibold text-[var(--gray-dark)] bg-gray-100 px-2 py-1 rounded-full">
-              This week
-            </span>
           </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">24h</h3>
-          <p className="text-sm text-[var(--gray-dark)]">Study Time</p>
+          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{stats?.study_hours || 0}h</h3>
+          <p className="text-sm text-[var(--gray-dark)]">Total Study Time</p>
         </div>
 
         {/* Mock Exams */}
@@ -70,11 +86,8 @@ export default function DashboardPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
               📊
             </div>
-            <span className="text-xs font-semibold text-[var(--gray-dark)] bg-gray-100 px-2 py-1 rounded-full">
-              Avg: 78%
-            </span>
           </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">12</h3>
+          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">0</h3>
           <p className="text-sm text-[var(--gray-dark)]">Mock Exams Taken</p>
         </div>
       </div>
@@ -88,28 +101,20 @@ export default function DashboardPage() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-20 translate-x-20"></div>
             <div className="relative z-10">
               <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                📚 In Progress
+                📚 AI Practice
               </div>
               <h2 className="font-display text-3xl font-extrabold mb-3">
-                Continue Where You Left Off
+                Ready to practice?
               </h2>
-              <p className="text-white/90 mb-6">
-                Mathematics - Quadratic Equations • 12 questions remaining
+              <p className="text-white/90 mb-6 font-medium">
+                Use our configured AI to generate questions for any subject and topic.
               </p>
-              <div className="mb-6">
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Progress</span>
-                  <span className="font-semibold">68%</span>
-                </div>
-                <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white rounded-full w-[68%]"></div>
-                </div>
-              </div>
+
               <Link
-                href="/dashboard/practice"
-                className="inline-block bg-white text-[var(--blue)] px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors"
+                href="/practice"
+                className="inline-block bg-white text-[var(--blue)] px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors shadow-lg"
               >
-                Continue Practice
+                Start Practice Session
               </Link>
             </div>
           </div>
@@ -117,7 +122,7 @@ export default function DashboardPage() {
           {/* Quick Actions */}
           <div className="grid md:grid-cols-2 gap-4 animate-[fadeInUp_0.6s_ease-out_0.6s_backwards]">
             <Link
-              href="/dashboard/practice"
+              href="/practice"
               className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-[var(--orange)] hover:shadow-lg transition-all duration-300 group"
             >
               <div className="w-12 h-12 bg-gradient-to-br from-[var(--orange)]/10 to-[var(--orange)]/5 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
@@ -176,34 +181,6 @@ export default function DashboardPage() {
               </p>
             </Link>
           </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200 animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
-            <h3 className="font-display text-xl font-bold text-[var(--black)] mb-4">
-              Recent Activity
-            </h3>
-            <div className="space-y-4">
-              {[
-                { icon: '✅', title: 'Completed Mock Exam', subject: 'Mathematics', score: '85%', time: '2 hours ago' },
-                { icon: '📝', title: 'Practice Session', subject: 'Physics', score: '12/15', time: '5 hours ago' },
-                { icon: '💬', title: 'AI Tutor Chat', subject: 'Chemistry', score: '15 mins', time: '1 day ago' },
-              ].map((activity, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg flex-shrink-0">
-                    {activity.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-[var(--black)] truncate">{activity.title}</h4>
-                    <p className="text-sm text-[var(--gray-dark)]">{activity.subject}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-[var(--orange)]">{activity.score}</div>
-                    <div className="text-xs text-[var(--gray-dark)]">{activity.time}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Right Column - 1/3 width */}
@@ -214,52 +191,24 @@ export default function DashboardPage() {
               Subject Mastery
             </h3>
             <div className="space-y-4">
-              {[
-                { subject: 'Mathematics', progress: 85, color: 'from-[var(--orange)] to-[var(--orange-light)]' },
-                { subject: 'Physics', progress: 72, color: 'from-[var(--blue)] to-[var(--blue-light)]' },
-                { subject: 'Chemistry', progress: 68, color: 'from-purple-500 to-purple-600' },
-                { subject: 'English', progress: 91, color: 'from-green-500 to-green-600' },
-              ].map((subject, idx) => (
-                <div key={idx}>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="font-semibold text-[var(--black)]">{subject.subject}</span>
-                    <span className="text-[var(--gray-dark)]">{subject.progress}%</span>
+              {stats?.mastery && stats.mastery.length > 0 ? (
+                stats.mastery.map((subject, idx) => (
+                  <div key={idx}>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="font-semibold text-[var(--black)]">{subject.subject || 'Unknown'}</span>
+                      <span className="text-[var(--gray-dark)]">{subject.progress}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r from-[var(--orange)] to-[var(--orange-light)] rounded-full transition-all duration-1000`}
+                        style={{ width: `${subject.progress}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full bg-gradient-to-r ${subject.color} rounded-full transition-all duration-1000`}
-                      style={{ width: `${subject.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Upcoming Tasks */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200 animate-[fadeInUp_0.6s_ease-out_0.6s_backwards]">
-            <h3 className="font-display text-xl font-bold text-[var(--black)] mb-4">
-              Today's Goals
-            </h3>
-            <div className="space-y-3">
-              {[
-                { task: 'Complete 20 Math questions', done: true },
-                { task: 'Review Physics Chapter 3', done: true },
-                { task: 'Take Chemistry Mock Exam', done: false },
-                { task: '30 mins AI Tutor session', done: false },
-              ].map((item, idx) => (
-                <label key={idx} className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={item.done}
-                    className="w-5 h-5 text-[var(--orange)] border-gray-300 rounded focus:ring-[var(--orange)] focus:ring-2"
-                    readOnly
-                  />
-                  <span className={`flex-1 ${item.done ? 'line-through text-[var(--gray-dark)]' : 'text-[var(--black)]'}`}>
-                    {item.task}
-                  </span>
-                </label>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-gray-400 italic">No practice data yet. Start practicing to see stats!</p>
+              )}
             </div>
           </div>
 
@@ -271,9 +220,9 @@ export default function DashboardPage() {
             <div className="mt-4 pt-4 border-t border-white/20">
               <div className="text-sm text-white/80 mb-1">Preparation Level</div>
               <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full w-[73%]"></div>
+                <div className="h-full bg-white rounded-full w-[10%]"></div>
               </div>
-              <div className="text-right text-sm font-semibold mt-1">73%</div>
+              <div className="text-right text-sm font-semibold mt-1">10%</div>
             </div>
           </div>
 
@@ -291,6 +240,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   )
 }

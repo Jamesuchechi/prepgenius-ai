@@ -11,7 +11,7 @@ interface DashboardLayoutProps {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Practice', href: '/dashboard/practice', icon: '📝' },
+  { name: 'Practice', href: '/practice', icon: '📝' },
   { name: 'Mock Exams', href: '/dashboard/exams', icon: '⏱️' },
   { name: 'Study Plan', href: '/dashboard/study-plan', icon: '📅' },
   { name: 'AI Tutor', href: '/dashboard/ai-tutor', icon: '🤖' },
@@ -58,7 +58,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-gray-200">
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link href="/dashboard" className="flex items-center gap-2 group">
               <div className="w-10 h-10 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-xl flex items-center justify-center text-xl -rotate-6 group-hover:rotate-0 transition-transform duration-300">
                 🎓
               </div>

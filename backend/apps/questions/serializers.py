@@ -4,7 +4,7 @@ from .models import Question, Answer, QuestionAttempt
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
-        fields = ['id', 'content', 'is_correct', 'explanation']
+        fields = ['id', 'content', 'is_correct', 'explanation', 'metadata']
         extra_kwargs = {
             'is_correct': {'write_only': True}, # Hide correctness by default
             'explanation': {'write_only': True} # Hide explanation by default
@@ -15,7 +15,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Question
-        fields = ['id', 'subject', 'topic', 'exam_type', 'content', 'question_type', 'difficulty', 'answers']
+        fields = ['id', 'subject', 'topic', 'exam_type', 'content', 'question_type', 'difficulty', 'answers', 'metadata', 'guidance']
 
 # Serializer for FULL details (after attempt)
 class QuestionDetailSerializer(serializers.ModelSerializer):
@@ -39,6 +39,7 @@ class GenerateQuestionSerializer(serializers.Serializer):
     exam_type_id = serializers.IntegerField()
     difficulty = serializers.ChoiceField(choices=['EASY', 'MEDIUM', 'HARD'], default='MEDIUM')
     count = serializers.IntegerField(default=5, max_value=20)
+    question_type = serializers.ChoiceField(choices=['MCQ', 'THEORY', 'TRUE_FALSE', 'FILL_BLANK', 'MATCHING', 'ORDERING'], default='MCQ')
 
 class AttemptQuestionSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()

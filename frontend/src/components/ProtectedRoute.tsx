@@ -1,1 +1,47 @@
-'use client'\n\nimport { useEffect, ReactNode } from 'react'\nimport { useRouter } from 'next/navigation'\nimport { useAuthStore } from '@/store/authStore'\n\ninterface ProtectedRouteProps {\n  children: ReactNode\n  requiredEmailVerification?: boolean\n}\n\nexport function ProtectedRoute({\n  children,\n  requiredEmailVerification = false,\n}: ProtectedRouteProps) {\n  const router = useRouter()\n  const { isAuthenticated, user, isLoading } = useAuthStore()\n\n  useEffect(() => {\n    if (!isLoading) {\n      if (!isAuthenticated) {\n        router.push('/auth/login')\n        return\n      }\n\n      if (requiredEmailVerification && user && !user.is_email_verified) {\n        router.push('/auth/verify-email')\n        return\n      }\n    }\n  }, [isAuthenticated, isLoading, user, requiredEmailVerification, router])\n\n  if (isLoading) {\n    return (\n      <div className=\"flex items-center justify-center min-h-screen\">\n        <div className=\"animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--orange)]\"></div>\n      </div>\n    )\n  }\n\n  if (!isAuthenticated) {\n    return null\n  }\n\n  return <>{children}</>\n}\n"
+'use client'
+
+import { useEffect, ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/store/authStore'
+
+interface ProtectedRouteProps {
+    children: ReactNode
+    requiredEmailVerification?: boolean
+}
+
+export function ProtectedRoute({
+    children,
+    requiredEmailVerification = false,
+}: ProtectedRouteProps) {
+    const router = useRouter()
+    // As with AuthContextProvider, assuming useAuthStore exists and has these properties
+    const { isAuthenticated, user, isLoading } = useAuthStore() as any
+
+    useEffect(() => {
+        if (!isLoading) {
+            if (!isAuthenticated) {
+                router.push('/auth/login')
+                return
+            }
+
+            if (requiredEmailVerification && user && !user.is_email_verified) {
+                router.push('/auth/verify-email')
+                return
+            }
+        }
+    }, [isAuthenticated, isLoading, user, requiredEmailVerification, router])
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--orange)]"></div>
+            </div>
+        )
+    }
+
+    if (!isAuthenticated) {
+        return null
+    }
+
+    return <>{children}</>
+}
