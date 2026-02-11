@@ -4,7 +4,7 @@ from .views import AnalyticsViewSet
 
 router = DefaultRouter()
 
-router.register(r'analytics', AnalyticsViewSet, basename='analytics')
+router.register(r'', AnalyticsViewSet, basename='analytics')
 
 urlpatterns = [
     path('', include(router.urls)),

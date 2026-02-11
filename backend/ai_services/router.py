@@ -72,3 +72,46 @@ class AIRouter:
         error_msg = f"All AI providers failed to generate topics. Errors: {'; '.join(errors)}"
         logger.error(error_msg)
         raise Exception(error_msg)
+    def generate_study_plan(self, exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days):
+        """Generate a study plan using AI providers."""
+        errors = []
+        
+        prompt = f"""Create a structured study plan with the following requirements:
+Exam Type: {exam_type}
+Subjects: {', '.join(subjects)}
+Days Available: {days_available}
+Daily Study Hours: {daily_hours}
+Weekly Study Days: {weekly_days}
+Difficulty Level: {difficulty_level}
+
+Return a JSON response with:
+- topic_sequence: list of topics to study in order with estimated hours each
+- revision_schedule: recommended revision topics
+- study_pace: recommended daily schedule structure
+"""
+        
+        for name, client in self.clients:
+            try:
+                if hasattr(client, 'client') and client.client is None:
+                    continue
+                
+                # HuggingFace check
+                if isinstance(client, HuggingFaceClient) and not client.api_key:
+                    continue
+
+                logger.info(f"Attempting study plan generation with {name}...")
+                # Use generate_questions with study plan context as fallback
+                if hasattr(client, 'generate_study_plan'):
+                    return client.generate_study_plan(exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days)
+                else:
+                    # Fallback to generating a high-level response
+                    logger.debug(f"{name} client does not support direct study plan generation, using fallback.")
+                    continue
+                
+            except Exception as e:
+                logger.warning(f"{name} failed to generate study plan: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
+        
+        logger.warning(f"AI-based study plan generation failed. Using template-based approach. Errors: {'; '.join(errors)}")
+        return None  # Return None to trigger template-based generation
