@@ -122,16 +122,7 @@ export default function Sidebar({
                             )}
                         </div>
 
-                        {/* Study Streak */}
-                        {!isCollapsed && (
-                            <div className="mt-4 p-3 bg-white rounded-lg border border-[var(--orange)]/20 overflow-hidden">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm font-medium text-[var(--gray-dark)]">Study Streak</span>
-                                    <span className="text-lg">🔥</span>
-                                </div>
-                                <div className="font-display text-2xl font-bold text-[var(--orange)]">7 days</div>
-                            </div>
-                        )}
+
                     </div>
 
                     {/* Navigation */}

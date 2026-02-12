@@ -13,7 +13,6 @@ export default function ExamsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState<number | null>(null)
-  const [filterDifficulty, setFilterDifficulty] = useState<string>('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [subjects, setSubjects] = useState<any[]>([])
 
@@ -61,10 +60,25 @@ export default function ExamsPage() {
     }
   }
 
-  const filteredExams = exams.filter((exam) => {
-    if (filterDifficulty === 'all') return true
-    return exam.difficulty === filterDifficulty
-  })
+  const handleDeleteExam = async (exam: MockExam) => {
+    if (!confirm(`Are you sure you want to delete "${exam.title}"? Questions will be preserved.`)) {
+      return
+    }
+
+    try {
+      setIsLoading(true) // Show global loading or handle individual deleting state
+      await ExamService.deleteExam(exam.id)
+      setExams((prev) => prev.filter((e) => e.id !== exam.id))
+    } catch (err) {
+      console.error('Error deleting exam:', err)
+      setError('Failed to delete exam. You may not have permission.')
+      setIsLoading(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+
 
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
@@ -159,10 +173,10 @@ export default function ExamsPage() {
     } catch (err: any) {
       console.error('Create exam error:', err)
       console.error('Error response:', err.response)
-      
+
       // Try to extract backend error message
       let errorMessage = 'Failed to create exam. Please try again.'
-      
+
       if (err.response?.data?.error) {
         errorMessage = err.response.data.error
       } else if (err.response?.data?.detail) {
@@ -172,12 +186,12 @@ export default function ExamsPage() {
       } else if (err.message) {
         errorMessage = err.message
       }
-      
+
       // Provide user-friendly message
       if (errorMessage.includes('Could not find past questions') || errorMessage.includes('No past exam questions found')) {
         errorMessage = `${errorMessage}\n\nPlease try:\n• A different subject\n• A different year\n• A different exam format\n• Or use "AI Generated" mode instead`
       }
-      
+
       setCreateError(errorMessage)
     } finally {
       setCreating(false)
@@ -279,21 +293,19 @@ export default function ExamsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setCreateMode('past_questions')}
-                    className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${
-                      createMode === 'past_questions'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300'
-                    }`}
+                    className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${createMode === 'past_questions'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300'
+                      }`}
                   >
                     Past Questions
                   </button>
                   <button
                     onClick={() => setCreateMode('ai_generated')}
-                    className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${
-                      createMode === 'ai_generated'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300'
-                    }`}
+                    className={`flex-1 px-3 py-2 rounded-lg border transition-colors ${createMode === 'ai_generated'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300'
+                      }`}
                   >
                     AI Generated
                   </button>
@@ -363,7 +375,9 @@ export default function ExamsPage() {
                   <div>
                     <label className="block text-sm text-gray-700 mb-1 flex items-center">
                       Exam Format
-                      <Info className="ml-2 w-4 h-4 text-gray-400" title="If the format is unknown the server will create an ExamBoard/ExamType automatically. Use 'Other' for custom formats." />
+                      <span title="If the format is unknown the server will create an ExamBoard/ExamType automatically. Use 'Other' for custom formats.">
+                        <Info className="ml-2 w-4 h-4 text-gray-400" />
+                      </span>
                     </label>
                     <select
                       value={createExamFormat}
@@ -461,33 +475,22 @@ export default function ExamsPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="mb-6 flex gap-2">
-        <button
-          onClick={() => setFilterDifficulty('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filterDifficulty === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-          }`}
-        >
-          All Exams
-        </button>
-      </div>
+
 
       {/* Exams Grid */}
-      {filteredExams.length === 0 ? (
+      {exams.length === 0 ? (
         <div className="text-center py-12">
           <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 text-lg">No exams available yet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredExams.map((exam) => (
+          {exams.map((exam) => (
             <ExamCard
               key={exam.id}
               exam={exam}
               onStart={() => handleStartExam(exam)}
+              onDelete={() => handleDeleteExam(exam)}
               isStarting={isStarting === exam.id}
             />
           ))}

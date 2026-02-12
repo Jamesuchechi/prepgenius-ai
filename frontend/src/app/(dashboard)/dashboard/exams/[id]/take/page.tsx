@@ -44,7 +44,7 @@ export default function ExamTakePage() {
   }, [examId])
 
   const handleSubmitExam = async (
-    responses: Record<string, number>,
+    responses: Record<string, number | string>,
     timeTaken: number
   ) => {
     try {

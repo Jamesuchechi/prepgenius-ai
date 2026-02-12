@@ -71,6 +71,24 @@ def auto_grade_exam(attempt: ExamAttempt):
 			# Get user's answer
 			user_answer_id = responses.get(qid)
 			
+			# Handle Theory/Essay questions
+			if question.question_type == 'THEORY' or question.question_type == 'ESSAY':
+				if user_answer_id:
+					attempted_questions += 1
+				
+				# For now, we don't auto-grade theory questions. 
+				# We mark them as None for correctness.
+				breakdown[qid] = {
+					'question_id': question.id,
+					'question_text': question.content[:100],
+					'topic': question.topic.name if question.topic else None,
+					'difficulty': question.difficulty,
+					'user_answer_text': user_answer_id,
+					'is_correct': None, # Pending grading
+					'explanation': question.guidance or "Model answer provided in detailed review."
+				}
+				continue
+
 			# Get correct answer
 			correct_answer = Answer.objects.filter(
 				question=question,

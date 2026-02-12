@@ -4,7 +4,7 @@ import FeaturesSection from '@/components/landing/FeaturesSection'
 import HowItWorksSection from '@/components/landing/HowItWorksSection'
 import PricingSection from '@/components/landing/PricingSection'
 import CTASection from '@/components/landing/CTASection'
-import Footer from '@/components/landing/Footer'
+import Footer from '@/components/layout/Footer'
 
 export default function LandingPage() {
   return (

@@ -3,7 +3,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
@@ -35,6 +35,12 @@ class MockExamViewSet(ModelViewSet):
 		if self.action == 'retrieve':
 			return MockExamDetailSerializer
 		return MockExamSerializer
+
+	def perform_destroy(self, instance):
+		"""Only allow creator to delete exam."""
+		if instance.creator != self.request.user and not self.request.user.is_staff:
+			raise PermissionDenied("You do not have permission to delete this exam.")
+		instance.delete()
 	
 	@action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
 	def create_jamb_exam(self, request):

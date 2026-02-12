@@ -99,3 +99,35 @@ class GroqClient:
         except json.JSONDecodeError:
             logger.error(f"Failed to parse Groq response: {response_text}")
             raise ValueError("Invalid JSON response from AI")
+
+    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+        """
+        Generates a chat response using Groq API.
+        """
+        try:
+            messages = []
+            
+            if system_prompt:
+                messages.append({
+                    "role": "system",
+                    "content": system_prompt
+                })
+            
+            messages.append({
+                "role": "user",
+                "content": prompt
+            })
+            
+            chat_completion = self.client.chat.completions.create(
+                messages=messages,
+                model=self.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=self.timeout
+            )
+            
+            return chat_completion.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"Error generating response with Groq: {e}")
+            raise

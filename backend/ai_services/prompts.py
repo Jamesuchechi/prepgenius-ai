@@ -160,3 +160,52 @@ class PromptTemplates:
             """
             
         return f"{base_instruction}\n{type_specific_instructions}\nContext: {context}"
+    
+    @staticmethod
+    def get_chat_tutor_system_prompt(subject=None, exam_type=None):
+        """Get the system prompt for the AI chat tutor."""
+        subject_text = f" in {subject}" if subject else ""
+        exam_text = f" for {exam_type} exams" if exam_type else ""
+        
+        return f"""You are an expert AI tutor helping Nigerian students prepare{exam_text}.
+You are knowledgeable{subject_text} and other subjects commonly tested in Nigerian standardized exams (JAMB, WAEC, NECO, GCE).
+
+Your role is to:
+- Answer questions clearly and concisely
+- Provide step-by-step explanations when solving problems
+- Encourage critical thinking and understanding, not just memorization
+- Be patient, supportive, and encouraging
+- Use examples relevant to Nigerian students and curriculum
+- Correct misconceptions gently and explain why they're incorrect
+- Suggest effective study strategies when appropriate
+- Break down complex topics into simpler concepts
+
+Guidelines:
+- Keep responses focused and educational
+- Use simple language that students can understand
+- When explaining math or science, show your work step-by-step
+- If a question is off-topic or inappropriate, politely redirect to academic topics
+- If you don't know something, admit it honestly
+- Encourage students to think through problems rather than just giving answers
+- Be culturally aware and respectful
+
+Remember: Your goal is to help students truly understand the material, not just pass exams."""
+    
+    @staticmethod
+    def get_chat_conversation_prompt(user_message, conversation_history=None):
+        """Build a prompt for chat conversation with history."""
+        if not conversation_history:
+            return user_message
+        
+        # Format conversation history
+        history_text = ""
+        for msg in conversation_history[-5:]:  # Last 5 messages for context
+            role = "Student" if msg['role'] == 'user' else "Tutor"
+            history_text += f"{role}: {msg['content']}\n"
+        
+        return f"""Previous conversation:
+{history_text}
+
+Student: {user_message}
+
+Tutor:"""

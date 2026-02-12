@@ -1,22 +1,38 @@
 'use client'
 
 import React from 'react'
-import { Clock, BookOpen, Target, TrendingUp, Zap } from 'lucide-react'
+import { Clock, BookOpen, Target, TrendingUp, Zap, Trash2 } from 'lucide-react'
 import { MockExam } from '@/services/exams'
 
 interface ExamCardProps {
   exam: MockExam
   onStart?: () => void
+  onDelete?: () => void
   isStarting?: boolean
 }
 
-export function ExamCard({ exam, onStart, isStarting = false }: ExamCardProps) {
+export function ExamCard({ exam, onStart, onDelete, isStarting = false }: ExamCardProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow relative group">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{exam.title}</h3>
-        <p className="text-sm text-gray-600 line-clamp-2">{exam.description}</p>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-200 flex justify-between items-start">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 pr-6">{exam.title}</h3>
+          <p className="text-sm text-gray-600 line-clamp-2">{exam.description}</p>
+        </div>
+
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+            title="Delete Exam"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Content */}
@@ -51,7 +67,7 @@ export function ExamCard({ exam, onStart, isStarting = false }: ExamCardProps) {
             <TrendingUp className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase">Avg Score</p>
-              <p className="text-sm font-semibold text-gray-900">{exam.average_score.toFixed(0) || '-'}%</p>
+              <p className="text-sm font-semibold text-gray-900">{exam.average_score?.toFixed(0) || '-'}%</p>
             </div>
           </div>
         </div>

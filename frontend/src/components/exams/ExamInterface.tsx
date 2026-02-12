@@ -10,7 +10,7 @@ interface ExamInterfaceProps {
   questions: Question[]
   durationMinutes: number
   examTitle: string
-  onSubmit: (responses: Record<string, number>, timeTaken: number) => void
+  onSubmit: (responses: Record<string, number | string>, timeTaken: number) => void
   onExit?: () => void
   isSubmitting?: boolean
 }
@@ -24,7 +24,7 @@ export function ExamInterface({
   isSubmitting = false,
 }: ExamInterfaceProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [responses, setResponses] = useState<Record<string, number>>({})
+  const [responses, setResponses] = useState<Record<string, number | string>>({})
   const [answeredQuestions, setAnsweredQuestions] = useState(new Set<number>())
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [showNavigator, setShowNavigator] = useState(true)
@@ -132,13 +132,12 @@ export function ExamInterface({
                   </h2>
                   <div className="flex gap-4 text-sm">
                     <span
-                      className={`px-3 py-1 rounded-full font-medium ${
-                        currentQuestion.difficulty === 'EASY'
-                          ? 'bg-green-100 text-green-700'
-                          : currentQuestion.difficulty === 'MEDIUM'
+                      className={`px-3 py-1 rounded-full font-medium ${currentQuestion.difficulty === 'EASY'
+                        ? 'bg-green-100 text-green-700'
+                        : currentQuestion.difficulty === 'MEDIUM'
                           ? 'bg-yellow-100 text-yellow-700'
                           : 'bg-red-100 text-red-700'
-                      }`}
+                        }`}
                     >
                       {currentQuestion.difficulty}
                     </span>
@@ -151,11 +150,10 @@ export function ExamInterface({
                 </div>
                 <button
                   onClick={handleToggleFlag}
-                  className={`p-2 rounded-lg transition-colors ${
-                    isFlagged
-                      ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  className={`p-2 rounded-lg transition-colors ${isFlagged
+                    ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
                   title="Flag this question for review"
                 >
                   <Flag className="w-5 h-5" />
@@ -163,37 +161,61 @@ export function ExamInterface({
               </div>
 
               {/* Options */}
+              {/* Options or Theory Input */}
               <div className="space-y-3 mb-6">
-                {currentQuestion.answers.map((answer) => (
-                  <label
-                    key={answer.id}
-                    className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      responses[currentQuestion.id] === answer.id
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={`question-${currentQuestion.id}`}
-                      value={answer.id}
-                      checked={responses[currentQuestion.id] === answer.id}
-                      onChange={() => handleSelectAnswer(answer.id)}
-                      className="w-4 h-4 cursor-pointer"
-                    />
-                    <span className="text-gray-900 font-medium">{answer.content}</span>
-                  </label>
-                ))}
+                {(currentQuestion.question_type === 'THEORY' || currentQuestion.question_type === 'ESSAY') ? (
+                  <textarea
+                    className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[200px]"
+                    placeholder="Type your answer here..."
+                    value={(responses[currentQuestion.id] as string) || ''}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setResponses((prev) => ({
+                        ...prev,
+                        [currentQuestion.id]: val,
+                      }))
+                      if (val.trim().length > 0) {
+                        setAnsweredQuestions((prev) => new Set(prev).add(currentQuestionIndex))
+                      } else {
+                        setAnsweredQuestions((prev) => {
+                          const newSet = new Set(prev)
+                          newSet.delete(currentQuestionIndex)
+                          return newSet
+                        })
+                      }
+                    }}
+                  />
+                ) : (
+                  currentQuestion.answers.map((answer) => (
+                    <label
+                      key={answer.id}
+                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${responses[currentQuestion.id] === answer.id
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${currentQuestion.id}`}
+                        value={answer.id}
+                        checked={responses[currentQuestion.id] === answer.id}
+                        onChange={() => handleSelectAnswer(answer.id)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span className="text-gray-900 font-medium">{answer.content}</span>
+                    </label>
+                  ))
+                )}
               </div>
 
-              {/* Guidance */}
-              {currentQuestion.guidance && (
+              {/* Guidance - HIDDEN during exam as per requirement */}
+              {/* {currentQuestion.guidance && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
                   <p className="text-sm text-blue-900">
                     <span className="font-semibold">Hint:</span> {currentQuestion.guidance}
                   </p>
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* Navigation */}
@@ -209,11 +231,10 @@ export function ExamInterface({
 
               <div className="flex items-center gap-2">
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    isAnswered
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${isAnswered
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {isAnswered ? '✓ Answered' : 'Not answered'}
                 </span>

@@ -1,5 +1,5 @@
 /**
- * AI Tutor page
+ * Chat page
  */
 
 'use client';
@@ -11,7 +11,7 @@ import { chatService, ChatSession } from '@/services/chatService';
 import { useChatStore } from '@/store/chatStore';
 import { Loader2 } from 'lucide-react';
 
-export default function AITutorPage() {
+export default function ChatPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -50,10 +50,10 @@ export default function AITutorPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
                 <div className="text-center">
                     <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">Loading AI Tutor...</p>
+                    <p className="text-gray-600 dark:text-gray-400">Loading chat...</p>
                 </div>
             </div>
         );
@@ -61,7 +61,7 @@ export default function AITutorPage() {
 
     if (error) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
                 <div className="text-center max-w-md">
                     <div className="text-red-500 mb-4">
                         <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +85,7 @@ export default function AITutorPage() {
 
     if (!activeSession) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
                 <div className="text-center">
                     <p className="text-gray-600 dark:text-gray-400">No active session</p>
                 </div>
@@ -94,7 +94,7 @@ export default function AITutorPage() {
     }
 
     return (
-        <div className="h-[calc(100vh-4rem)] flex flex-col">
+        <div className="h-screen flex flex-col">
             <ChatInterface sessionId={activeSession.id} />
         </div>
     );

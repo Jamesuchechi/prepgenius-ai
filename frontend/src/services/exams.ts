@@ -50,7 +50,7 @@ export interface ExamAttempt {
   status: 'IN_PROGRESS' | 'SUBMITTED' | 'GRADED' | 'TIME_UP'
   score: number
   percentage: number
-  raw_responses: Record<string, number>
+  raw_responses: Record<string, number | string>
   auto_graded: boolean
   attempted_questions: number
   remaining_time_seconds: number
@@ -87,7 +87,7 @@ export interface ExamResult {
 }
 
 export interface ExamSubmission {
-  raw_responses: Record<string, number>
+  raw_responses: Record<string, number | string>
   time_taken_seconds: number
 }
 
@@ -108,6 +108,10 @@ export const ExamService = {
   getExamDetail: async (examId: number): Promise<MockExam> => {
     const response = await axiosInstance.get<MockExam>(`/exams/${examId}/`)
     return response.data
+  },
+
+  deleteExam: async (examId: number): Promise<void> => {
+    await axiosInstance.delete(`/exams/${examId}/`)
   },
 
   /**

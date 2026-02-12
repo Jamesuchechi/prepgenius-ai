@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/analytics/', include('apps.analytics.urls')),
     path('api/', include('apps.study_plans.urls')),
     path('api/exams/', include('apps.exams.urls')),
+    path('api/chat/', include('apps.ai_tutor.urls')),
 ]
 
 # Serve media files in development

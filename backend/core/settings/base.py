@@ -263,6 +263,7 @@ MISTRAL_BASE_URL = os.getenv("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
 MISTRAL_TIMEOUT = int(os.getenv("MISTRAL_TIMEOUT", 60))
 
 ALOC_ACCESS_TOKEN = os.getenv("ALOC_ACCESS_TOKEN", "")
+ALOC_ACCESS_TOKEN_SECONDARY = os.getenv("ALOC_ACCESS_TOKEN_SECONDARY", "")
 ALOC_BASE_URL = os.getenv("ALOC_BASE_URL", "https://questions.aloc.com.ng/api/v2")
 ALOC_TIMEOUT = int(os.getenv("ALOC_TIMEOUT", 60))
 
@@ -307,4 +308,30 @@ LOGGING = {
         "handlers": ["console"],
         "level": "INFO",
     },
+}
+
+# ============================================================================
+# CHANNELS CONFIGURATION (WebSocket Support)
+# ============================================================================
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
+
+# ============================================================================
+# CHAT RATE LIMITS
+# ============================================================================
+
+CHAT_RATE_LIMITS = {
+    "free": {
+        "messages_per_hour": 50
+    },
+    "premium": {
+        "messages_per_hour": None  # Unlimited
+    }
 }

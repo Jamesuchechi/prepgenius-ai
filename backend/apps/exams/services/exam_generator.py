@@ -140,10 +140,21 @@ def generate_mock_exam_by_subject_name(
 			
 			# Step 2: Try ALOC API for past exam questions
 			try:
-				base = getattr(settings, 'ALOC_BASE_URL', None)
-				token = getattr(settings, 'ALOC_ACCESS_TOKEN', None)
+				import concurrent.futures
 				
-				if base and token and remaining > 0:
+				# Get API tokens (primary and secondary)
+				tokens = []
+				primary_token = getattr(settings, 'ALOC_ACCESS_TOKEN', None)
+				if primary_token:
+					tokens.append(primary_token)
+				
+				secondary_token = getattr(settings, 'ALOC_ACCESS_TOKEN_SECONDARY', None)
+				if secondary_token:
+					tokens.append(secondary_token)
+				
+				base = getattr(settings, 'ALOC_BASE_URL', None)
+				
+				if base and tokens and remaining > 0:
 					# Convert exam format to ALOC type parameter
 					aloc_type = exam_format.lower() if exam_format else None
 					# Convert subject name to lowercase
@@ -157,85 +168,215 @@ def generate_mock_exam_by_subject_name(
 					if year:
 						params['year'] = str(year)
 					
-					# ALOC uses AccessToken header, not Authorization
-					headers = {'AccessToken': token}
-					logger.debug(f"Calling ALOC API with params: {params}")
-					resp = requests.get(f"{base.rstrip('/')}/q", params=params, headers=headers, timeout=10)
-					logger.debug(f"ALOC API status: {resp.status_code}")
+					# Parallel Fetching Strategy
+					# We need to fetch 'remaining' questions.
+					# Since /q returns 1 question per call, we need multiple calls.
+					# Use ThreadPoolExecutor to make concurrent requests.
+
+					# Determine number of workers and total calls needed
+					# We'll fetch slightly more than needed to account for duplicates
+					target_fetch = remaining + 5 
+					max_workers = 10 # Reasonable concurrency limit
 					
-					if resp.status_code == 200:
-						data = resp.json()
-						items = data if isinstance(data, list) else data.get('results', [])
+					logger.info(f"Starting parallel fetch for {target_fetch} questions using {len(tokens)} keys...")
+					
+					fetched_count = 0
+					
+					# Ensure a topic exists
+					topic = Topic.objects.filter(subject=subject).first()
+					if not topic:
+						topic = Topic.objects.create(
+							subject=subject,
+							name='General',
+							difficulty='BEGINNER',
+							order=0,
+							estimated_hours=1.0,
+							description='Auto-generated topic',
+							learning_objectives=[]
+						)
+
+					def fetch_single_question(idx):
+						# Round-robin key selection
+						token = tokens[idx % len(tokens)]
+						headers = {'AccessToken': token}
+						try:
+							resp = requests.get(f"{base.rstrip('/')}/q", params=params, headers=headers, timeout=10)
+							if resp.status_code == 200:
+								try:
+									return resp.json()
+								except Exception:
+									logger.warning(f"ALOC API returned invalid JSON: {resp.text[:200]}...")
+									return None
+						except Exception as e:
+							logger.warning(f"Request {idx} failed: {e}")
+						return None
+
+					with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+						# Submit tasks
+						futures = [executor.submit(fetch_single_question, i) for i in range(target_fetch)]
 						
-						if items:
-							logger.info(f"ALOC API returned {len(items)} questions for {subject.name} ({year})")
+						for future in concurrent.futures.as_completed(futures):
+							if len(selected_questions) >= num_questions:
+								break
+								
+							data = future.result()
+							if not data:
+								continue
+								
+							# API returns { ..., "data": { "id": ..., "question": ... } }
+							item = data.get('data')
 							
-							# Ensure a topic exists
-							topic = Topic.objects.filter(subject=subject).first()
-							if not topic:
-								topic = Topic.objects.create(
-									subject=subject,
-									name='General',
-									difficulty='BEGINNER',
-									order=0,
-									estimated_hours=1.0,
-									description='Auto-generated topic',
-									learning_objectives=[]
-								)
-							
-							# Map and cache ALOC questions
-							for aloc_q in items:
-								q_text = aloc_q.get('question') or aloc_q.get('content')
+							if item and isinstance(item, dict):
+								q_text = item.get('question')
 								if not q_text:
 									continue
-								
-								q_meta = {'source': 'ALOC', 'year': year}
-								
-								question_obj, created = Question.objects.get_or_create(
-									content=q_text,
-									subject=subject,
-									defaults={
-										'topic': topic,
-										'question_type': 'MCQ',
-										'difficulty': aloc_q.get('difficulty', 'MEDIUM'),
-										'guidance': aloc_q.get('explanation', '') or '',
-										'metadata': q_meta
-									}
-								)
-								
-								# Create answers if they don't exist
-								if created:
-									options = [aloc_q.get('option_a'), aloc_q.get('option_b'), aloc_q.get('option_c'), aloc_q.get('option_d')]
-									options = [o for o in options if o]
-									correct = aloc_q.get('answer')
 									
-									for opt in options:
-										is_correct = False
-										if correct and str(correct).strip():
-											is_correct = (opt.strip() == str(correct).strip())
-										Answer.objects.create(
-											question=question_obj,
-											content=opt,
-											is_correct=is_correct,
-											explanation=(aloc_q.get('explanation') if is_correct else '')
-										)
+								q_meta = {
+									'source': 'ALOC', 
+									'year': year, 
+									'external_id': item.get('id')
+								}
 								
-								selected_questions.append(question_obj)
-					else:
-						logger.warning(f"ALOC API returned status {resp.status_code}. Response text: {resp.text[:500] if hasattr(resp, 'text') else 'N/A'}. Data may not be available for {subject.name}/{exam_format}/{year}.")
+								try:
+									with transaction.atomic():
+										question_obj, created = Question.objects.get_or_create(
+											content=q_text,
+											subject=subject,
+											defaults={
+												'topic': topic,
+												'question_type': 'MCQ',
+												'difficulty': 'MEDIUM',
+												'guidance': item.get('answer', ''),
+												'metadata': q_meta
+											}
+										)
+										
+										if created:
+											opts_data = item.get('option', {})
+											correct_letter = str(item.get('answer', '')).lower()
+											
+											for letter, opt_text in opts_data.items():
+												if not opt_text: continue
+												is_correct = (letter.lower() == correct_letter)
+												Answer.objects.create(
+													question=question_obj,
+													content=opt_text,
+													is_correct=is_correct,
+													explanation=''
+												)
+									
+									if question_obj not in selected_questions:
+										selected_questions.append(question_obj)
+										fetched_count += 1
+										
+								except Exception as db_err:
+									logger.error(f"Error saving fetched question: {db_err}")
+							
+					logger.info(f"Parallel fetch completed. Got {fetched_count} unique questions. Total selected: {len(selected_questions)}")
+
 				else:
-					logger.warning(f"ALOC not configured or insufficient remaining: base={bool(base)}, token={bool(token)}, remaining={remaining}")
+					logger.warning(f"ALOC not configured or insufficient remaining.")
 							
 			except Exception as e:
 				logger.warning(f"ALOC API error (will try with cached questions): {e}")
 		
-		# If still not enough questions, try AI as fallback (only for AI generated mode)
+		# If still not enough questions, try AI as fallback (Hybrid Mode)
 		if len(selected_questions) < num_questions:
-			logger.warning(f"Only found {len(selected_questions)} questions for {subject.name} ({exam_format}, {year}), requested {num_questions}")
+			missing_count = num_questions - len(selected_questions)
+			logger.info(f"Only found {len(selected_questions)} past questions. Generating {missing_count} AI fallback questions.")
 			
-			# For past_questions mode: fail if no questions found
-			if mode == 'past_questions' and len(selected_questions) == 0:
-				raise ValueError(f'No past exam questions found for {subject.name} ({exam_format}, {year}). Please try a different year or exam format.')
+			fallback_retries = 0
+			MAX_FALLBACK_RETRIES = 5
+			
+			while len(selected_questions) < num_questions and fallback_retries < MAX_FALLBACK_RETRIES:
+				current_missing = num_questions - len(selected_questions)
+				# Request in batches of 20 to ensure completion and quality
+				batch_size = min(current_missing, 20)
+				logger.info(f"AI Fallback Batch {fallback_retries+1}: Requesting {batch_size} questions...")
+				
+				try:
+					# Reuse AI generation logic for objective questions
+					batch_context = f"Based on {exam_format} past exam style for year {year}. Mimic the style of existing questions. Generate SET #{fallback_retries + 1} with unique content."
+					
+					generated = ai.generate_questions(
+						topic=subject.name,
+						difficulty=difficulty,
+						count=batch_size,
+						q_type='MCQ',
+						additional_context=batch_context
+					)
+					items = generated.get('questions', generated) if isinstance(generated, dict) else generated
+					if not isinstance(items, list):
+						items = [] # Handle error gracefully
+						logger.warning("AI returned unexpected format, skipping fallback batch.")
+
+					topic_fallback = Topic.objects.filter(subject=subject).first()
+					if not topic_fallback:
+						topic_fallback = Topic.objects.create(
+							subject=subject, 
+							name='General', 
+							difficulty='BEGINNER',
+							description='Auto-generated topic'
+						)
+
+					batch_added = 0
+					for q_data in items:
+						try:
+							# Check for duplicates based on content
+							content = q_data.get('content', 'No content provided')
+							if Question.objects.filter(subject=subject, content=content).exists():
+								# If duplicate, verify if it's already in our selection
+								existing_q = Question.objects.filter(subject=subject, content=content).first()
+								if existing_q not in selected_questions:
+									selected_questions.append(existing_q)
+									batch_added += 1
+								continue
+
+							q = Question.objects.create(
+								subject=subject,
+								topic=topic_fallback,
+								exam_type=exam_type,
+								content=content,
+								question_type='MCQ',
+								difficulty=q_data.get('difficulty', difficulty),
+								guidance=q_data.get('explanation', ''),
+								metadata={'source': 'AI_FALLBACK', 'original_mode': 'past_questions', 'year': year},
+							)
+
+							options = q_data.get('options', [])
+							correct = q_data.get('correct_answer')
+							for opt in options:
+								is_correct = False
+								if isinstance(correct, int) and 0 <= correct < len(options):
+									is_correct = (options.index(opt) == correct)
+								elif isinstance(correct, str):
+									is_correct = (opt.strip() == correct.strip())
+								
+								Answer.objects.create(
+									question=q,
+									content=opt,
+									is_correct=is_correct,
+									explanation=(q_data.get('explanation') if is_correct else '')
+								)
+
+							selected_questions.append(q)
+							batch_added += 1
+						except Exception as q_err:
+							logger.error(f"Failed to save AI fallback question: {q_err}")
+					
+					logger.info(f"AI Fallback Batch {fallback_retries+1}: Added {batch_added} questions.")
+					if batch_added == 0:
+						logger.warning("AI returned 0 valid new questions. Stopping to avoid infinite loop.")
+						break
+
+				except Exception as ai_err:
+					logger.error(f"AI fallback generation failed for batch: {ai_err}")
+				
+				fallback_retries += 1
+
+			# Final check
+			if len(selected_questions) == 0:
+				raise ValueError(f'No past exam questions found for {subject.name} ({exam_format}, {year}) and AI fallback failed. Please try a different year or exam format.')
 			
 			# For AI generated mode: allow fallback
 			if len(selected_questions) == 0 and mode != 'past_questions':
@@ -300,14 +441,66 @@ def generate_mock_exam_by_subject_name(
 				except Exception as e:
 					logger.error(f"AI fallback generation failed: {e}")
 					raise ValueError(f'Could not find past questions for {subject.name} ({year}) and AI generation failed. Please try a different year or use a different exam format.')
-			else:
-				# Use whatever questions we have (partial results are better than nothing)
-				logger.info(f"Using {len(selected_questions)} questions (less than requested {num_questions})")
-				num_questions = len(selected_questions)
-		
-		# Shuffle and trim
+		# Standard WAEC/NECO/JAMB typically has Theory questions too.
+		# ALOC doesn't provide them reliably, so we use AI to generate them if needed.
+		if mode == 'past_questions' and exam_format.upper() in ['WAEC', 'NECO', 'JAMB']:
+			theory_count = 4 # Standardize on 4 theory questions for now
+			logger.info(f"Generating {theory_count} theory questions via AI for {subject.name} ({exam_format})")
+			
+			try:
+				# Use AI to generate theory questions matching the subject/year context
+				generated_theory = ai.generate_questions(
+					topic=subject.name,
+					difficulty='HARD',
+					count=theory_count,
+					q_type='THEORY', # Request theory/essay type
+					additional_context=f"Generate standard {exam_format} theory/essay questions for {subject.name}. Year context: {year}. Output full question text."
+				)
+				
+				t_items = generated_theory.get('questions', generated_theory) if isinstance(generated_theory, dict) else generated_theory
+				if isinstance(t_items, list):
+					topic = Topic.objects.filter(subject=subject).first()
+					
+					for t_data in t_items:
+						try:
+							q_content = t_data.get('content') or t_data.get('question')
+							if not q_content: continue
+
+							# Check duplication
+							if Question.objects.filter(content=q_content, subject=subject).exists():
+								q = Question.objects.filter(content=q_content, subject=subject).first()
+							else:
+								q = Question.objects.create(
+									subject=subject,
+									topic=topic,
+									exam_type=exam_type,
+									content=q_content,
+									question_type='THEORY', # Explicitly set as THEORY
+									difficulty='HARD',
+									guidance=t_data.get('answer', '') or t_data.get('explanation', ''),
+									metadata={'source': 'AI_THEORY_FALLBACK', 'year': year}
+								)
+								# Theory doesn't have options/answers in the same way, but we store the model answer in guidance
+							
+							selected_questions.append(q)
+						except Exception as t_err:
+							logger.error(f"Failed to save theory question: {t_err}")
+
+			except Exception as ai_err:
+				logger.warning(f"Failed to generate theory questions: {ai_err}")
+
+		# Shuffle and trim (ensure we keep theory questions if possible)
+		# We shuffle but prioritize keeping the theory questions at the end or mixed?
+		# Standard is usually Section A (Obj) and Section B (Theory).
+		# For now, simple shuffle.
 		random.shuffle(selected_questions)
-		selected_questions = selected_questions[:num_questions]
+		# NOTE: We might exceed num_questions if we added theory on top. 
+		# If user requested 60, and we got 60 obj + 4 theory, we probably want 64 total? 
+		# Or should we respect num_questions exactly? 
+		# For "Past Questions" mode, users usually want "Available Obj" + "Standard Theory".
+		# So we won't trim STRICTLY if it means losing the theory questions we just generated.
+		# But 'selected_questions' list is what gets added to exam.
+
 		
 		# Create MockExam for past questions
 		with transaction.atomic():

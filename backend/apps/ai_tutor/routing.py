@@ -1,0 +1,7 @@
+"""WebSocket URL routing for AI tutor."""
+from django.urls import path
+from . import consumers
+
+websocket_urlpatterns = [
+    path('ws/chat/<uuid:session_id>/', consumers.ChatConsumer.as_asgi()),
+]

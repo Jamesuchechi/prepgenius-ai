@@ -115,3 +115,49 @@ Return a JSON response with:
         
         logger.warning(f"AI-based study plan generation failed. Using template-based approach. Errors: {'; '.join(errors)}")
         return None  # Return None to trigger template-based generation
+    
+    def generate_chat_response(self, message, conversation_history=None, system_prompt=None, context=None):
+        """Generate a chat response using AI providers with conversation context."""
+        errors = []
+        
+        for name, client in self.clients:
+            try:
+                if hasattr(client, 'client') and client.client is None:
+                    continue
+                
+                # HuggingFace check
+                if isinstance(client, HuggingFaceClient) and not client.api_key:
+                    continue
+
+                logger.info(f"Attempting chat response generation with {name}...")
+                
+                # Build the prompt with conversation history
+                if conversation_history:
+                    # Format history for context
+                    history_context = "\n".join([
+                        f"{'Student' if msg['role'] == 'user' else 'Tutor'}: {msg['content']}"
+                        for msg in conversation_history[-5:]  # Last 5 messages
+                    ])
+                    full_message = f"{history_context}\nStudent: {message}\nTutor:"
+                else:
+                    full_message = message
+                
+                # Use the base generate_response method
+                if hasattr(client, 'generate_response'):
+                    response = client.generate_response(
+                        prompt=full_message,
+                        system_prompt=system_prompt,
+                        temperature=0.7,
+                        max_tokens=1024
+                    )
+                    if response:
+                        return response
+                
+            except Exception as e:
+                logger.warning(f"{name} failed to generate chat response: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
+        
+        error_msg = f"All AI providers failed to generate chat response. Errors: {'; '.join(errors)}"
+        logger.error(error_msg)
+        raise Exception(error_msg)

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
+import Footer from '@/components/layout/Footer'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -81,6 +82,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="p-8">
           {children}
         </div>
+        <Footer />
       </main>
     </div>
   )
