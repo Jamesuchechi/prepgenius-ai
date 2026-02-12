@@ -45,6 +45,56 @@ class MistralClient:
             logger.error(f"Error generating questions with Mistral: {e}")
             raise
 
+    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+        """Standard chat completion response."""
+        if not self.client:
+            raise ValueError("Mistral API key not configured")
+
+        try:
+            messages = []
+            if system_prompt:
+                messages.append(SystemMessage(content=system_prompt))
+            messages.append(UserMessage(content=prompt))
+
+            chat_response = self.client.chat.complete(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            return chat_response.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"Error generating chat response with Mistral: {e}")
+            raise
+
+    def stream_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+        """Streaming chat completion response."""
+        if not self.client:
+            raise ValueError("Mistral API key not configured")
+
+        try:
+            messages = []
+            if system_prompt:
+                messages.append(SystemMessage(content=system_prompt))
+            messages.append(UserMessage(content=prompt))
+
+            stream_response = self.client.chat.stream(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            for chunk in stream_response:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+            
+        except Exception as e:
+            logger.error(f"Error streaming chat response with Mistral: {e}")
+            raise
+
     def _build_prompt(self, topic, difficulty, count, q_type, context):
         from .prompts import PromptTemplates
         return PromptTemplates.get_question_prompt(topic, difficulty, count, q_type, context)

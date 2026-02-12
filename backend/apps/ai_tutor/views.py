@@ -38,7 +38,11 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
             user=request.user,
             subject=serializer.validated_data.get('subject'),
             exam_type=serializer.validated_data.get('exam_type'),
-            title=serializer.validated_data.get('title')
+            title=serializer.validated_data.get('title'),
+            tone=serializer.validated_data.get('tone', 'casual'),
+            detail_level=serializer.validated_data.get('detail_level', 'detailed'),
+            use_analogies=serializer.validated_data.get('use_analogies', True),
+            socratic_mode=serializer.validated_data.get('socratic_mode', False)
         )
         
         response_serializer = ChatSessionSerializer(session)

@@ -9,10 +9,12 @@ import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { TypingIndicator } from './TypingIndicator';
 import { SuggestedQuestions } from './SuggestedQuestions';
+import { ExportChatButton } from './ExportChatButton';
 import { useWebSocket, WebSocketMessage } from '@/hooks/useWebSocket';
 import { useChatStore } from '@/store/chatStore';
 import { chatService, ChatMessage } from '@/services/chatService';
-import { Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { Wifi, WifiOff, AlertCircle, Settings } from 'lucide-react';
+import { ChatSettingsModal } from './ChatSettingsModal';
 
 interface ChatInterfaceProps {
     sessionId: string;
@@ -23,14 +25,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
     const [error, setError] = useState<string | null>(null);
     const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const {
         messages,
+        sessions,
         isTyping,
+        activeStreamingId,
         connectionStatus,
         addMessage,
+        appendMessageContent,
+        replaceMessageId,
         setMessages,
         setTyping,
+        setActiveStreamingId,
         setConnectionStatus,
     } = useChatStore();
 
@@ -42,15 +50,60 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
                 setError(null);
                 break;
 
+            case 'chat_stream_start':
+                if (data.message_id) {
+                    setActiveStreamingId(data.message_id);
+                    // Also ensure message exists (empty)
+                    const exists = messages.some(m => m.id === data.message_id);
+                    if (!exists) {
+                        const newMessage: ChatMessage = {
+                            id: data.message_id,
+                            role: 'assistant',
+                            content: '',
+                            timestamp: data.timestamp || new Date().toISOString(),
+                        };
+                        addMessage(newMessage);
+                    }
+                }
+                break;
+
             case 'chat_message':
                 if (data.role === 'assistant' && data.message) {
-                    const newMessage: ChatMessage = {
-                        id: data.message_id || crypto.randomUUID(),
-                        role: 'assistant',
-                        content: data.message,
-                        timestamp: data.timestamp || new Date().toISOString(),
-                    };
-                    addMessage(newMessage);
+                    // Streaming finished or full message received
+                    setActiveStreamingId(null);
+
+                    const exists = messages.some(m => m.id === data.message_id);
+                    if (!exists) {
+                        const newMessage: ChatMessage = {
+                            id: data.message_id || crypto.randomUUID(),
+                            role: 'assistant',
+                            content: data.message,
+                            timestamp: data.timestamp || new Date().toISOString(),
+                        };
+                        addMessage(newMessage);
+                    }
+                }
+                break;
+
+            case 'chat_chunk':
+                if (data.message_id && data.delta) {
+                    const exists = messages.some(m => m.id === data.message_id);
+                    if (exists) {
+                        appendMessageContent(data.message_id, data.delta);
+                    } else {
+                        // Create new message with first chunk if missed start
+                        const newMessage: ChatMessage = {
+                            id: data.message_id,
+                            role: 'assistant',
+                            content: data.delta,
+                            timestamp: new Date().toISOString(),
+                        };
+                        addMessage(newMessage);
+                        // Ensure it's marked as streaming
+                        if (activeStreamingId !== data.message_id) {
+                            setActiveStreamingId(data.message_id);
+                        }
+                    }
                 }
                 break;
 
@@ -61,10 +114,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
             case 'error':
                 setError(data.message || 'An error occurred');
                 setTyping(false);
+                setActiveStreamingId(null);
                 break;
 
             case 'message_saved':
-                // Message was saved successfully
+                // Message was saved successfully - replace temp ID with real ID
+                if (data.temp_id && data.message_id) {
+                    replaceMessageId(data.temp_id, data.message_id, {
+                        image: data.image_url || undefined // Handle null from backend
+                    });
+                }
                 break;
         }
     };
@@ -75,12 +134,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
         onMessage: handleWebSocketMessage,
         onConnect: () => setConnectionStatus('connected'),
         onDisconnect: () => setConnectionStatus('disconnected'),
-        onError: () => setError('Connection error. Retrying...'),
+        onError: () => {
+            setError('Connection error. Retrying...');
+            setActiveStreamingId(null);
+        },
     });
 
     // Load message history
     useEffect(() => {
         const loadMessages = async () => {
+            // Reset streaming state on load
+            setActiveStreamingId(null);
+
             try {
                 const response: any = await chatService.getSessionMessages(sessionId);
                 // Handle both array response and paginated response
@@ -93,7 +158,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
         };
 
         loadMessages();
-    }, [sessionId, setMessages]);
+    }, [sessionId, setMessages, setActiveStreamingId]);
+
 
     // Load suggested questions
     useEffect(() => {
@@ -130,23 +196,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
         }
     }, [isConnected, isConnecting, setConnectionStatus]);
 
-    const handleSendMessage = (message: string) => {
+    const handleSendMessage = (message: string, imageData?: string) => {
         if (!isConnected) {
             setError('Not connected. Please wait...');
             return;
         }
 
+        const tempId = crypto.randomUUID();
+
         // Add user message to UI immediately
         const userMessage: ChatMessage = {
-            id: crypto.randomUUID(),
+            id: tempId,
             role: 'user',
             content: message,
+            image: imageData,
             timestamp: new Date().toISOString(),
         };
         addMessage(userMessage);
 
         // Send via WebSocket
-        const sent = sendMessage(message);
+        const sent = sendMessage(message, imageData, { tempId });
         if (!sent) {
             setError('Failed to send message');
         } else {
@@ -158,6 +227,35 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
         handleSendMessage(question);
     };
 
+    // Handle regenerate: find last user message before the assistant message
+    const handleRegenerate = (assistantMessageIndex: number) => async () => {
+        if (!isConnected) {
+            setError('Not connected. Cannot regenerate.');
+            return;
+        }
+
+        // Find the last user message before this assistant message
+        let userMessage = null;
+        for (let i = assistantMessageIndex - 1; i >= 0; i--) {
+            if (messages[i].role === 'user') {
+                userMessage = messages[i];
+                break;
+            }
+        }
+
+        if (userMessage) {
+            // Remove the old assistant response
+            const updatedMessages = messages.filter((_, idx) => idx !== assistantMessageIndex);
+            setMessages(updatedMessages);
+
+            // Re-send the user message
+            const sent = sendMessage(userMessage.content);
+            if (!sent) {
+                setError('Failed to regenerate response');
+            }
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
             {/* Header with connection status */}
@@ -166,7 +264,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
                     <h2 className="text-xl font-semibold text-gray-900 font-display">
                         AI Tutor
                     </h2>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                        {/* Settings Button */}
+                        <button
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Chat Settings"
+                        >
+                            <Settings size={20} />
+                        </button>
+
+                        <ExportChatButton messages={messages} sessionTitle="Chat Session" />
+
                         {connectionStatus === 'connected' && (
                             <div className="flex items-center gap-1 text-green-500 text-sm">
                                 <Wifi size={16} />
@@ -208,12 +317,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
                     </div>
                 )}
 
-                {Array.isArray(messages) && messages.map((message) => (
+                {Array.isArray(messages) && messages.map((message, index) => (
                     <MessageBubble
                         key={message.id}
+                        id={message.id}
                         role={message.role}
                         content={message.content}
                         timestamp={message.timestamp}
+                        image={message.image}
+                        isStreaming={message.id === activeStreamingId}
+                        onRegenerate={message.role === 'assistant' ? handleRegenerate(index) : undefined}
                     />
                 ))}
 
@@ -240,6 +353,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
                         : 'Connecting...'
                 }
             />
+
+            {/* Settings Modal */}
+            {sessions.find(s => s.id === sessionId) && (
+                <ChatSettingsModal
+                    isOpen={isSettingsOpen}
+                    onClose={() => setIsSettingsOpen(false)}
+                    session={sessions.find(s => s.id === sessionId)!}
+                />
+            )}
         </div>
     );
 };

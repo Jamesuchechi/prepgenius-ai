@@ -77,20 +77,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
         from .services import ChatService, RateLimiter, ModerationService
         
         message = data.get('message', '').strip()
+        image_data = data.get('image_data') # Base64 string
         context = data.get('context', {})
         
-        if not message:
-            await self.send_error("Message cannot be empty")
+        if not message and not image_data:
+            await self.send_error("Message or image cannot be empty")
             return
         
-        # Moderate message
-        is_allowed, reason = await database_sync_to_async(
-            ModerationService.moderate_message
-        )(message)
-        
-        if not is_allowed:
-            await self.send_error(f"Message not allowed: {reason}")
-            return
+        # Moderate message (text part)
+        if message:
+            is_allowed, reason = await database_sync_to_async(
+                ModerationService.moderate_message
+            )(message)
+            
+            if not is_allowed:
+                await self.send_error(f"Message not allowed: {reason}")
+                return
         
         # Check rate limit
         is_allowed, remaining = await database_sync_to_async(
@@ -112,12 +114,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )(self.user)
         
         # Save user message
-        user_message = await self.save_message('user', message)
+        user_message = await self.save_message('user', message, image_data)
         
         # Send user message confirmation
         await self.send(text_data=json.dumps({
             'type': 'message_saved',
             'message_id': str(user_message.id),
+            'temp_id': data.get('temp_id'),
+            'image_url': user_message.image.url if user_message.image else None,
             'timestamp': user_message.timestamp.isoformat()
         }))
         
@@ -127,21 +131,71 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'is_typing': True
         }))
         
-        # Generate AI response
+        # Generate AI response with streaming
         try:
             chat_service = ChatService()
-            ai_response = await database_sync_to_async(
-                chat_service.generate_ai_response
+            
+            # Create initial empty message
+            ai_message = await self.save_message('assistant', '')
+            
+            # Stop generic typing indicator as we're about to show the stream
+            await self.send(text_data=json.dumps({
+                'type': 'typing',
+                'is_typing': False
+            }))
+            
+            # Send stream start to trigger cursor on frontend
+            await self.send(text_data=json.dumps({
+                'type': 'chat_stream_start',
+                'role': 'assistant',
+                'message_id': str(ai_message.id),
+                'timestamp': ai_message.timestamp.isoformat()
+            }))
+            
+            full_response = ""
+            
+            # Add image_data to context for AI router
+            if image_data:
+                # Strip prefix if present for clean processing by GroqClient
+                raw_base64 = image_data.split(';base64,')[-1] if ';base64,' in image_data else image_data
+                context['image_data'] = raw_base64
+            
+            # Create iterator in sync context
+            iterator = await database_sync_to_async(
+                chat_service.stream_ai_response
             )(self.session, message, context)
             
-            # Save AI response
-            ai_message = await self.save_message('assistant', ai_response)
+            def get_next_chunk(it):
+                try:
+                    return next(it)
+                except StopIteration:
+                    return None # Sentinel value
             
-            # Send AI response
+            # Iterate through chunks
+            while True:
+                # Get next chunk in thread
+                chunk = await database_sync_to_async(get_next_chunk)(iterator)
+                
+                if chunk is None:
+                    break
+                    
+                full_response += chunk
+                
+                # Send chunk
+                await self.send(text_data=json.dumps({
+                    'type': 'chat_chunk',
+                    'message_id': str(ai_message.id),
+                    'delta': chunk
+                }))
+            
+            # Update message details in DB
+            await self.update_message_content(ai_message, full_response)
+            
+            # Send final message to ensure consistency
             await self.send(text_data=json.dumps({
                 'type': 'chat_message',
                 'role': 'assistant',
-                'message': ai_response,
+                'message': full_response,
                 'message_id': str(ai_message.id),
                 'timestamp': ai_message.timestamp.isoformat()
             }))
@@ -156,13 +210,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'type': 'typing',
                 'is_typing': False
             }))
-    
+            
     async def send_error(self, message):
         """Send an error message to the client."""
         await self.send(text_data=json.dumps({
             'type': 'error',
             'message': message
         }))
+
+    @database_sync_to_async
+    def update_message_content(self, message, content):
+        """Update message content."""
+        message.content = content
+        message.save(update_fields=['content'])
     
     @database_sync_to_async
     def get_user_from_token(self):
@@ -172,7 +232,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         from rest_framework_simplejwt.tokens import AccessToken
         from rest_framework_simplejwt.exceptions import TokenError
         
-        User = get_user_model()
+        User = get_model = get_user_model()
         
         # Get token from query string
         query_string = self.scope.get('query_string', b'').decode()
@@ -221,15 +281,35 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return None
     
     @database_sync_to_async
-    def save_message(self, role, content):
+    def save_message(self, role, content, image_data=None):
         """Save a message to the database."""
         from .models import ChatMessage
+        import base64
+        from django.core.files.base import ContentFile
+        import uuid
         
-        message = ChatMessage.objects.create(
+        message = ChatMessage(
             session=self.session,
             role=role,
             content=content
         )
+        
+        if image_data:
+            try:
+                # Handle base64 image data
+                if ';base64,' in image_data:
+                    format, imgstr = image_data.split(';base64,')
+                    ext = format.split('/')[-1]
+                else:
+                    imgstr = image_data
+                    ext = 'jpg'
+                
+                name = f"{uuid.uuid4()}.{ext}"
+                message.image.save(name, ContentFile(base64.b64decode(imgstr)), save=False)
+            except Exception as e:
+                logger.error(f"Error saving image: {e}")
+        
+        message.save()
         
         # Update session timestamp
         self.session.save(update_fields=['updated_at'])

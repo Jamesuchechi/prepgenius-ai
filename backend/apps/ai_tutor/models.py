@@ -18,6 +18,29 @@ class ChatSession(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     metadata = models.JSONField(default=dict, blank=True)
+    
+    # Response style preferences
+    tone = models.CharField(
+        max_length=20,
+        choices=[('formal', 'Formal'), ('casual', 'Casual')],
+        default='casual',
+        help_text="Teaching tone: formal or casual"
+    )
+    detail_level = models.CharField(
+        max_length=20,
+        choices=[('concise', 'Concise'), ('detailed', 'Detailed')],
+        default='detailed',
+        help_text="Response detail level"
+    )
+    use_analogies = models.BooleanField(
+        default=True,
+        help_text="Use analogies and real-world examples"
+    )
+    socratic_mode = models.BooleanField(
+        default=False,
+        help_text="Ask guiding questions instead of direct answers"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -57,6 +80,7 @@ class ChatMessage(models.Model):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     content = models.TextField()
+    image = models.ImageField(upload_to='chat_images/', blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     metadata = models.JSONField(default=dict, blank=True)
     

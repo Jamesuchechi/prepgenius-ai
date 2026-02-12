@@ -4,24 +4,104 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
-import { Bot, User } from 'lucide-react';
+import { Bot, User, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Volume2, VolumeX } from 'lucide-react';
+import { copyToClipboard } from '@/utils/exportUtils';
+import { useChatStore } from '@/store/chatStore';
 
 interface MessageBubbleProps {
+    id: string;
     role: 'user' | 'assistant' | 'system';
     content: string;
     timestamp: string;
+    onRegenerate?: () => void;
+    isStreaming?: boolean;
+    image?: string;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
+    id,
     role,
     content,
     timestamp,
+    onRegenerate,
+    isStreaming,
+    image,
 }) => {
     const isUser = role === 'user';
     const isSystem = role === 'system';
+    const isAssistant = role === 'assistant';
+
+    // Append blinking cursor if streaming
+    const displayContent = isStreaming ? `${content} ▍` : content;
+
+    const [copied, setCopied] = useState(false);
+    const [isRegenerating, setIsRegenerating] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+
+    const { messageFeedback, setMessageFeedback } = useChatStore();
+    const feedback = messageFeedback[id];
+
+    // Handle Speech Synthesis
+    useEffect(() => {
+        return () => {
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+            }
+        };
+    }, [isSpeaking]);
+
+    const handleToggleSpeech = () => {
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+            return;
+        }
+
+        if (!('speechSynthesis' in window)) {
+            alert('Text-to-speech is not supported in your browser.');
+            return;
+        }
+
+        // Clean markdown for better speech
+        const plainText = content.replace(/[#*_\[\]()>]/g, '');
+        const utterance = new SpeechSynthesisUtterance(plainText);
+
+        utterance.onend = () => {
+            setIsSpeaking(false);
+        };
+
+        utterance.onerror = (event) => {
+            console.error('Speech synthesis error:', event);
+            setIsSpeaking(false);
+        };
+
+        setIsSpeaking(true);
+        window.speechSynthesis.speak(utterance);
+    };
+
+    const handleCopy = async () => {
+        const success = await copyToClipboard(content);
+        if (success) {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    const handleRegenerate = async () => {
+        if (onRegenerate && !isRegenerating) {
+            setIsRegenerating(true);
+            await onRegenerate();
+            setIsRegenerating(false);
+        }
+    };
+
+    const handleFeedback = (type: 'like' | 'dislike') => {
+        // Toggle feedback: if clicking same button, remove feedback
+        setMessageFeedback(id, feedback === type ? null : type);
+    };
 
     if (isSystem) {
         return (
@@ -34,7 +114,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
 
     return (
-        <div className={`flex gap-3 mb-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`group flex gap-3 mb-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
             {/* Avatar */}
             <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border border-gray-100 shadow-sm ${isUser
                 ? 'bg-blue-600 text-white'
@@ -45,6 +125,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
             {/* Message content */}
             <div className={`flex flex-col max-w-[70%] ${isUser ? 'items-end' : 'items-start'}`}>
+                {image && (
+                    <div className="mb-2 rounded-xl overflow-hidden border border-gray-100 shadow-sm transition-all hover:shadow-md max-w-full">
+                        <img
+                            src={image}
+                            alt="Attachment"
+                            className="max-h-72 w-auto object-contain cursor-zoom-in"
+                            onClick={() => window.open(image, '_blank')}
+                        />
+                    </div>
+                )}
                 <div className={`rounded-2xl px-4 py-3 shadow-sm ${isUser
                     ? 'bg-blue-600 text-white rounded-tr-none'
                     : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none'
@@ -71,11 +161,74 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                                         ),
                                 }}
                             >
-                                {content}
+
+                                {displayContent}
                             </ReactMarkdown>
                         </div>
                     )}
                 </div>
+
+                {/* Action Buttons - Only for assistant messages */}
+                {isAssistant && (
+                    <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Copy Button */}
+                        <button
+                            onClick={handleCopy}
+                            className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600 hover:text-blue-600 transition-all"
+                            title="Copy message"
+                        >
+                            {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                        </button>
+
+                        {/* Read Aloud Button */}
+                        <button
+                            onClick={handleToggleSpeech}
+                            className={`p-1.5 rounded-md transition-all ${isSpeaking
+                                ? 'bg-blue-50 text-blue-600'
+                                : 'hover:bg-gray-100 text-gray-600 hover:text-blue-600'
+                                }`}
+                            title={isSpeaking ? 'Stop reading' : 'Read aloud'}
+                        >
+                            {isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                        </button>
+
+                        {/* Regenerate Button */}
+                        {onRegenerate && (
+                            <button
+                                onClick={handleRegenerate}
+                                disabled={isRegenerating}
+                                className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600 hover:text-green-600 transition-all disabled:opacity-50"
+                                title="Regenerate response"
+                            >
+                                <RotateCw size={14} className={isRegenerating ? 'animate-spin' : ''} />
+                            </button>
+                        )}
+
+                        {/* Feedback Buttons */}
+                        <div className="flex items-center gap-0.5 ml-1">
+                            <button
+                                onClick={() => handleFeedback('like')}
+                                className={`p-1.5 rounded-md transition-all ${feedback === 'like'
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : 'hover:bg-gray-100 text-gray-600 hover:text-blue-600'
+                                    }`}
+                                title="Like this response"
+                            >
+                                <ThumbsUp size={14} />
+                            </button>
+                            <button
+                                onClick={() => handleFeedback('dislike')}
+                                className={`p-1.5 rounded-md transition-all ${feedback === 'dislike'
+                                    ? 'bg-red-100 text-red-600'
+                                    : 'hover:bg-gray-100 text-gray-600 hover:text-red-600'
+                                    }`}
+                                title="Dislike this response"
+                            >
+                                <ThumbsDown size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Timestamp */}
                 <span className="text-xs text-gray-400 mt-1 px-2 font-medium">

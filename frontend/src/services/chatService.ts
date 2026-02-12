@@ -18,12 +18,18 @@ export interface ChatSession {
         content: string;
         timestamp: string;
     };
+    // Style preferences
+    tone?: 'formal' | 'casual';
+    detail_level?: 'concise' | 'detailed';
+    use_analogies?: boolean;
+    socratic_mode?: boolean;
 }
 
 export interface ChatMessage {
     id: string;
     role: 'user' | 'assistant' | 'system';
     content: string;
+    image?: string;
     timestamp: string;
     metadata?: Record<string, any>;
 }
@@ -32,6 +38,20 @@ export interface CreateSessionData {
     subject?: string;
     exam_type?: string;
     title?: string;
+    tone?: 'formal' | 'casual';
+    detail_level?: 'concise' | 'detailed';
+    use_analogies?: boolean;
+    socratic_mode?: boolean;
+}
+
+export interface UpdateSessionData {
+    title?: string;
+    subject?: string;
+    exam_type?: string;
+    tone?: 'formal' | 'casual';
+    detail_level?: 'concise' | 'detailed';
+    use_analogies?: boolean;
+    socratic_mode?: boolean;
 }
 
 export interface SuggestedQuestion {
@@ -49,11 +69,21 @@ class ChatService {
     }
 
     /**
+     * Update an existing chat session
+     */
+    async updateSession(sessionId: string, data: UpdateSessionData): Promise<ChatSession> {
+        const response = await api.patch(`/chat/sessions/${sessionId}/`, data);
+        return response.data;
+    }
+
+    /**
      * Get all chat sessions for the current user
      */
     async getSessions(): Promise<ChatSession[]> {
         const response = await api.get('/chat/sessions/');
-        return response.data;
+        // Backend returns paginated response: {count, next, previous, results}
+        // Extract the results array
+        return response.data.results || response.data;
     }
 
     /**
@@ -76,7 +106,8 @@ class ChatService {
      */
     async getSessionMessages(sessionId: string): Promise<ChatMessage[]> {
         const response = await api.get(`/chat/sessions/${sessionId}/messages/`);
-        return response.data;
+        // Handle paginated response if backend adds it
+        return response.data.results || response.data;
     }
 
     /**

@@ -59,3 +59,45 @@ class CohereClient:
         except json.JSONDecodeError:
             logger.error(f"Failed to parse Cohere response: {response_text}")
             raise ValueError("Invalid JSON response from Cohere")
+
+    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+        """Standard chat completion response."""
+        if not self.client:
+            raise ValueError("Cohere API key not configured")
+
+        try:
+            response = self.client.chat(
+                message=prompt,
+                model=self.model,
+                preamble=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            return response.text
+            
+        except Exception as e:
+            logger.error(f"Error generating chat response with Cohere: {e}")
+            raise
+
+    def stream_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+        """Streaming chat completion response."""
+        if not self.client:
+            raise ValueError("Cohere API key not configured")
+
+        try:
+            stream = self.client.chat_stream(
+                message=prompt,
+                model=self.model,
+                preamble=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            for event in stream:
+                if event.event_type == "text-generation":
+                    yield event.text
+            
+        except Exception as e:
+            logger.error(f"Error streaming chat response with Cohere: {e}")
+            raise

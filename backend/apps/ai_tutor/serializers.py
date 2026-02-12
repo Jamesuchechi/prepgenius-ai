@@ -8,8 +8,8 @@ class ChatMessageSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ChatMessage
-        fields = ['id', 'role', 'content', 'timestamp', 'metadata']
-        read_only_fields = ['id', 'timestamp']
+        fields = ['id', 'role', 'content', 'image', 'timestamp', 'metadata']
+        read_only_fields = ['id', 'image', 'timestamp']
 
 
 class ChatSessionSerializer(serializers.ModelSerializer):
@@ -22,6 +22,7 @@ class ChatSessionSerializer(serializers.ModelSerializer):
         model = ChatSession
         fields = [
             'id', 'subject', 'exam_type', 'title', 'is_active',
+            'tone', 'detail_level', 'use_analogies', 'socratic_mode',
             'created_at', 'updated_at', 'message_count', 'last_message'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -48,6 +49,12 @@ class CreateSessionSerializer(serializers.Serializer):
     subject = serializers.CharField(max_length=100, required=False, allow_blank=True)
     exam_type = serializers.CharField(max_length=50, required=False, allow_blank=True)
     title = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    
+    # Optional style settings
+    tone = serializers.ChoiceField(choices=[('formal', 'Formal'), ('casual', 'Casual')], required=False)
+    detail_level = serializers.ChoiceField(choices=[('concise', 'Concise'), ('detailed', 'Detailed')], required=False)
+    use_analogies = serializers.BooleanField(required=False)
+    socratic_mode = serializers.BooleanField(required=False)
 
 
 class SuggestedQuestionSerializer(serializers.Serializer):

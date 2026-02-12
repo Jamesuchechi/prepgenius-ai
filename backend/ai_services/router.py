@@ -144,11 +144,15 @@ Return a JSON response with:
                 
                 # Use the base generate_response method
                 if hasattr(client, 'generate_response'):
+                    # Extract image_data from context if available
+                    image_data = (context or {}).get('image_data')
+                    
                     response = client.generate_response(
                         prompt=full_message,
                         system_prompt=system_prompt,
                         temperature=0.7,
-                        max_tokens=1024
+                        max_tokens=1024,
+                        image_data=image_data
                     )
                     if response:
                         return response
@@ -160,4 +164,71 @@ Return a JSON response with:
         
         error_msg = f"All AI providers failed to generate chat response. Errors: {'; '.join(errors)}"
         logger.error(error_msg)
+        raise Exception(error_msg)
+
+    def stream_chat_response(self, message, conversation_history=None, system_prompt=None, context=None):
+        """
+        Streams a chat response using AI providers with conversation context.
+        Yields chunks of text.
+        """
+        errors = []
+        
+        for name, client in self.clients:
+            try:
+                if hasattr(client, 'client') and client.client is None:
+                    continue
+                
+                # HuggingFace check
+                if isinstance(client, HuggingFaceClient) and not client.api_key:
+                    continue
+
+                logger.info(f"Attempting streaming chat response generation with {name}...")
+                
+                # Build the prompt with conversation history (same as non-streaming)
+                if conversation_history:
+                    history_context = "\n".join([
+                        f"{'Student' if msg['role'] == 'user' else 'Tutor'}: {msg['content']}"
+                        for msg in conversation_history[-5:]
+                    ])
+                    full_message = f"{history_context}\nStudent: {message}\nTutor:"
+                else:
+                    full_message = message
+                
+                # Check if client supports streaming
+                if hasattr(client, 'stream_response'):
+                    # Extract image_data from context if available
+                    image_data = (context or {}).get('image_data')
+                    
+                    for chunk in client.stream_response(
+                        prompt=full_message,
+                        system_prompt=system_prompt,
+                        temperature=0.7,
+                        max_tokens=1024,
+                        image_data=image_data
+                    ):
+                        yield chunk
+                    return  # Success, stop trying other clients
+                
+                # Fallback to non-streaming if streaming not supported but client works
+                elif hasattr(client, 'generate_response'):
+                    logger.info(f"{name} does not support streaming, falling back to full response.")
+                    response = client.generate_response(
+                        prompt=full_message,
+                        system_prompt=system_prompt,
+                        temperature=0.7,
+                        max_tokens=1024
+                    )
+                    if response:
+                        yield response  # Yield full response as one chunk
+                        return
+                
+            except Exception as e:
+                logger.warning(f"{name} failed to stream chat response: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
+        
+        error_msg = f"All AI providers failed to stream chat response. Errors: {'; '.join(errors)}"
+        logger.error(error_msg)
+        # Don't raise exception here as it breaks the generator pattern easily, 
+        # or yield an error message? Better to raise so caller knows.
         raise Exception(error_msg)

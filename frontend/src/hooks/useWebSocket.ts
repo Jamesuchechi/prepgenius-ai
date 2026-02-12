@@ -5,12 +5,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export interface WebSocketMessage {
-    type: 'connection' | 'chat_message' | 'typing' | 'error' | 'message_saved';
+    type: 'connection' | 'chat_message' | 'chat_chunk' | 'chat_stream_start' | 'typing' | 'error' | 'message_saved';
     status?: string;
     session_id?: string;
     role?: 'user' | 'assistant';
     message?: string;
+    delta?: string;
     message_id?: string;
+    temp_id?: string;
+    image_url?: string | null;
     timestamp?: string;
     is_typing?: boolean;
 }
@@ -36,6 +39,19 @@ export const useWebSocket = ({
     const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
     const reconnectAttemptsRef = useRef(0);
     const maxReconnectAttempts = 5;
+
+    const onMessageRef = useRef(onMessage);
+    const onErrorRef = useRef(onError);
+    const onConnectRef = useRef(onConnect);
+    const onDisconnectRef = useRef(onDisconnect);
+
+    // Keep refs updated
+    useEffect(() => {
+        onMessageRef.current = onMessage;
+        onErrorRef.current = onError;
+        onConnectRef.current = onConnect;
+        onDisconnectRef.current = onDisconnect;
+    }, [onMessage, onError, onConnect, onDisconnect]);
 
     const connect = useCallback(() => {
         // Get token from localStorage
@@ -65,13 +81,13 @@ export const useWebSocket = ({
                 setIsConnected(true);
                 setIsConnecting(false);
                 reconnectAttemptsRef.current = 0;
-                onConnect?.();
+                onConnectRef.current?.();
             };
 
             ws.onmessage = (event) => {
                 try {
                     const data: WebSocketMessage = JSON.parse(event.data);
-                    onMessage?.(data);
+                    onMessageRef.current?.(data);
                 } catch (error) {
                     console.error('Failed to parse WebSocket message:', error);
                 }
@@ -80,7 +96,7 @@ export const useWebSocket = ({
             ws.onerror = (error) => {
                 console.error('WebSocket error:', error);
                 setIsConnecting(false);
-                onError?.(error);
+                onErrorRef.current?.(error);
             };
 
             ws.onclose = (event) => {
@@ -88,7 +104,7 @@ export const useWebSocket = ({
                 setIsConnected(false);
                 setIsConnecting(false);
                 wsRef.current = null;
-                onDisconnect?.();
+                onDisconnectRef.current?.();
 
                 // Attempt to reconnect with exponential backoff
                 if (reconnectAttemptsRef.current < maxReconnectAttempts) {
@@ -109,7 +125,7 @@ export const useWebSocket = ({
             console.error('Failed to create WebSocket:', error);
             setIsConnecting(false);
         }
-    }, [sessionId, onMessage, onError, onConnect, onDisconnect]);
+    }, [sessionId]);
 
     const disconnect = useCallback(() => {
         if (reconnectTimeoutRef.current) {
@@ -125,7 +141,7 @@ export const useWebSocket = ({
         setIsConnecting(false);
     }, []);
 
-    const sendMessage = useCallback((message: string, context?: Record<string, any>) => {
+    const sendMessage = useCallback((message: string, imageData?: string, options?: { tempId?: string, context?: Record<string, any> }) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.error('WebSocket is not connected');
             return false;
@@ -135,7 +151,9 @@ export const useWebSocket = ({
             wsRef.current.send(JSON.stringify({
                 type: 'chat_message',
                 message,
-                context: context || {},
+                image_data: imageData,
+                temp_id: options?.tempId,
+                context: options?.context || {},
             }));
             return true;
         } catch (error) {

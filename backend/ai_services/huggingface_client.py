@@ -49,6 +49,43 @@ class HuggingFaceClient:
             logger.error(f"Error generating questions with HuggingFace: {e}")
             raise
 
+    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+        """Standard chat completion response."""
+        if not self.api_key:
+             raise ValueError("HuggingFace API key not configured")
+
+        # Format prompt with system message if provided
+        if system_prompt:
+            full_prompt = f"[SYSTEM] {system_prompt} [/SYSTEM] [INST] {prompt} [/INST]"
+        else:
+            full_prompt = f"[INST] {prompt} [/INST]"
+            
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        payload = {
+            "inputs": full_prompt,
+            "parameters": {
+                "max_new_tokens": max_tokens,
+                "temperature": temperature,
+                "return_full_text": False
+            }
+        }
+        
+        try:
+            response = requests.post(
+                self.api_url, 
+                headers=headers, 
+                json=payload, 
+                timeout=getattr(settings, 'HUGGINGFACE_TIMEOUT', 30)
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            return result[0]['generated_text']
+            
+        except Exception as e:
+            logger.error(f"Error generating chat response with HuggingFace: {e}")
+            raise
+
     def _build_prompt(self, topic, difficulty, count, q_type, context):
         from .prompts import PromptTemplates
         # Adding explicit JSON enforcement instruction for open models

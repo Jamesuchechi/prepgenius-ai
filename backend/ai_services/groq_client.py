@@ -100,9 +100,10 @@ class GroqClient:
             logger.error(f"Failed to parse Groq response: {response_text}")
             raise ValueError("Invalid JSON response from AI")
 
-    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024, image_data=None):
         """
         Generates a chat response using Groq API.
+        Supports multi-modal input (text + image).
         """
         try:
             messages = []
@@ -113,14 +114,31 @@ class GroqClient:
                     "content": system_prompt
                 })
             
+            if image_data:
+                # Use multi-modal format for vision tasks
+                user_content = [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_data}",
+                        },
+                    },
+                ]
+            else:
+                user_content = prompt
+
             messages.append({
                 "role": "user",
-                "content": prompt
+                "content": user_content
             })
+            
+            # Switch to vision model if image is provided
+            model = "llama-3.2-11b-vision-preview" if image_data else self.model
             
             chat_completion = self.client.chat.completions.create(
                 messages=messages,
-                model=self.model,
+                model=model,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 timeout=self.timeout
@@ -130,4 +148,58 @@ class GroqClient:
             
         except Exception as e:
             logger.error(f"Error generating response with Groq: {e}")
+            raise
+
+    def stream_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024, image_data=None):
+        """
+        Streams a chat response using Groq API.
+        Supports multi-modal input (text + image).
+        Yields chunks of text.
+        """
+        try:
+            messages = []
+            
+            if system_prompt:
+                messages.append({
+                    "role": "system",
+                    "content": system_prompt
+                })
+            
+            if image_data:
+                # Use multi-modal format for vision tasks
+                user_content = [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_data}",
+                        },
+                    },
+                ]
+            else:
+                user_content = prompt
+
+            messages.append({
+                "role": "user",
+                "content": user_content
+            })
+            
+            # Switch to vision model if image is provided
+            model = "llama-3.2-11b-vision-preview" if image_data else self.model
+            
+            stream = self.client.chat.completions.create(
+                messages=messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stream=True,
+                timeout=self.timeout
+            )
+            
+            for chunk in stream:
+                if chunk.choices[0].delta.content is not None:
+                    yield chunk.choices[0].delta.content
+            
+        except Exception as e:
+            logger.error(f"Error streaming response with Groq: {e}")
             raise
