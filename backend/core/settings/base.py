@@ -262,6 +262,10 @@ MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "")
 MISTRAL_BASE_URL = os.getenv("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
 MISTRAL_TIMEOUT = int(os.getenv("MISTRAL_TIMEOUT", 60))
 
+ALOC_ACCESS_TOKEN = os.getenv("ALOC_ACCESS_TOKEN", "")
+ALOC_BASE_URL = os.getenv("ALOC_BASE_URL", "https://questions.aloc.com.ng/api/v2")
+ALOC_TIMEOUT = int(os.getenv("ALOC_TIMEOUT", 60))
+
 
 # ============================================================================
 # CELERY SETTINGS

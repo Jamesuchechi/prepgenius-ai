@@ -138,5 +138,25 @@ class PromptTemplates:
                 ]
             }
             """
+        elif q_type == "EXPLAIN":
+            type_specific_instructions = """
+            Output schema:
+            {
+                "questions": [
+                    {
+                        "content": "Original question text",
+                        "options": ["Option A", "Option B", "Option C", "Option D"],
+                        "correct_answer": "Option A",
+                        "user_answer": "Option C",
+                        "explanation": "A clear, educative explanation why the correct answer is correct",
+                        "correction": "If user was wrong, show the corrected answer and steps",
+                        "step_by_step": "Optional step-by-step reasoning or alternative methods",
+                        "difficulty": "EASY|MEDIUM|HARD",
+                        "type": "EXPLAIN"
+                    }
+                ]
+            }
+            Please return a single-item 'questions' list in valid JSON.
+            """
             
         return f"{base_instruction}\n{type_specific_instructions}\nContext: {context}"
