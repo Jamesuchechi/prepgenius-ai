@@ -29,6 +29,35 @@ export interface AnalyticsSummary {
     strong_topics: TopicMastery[];
 }
 
+export interface StudySession {
+    start_time: string;
+    end_time: string;
+    duration_minutes: number;
+    questions_answered: number;
+    correct_count: number;
+}
+
+export interface SpacedRepetitionItem {
+    topic: string;
+    question_identifier: string;
+    next_review_date: string;
+    interval: number;
+    repetitions: number;
+}
+
+export interface PredictedScore {
+    score: number;
+    confidence: 'low' | 'medium' | 'high';
+}
+
+export interface StudyPatterns {
+    optimal_study_time: {
+        start_hour: number;
+        end_hour: number;
+        accuracy: number;
+    } | null;
+}
+
 export const analyticsApi = {
     getProgress: async () => {
         const response = await axios.get<ProgressTracker>('/analytics/progress/');
@@ -64,6 +93,21 @@ export const analyticsApi = {
 
     getPerformanceHistory: async () => {
         const response = await axios.get<any[]>('/analytics/history/');
+        return response.data;
+    },
+
+    getPredictedScore: async () => {
+        const response = await axios.get<PredictedScore>('/analytics/predicted_score/');
+        return response.data;
+    },
+
+    getStudyPatterns: async () => {
+        const response = await axios.get<StudyPatterns>('/analytics/study_patterns/');
+        return response.data;
+    },
+
+    getSpacedRepetitionQueue: async () => {
+        const response = await axios.get<SpacedRepetitionItem[]>('/analytics/spaced_repetition/');
         return response.data;
     }
 };

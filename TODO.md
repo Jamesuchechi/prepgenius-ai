@@ -315,7 +315,7 @@ GET  /api/exams/my-attempts/
 - [x] Create chat interface component
 - [x] Implement real-time messaging (WebSocket)
 - [x] Add typing indicators
-- [ ] Build chat history view
+- [x] Build chat history view
 - [x] Create suggested questions feature
 - [x] Add markdown rendering for responses
 
@@ -339,7 +339,6 @@ DELETE /api/chat/sessions/:id/
 ### TODO #9: Advanced Analytics & Insights
 **Status**: 🔴 Not Started  
 **Priority**: MEDIUM  
-**Estimated Time**: 3-4 days
 
 **Features to Add:**
 - [ ] Predicted score estimation

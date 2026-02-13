@@ -7,12 +7,13 @@ import { Button } from '../ui/Button'
 import { BrainCircuit, BookOpen, Layers, Target, Wand2, Calculator, Search, Loader2 } from 'lucide-react'
 import clsx from 'clsx'
 import { toast } from 'sonner'
+import { quizApi, Quiz } from '@/lib/api/quiz'
 
 interface AIGenerationFormProps {
-    onQuestionsGenerated: (questions: any[]) => void
+    onQuizGenerated: (quiz: Quiz) => void
 }
 
-export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationFormProps) {
+export default function AIGenerationForm({ onQuizGenerated }: AIGenerationFormProps) {
     const [examTypes, setExamTypes] = useState<ExamType[]>([])
     const [subjectQuery, setSubjectQuery] = useState('')
     const [topics, setTopics] = useState<Topic[]>([])
@@ -71,17 +72,16 @@ export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationF
         if (!selectedSubjectId || !selectedTopic) return
         setLoading(true)
         try {
-            const payload: GenerateQuestionsPayload = {
+            const quiz = await quizApi.generate({
                 subject_id: Number(selectedSubjectId),
-                topic_id: Number(selectedTopic),
-                exam_type_id: Number(selectedExamType),
+                topic: topics.find(t => String(t.id) === selectedTopic)?.name || "General",
                 difficulty,
-                question_type: questionType,
-                count
-            }
-            const questions = await QuestionService.generate(payload)
-            toast.success(`${questions.length} questions generated successfully! ✨`)
-            onQuestionsGenerated(questions)
+                question_count: count,
+                exam_type: questionType
+            });
+
+            toast.success(`Quiz "${quiz.title}" generated and saved! ✨`)
+            onQuizGenerated(quiz)
         } catch (err) {
             console.error("Failed to generate questions", err)
             toast.error("AI Generation failed. Please try again.")

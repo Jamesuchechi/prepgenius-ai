@@ -33,14 +33,21 @@ class QuizViewSet(viewsets.ModelViewSet):
         
         data = serializer.validated_data
         
+        # Resolve Subject
+        subject_id = data.get('subject_id')
+        subject_obj = None
+        if subject_id:
+            from apps.content.models import Subject
+            subject_obj = get_object_or_404(Subject, id=subject_id)
+
         try:
             quiz = QuizService.generate_quiz(
                 user=request.user,
-                subject=data.get('subject_id'), # TODO: Fetch generic 'General' subject if None? Or modify Service to handle None.
+                subject=subject_obj, 
                 topic=data['topic'],
                 difficulty=data['difficulty'],
                 question_count=data['question_count'],
-                question_type=data['exam_type'], # Map API 'exam_type' to service 'question_type'
+                question_type=data['exam_type'], 
                 document_id=data.get('document_id')
             )
             return Response(QuizSerializer(quiz).data, status=status.HTTP_201_CREATED)
@@ -78,6 +85,7 @@ class QuizViewSet(viewsets.ModelViewSet):
                 continue
                 
             selected_option = ans_data.get('selected_option')
+            selected_answer_id = ans_data.get('selected_answer_id')
             text_response = ans_data.get('text_response')
             is_correct = False
             feedback = ""
@@ -87,17 +95,15 @@ class QuizViewSet(viewsets.ModelViewSet):
                 # Find correct answer in DB
                 correct_answer_obj = question.answers.filter(is_correct=True).first()
                 if correct_answer_obj:
-                     # Check if selected option matches content or metadata
-                     # Since we store "A. Option Text", matching might be tricky if frontend sends just "A" or the full text.
-                     # Let's assume frontend sends the full text found in Answer.content for now, or we implement ID matching.
-                     # Ideally we should expose Answer IDs and frontend submits Answer ID.
-                     
-                     # Check if selected_option matches content directly
-                     if selected_option == correct_answer_obj.content:
-                         is_correct = True
-                     # Or check if startswith (careful with partial matches)
-                     elif selected_option and correct_answer_obj.content.startswith(selected_option):
-                         is_correct = True
+                     # Check by ID if provided, otherwise fallback to content matching
+                     if selected_answer_id:
+                         if int(selected_answer_id) == correct_answer_obj.id:
+                             is_correct = True
+                     elif selected_option:
+                         if selected_option == correct_answer_obj.content:
+                             is_correct = True
+                         elif correct_answer_obj.content.startswith(selected_option):
+                             is_correct = True
                          
                      if is_correct:
                          correct_count += 1

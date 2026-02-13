@@ -1,5 +1,17 @@
 from rest_framework import serializers
-from .models import ProgressTracker, TopicMastery
+from .models import ProgressTracker, TopicMastery, StudySession, SpacedRepetitionItem
+
+class StudySessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudySession
+        fields = ['start_time', 'end_time', 'duration_minutes', 'questions_answered', 'correct_count']
+        read_only_fields = fields
+
+class SpacedRepetitionItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpacedRepetitionItem
+        fields = ['topic', 'question_identifier', 'next_review_date', 'interval', 'repetitions']
+        read_only_fields = fields
 
 class ProgressTrackerSerializer(serializers.ModelSerializer):
     class Meta:

@@ -16,7 +16,8 @@ import {
     ChevronRight,
     Search,
     Bell,
-    Settings as SettingsIcon
+    Settings as SettingsIcon,
+    Trophy
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -50,9 +51,11 @@ export default function Sidebar({
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'AI Practice', href: '/practice', icon: BrainCircuit },
         { name: 'Mock Exams', href: '/dashboard/exams', icon: BookOpen },
+        { name: 'Quizzes', href: '/dashboard/quiz', icon: BookOpen },
         { name: 'Study Plan', href: '/dashboard/study-plan', icon: GraduationCap },
         { name: 'AI Tutor', href: '/dashboard/ai-tutor', icon: BrainCircuit }, // Using BrainCircuit as placeholder if robot icon not available, or import specific icon
         { name: 'Analytics', href: '/dashboard/analytics', icon: LineChart },
+        { name: 'Achievements', href: '/dashboard/achievements', icon: Trophy },
         { name: 'Profile', href: '/dashboard/profile', icon: User },
     ]
 

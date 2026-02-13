@@ -18,6 +18,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+media/
 
 # Django
 *.log

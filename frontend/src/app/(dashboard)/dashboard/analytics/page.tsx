@@ -13,6 +13,9 @@ import WeakAreasList from '@/components/analytics/WeakAreasList';
 import ProgressChart from '@/components/analytics/ProgressChart';
 import StudyTimeTracker from '@/components/analytics/StudyTimeTracker';
 import PerformanceTimeline from '@/components/analytics/PerformanceTimeline';
+import PredictedScoreCard from '@/components/analytics/PredictedScoreCard';
+import OptimalStudyTimeCard from '@/components/analytics/OptimalStudyTimeCard';
+import SpacedRepetitionQueue from '@/components/analytics/SpacedRepetitionQueue';
 
 export default function AnalyticsDashboard() {
     const { data: overview, isLoading: overviewLoading } = useQuery({
@@ -35,7 +38,22 @@ export default function AnalyticsDashboard() {
         queryFn: analyticsApi.getPerformanceHistory
     });
 
-    if (overviewLoading || masteryLoading || weakAreasLoading || historyLoading) {
+    const { data: predicted, isLoading: predictedLoading } = useQuery({
+        queryKey: ['analytics-predicted'],
+        queryFn: analyticsApi.getPredictedScore
+    });
+
+    const { data: patterns, isLoading: patternsLoading } = useQuery({
+        queryKey: ['analytics-patterns'],
+        queryFn: analyticsApi.getStudyPatterns
+    });
+
+    const { data: studyQueue, isLoading: queueLoading } = useQuery({
+        queryKey: ['analytics-queue'],
+        queryFn: analyticsApi.getSpacedRepetitionQueue
+    });
+
+    if (overviewLoading || masteryLoading || weakAreasLoading || historyLoading || predictedLoading || patternsLoading || queueLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -104,6 +122,9 @@ export default function AnalyticsDashboard() {
             <div className="grid gap-4 lg:grid-cols-7">
                 <div className="lg:col-span-4">
                     {mastery && <TopicMasteryCard data={mastery} />}
+                    <div className="grid gap-4">
+                        {studyQueue && <SpacedRepetitionQueue items={studyQueue} />}
+                    </div>
                 </div>
                 <div className="lg:col-span-3">
                     {weakAreas && <WeakAreasList data={weakAreas} />}
@@ -121,6 +142,10 @@ export default function AnalyticsDashboard() {
 
             <div className="grid gap-4">
                 {history && <PerformanceTimeline data={history} />}
+            </div>
+
+            <div className="grid gap-4">
+                {studyQueue && <SpacedRepetitionQueue items={studyQueue} />}
             </div>
         </div>
     );

@@ -49,6 +49,7 @@ class QuizGenerationSerializer(serializers.Serializer):
 class AnswerSubmissionSerializer(serializers.Serializer):
     question_id = serializers.IntegerField(required=True)
     selected_option = serializers.CharField(required=False, allow_blank=True)
+    selected_answer_id = serializers.IntegerField(required=False, allow_null=True)
     text_response = serializers.CharField(required=False, allow_blank=True)
 
 class QuizSubmissionSerializer(serializers.Serializer):

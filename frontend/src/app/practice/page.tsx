@@ -7,17 +7,19 @@ import { Question } from '../../lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import DashboardLayout from '@/components/dashboard/DashboardLayout'
 
+import { Quiz } from '@/lib/api/quiz'
+
 export default function PracticePage() {
-    const [questions, setQuestions] = useState<Question[]>([])
+    const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
     const [view, setView] = useState<'SETUP' | 'SESSION'>('SETUP')
 
-    const handleQuestionsGenerated = (generatedQuestions: Question[]) => {
-        setQuestions(generatedQuestions)
+    const handleQuizGenerated = (quiz: Quiz) => {
+        setCurrentQuiz(quiz)
         setView('SESSION')
     }
 
     const handleExit = () => {
-        setQuestions([])
+        setCurrentQuiz(null)
         setView('SETUP')
     }
 
@@ -42,11 +44,11 @@ export default function PracticePage() {
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.3 }}
                             >
-                                <AIGenerationForm onQuestionsGenerated={handleQuestionsGenerated} />
+                                <AIGenerationForm onQuizGenerated={handleQuizGenerated} />
                             </motion.div>
                         )}
 
-                        {view === 'SESSION' && (
+                        {view === 'SESSION' && currentQuiz && (
                             <motion.div
                                 key="session"
                                 initial={{ opacity: 0, scale: 0.95 }}
@@ -54,7 +56,11 @@ export default function PracticePage() {
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ duration: 0.4 }}
                             >
-                                <AIQuizSession questions={questions} onExit={handleExit} />
+                                <AIQuizSession
+                                    questions={currentQuiz.questions || []}
+                                    quiz={currentQuiz}
+                                    onExit={handleExit}
+                                />
                             </motion.div>
                         )}
                     </AnimatePresence>

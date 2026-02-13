@@ -16,6 +16,7 @@ import { chatService, ChatMessage } from '@/services/chatService';
 import { Wifi, WifiOff, AlertCircle, Settings } from 'lucide-react';
 import { ChatSettingsModal } from './ChatSettingsModal';
 import { DocumentSelector } from './DocumentSelector';
+import { VoiceMode } from './VoiceMode';
 
 interface ChatInterfaceProps {
     sessionId: string;
@@ -27,6 +28,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
     const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
 
     const {
         messages,
@@ -358,6 +360,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
             {/* Input area */}
             <ChatInput
                 onSend={handleSendMessage}
+                onVoiceMode={() => setIsVoiceModeOpen(true)}
                 disabled={!isConnected || isTyping}
                 placeholder={
                     isConnected
@@ -374,6 +377,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
                     session={sessions.find(s => s.id === sessionId)!}
                 />
             )}
+
+            {/* Voice Mode Overlay */}
+            <VoiceMode
+                isOpen={isVoiceModeOpen}
+                onClose={() => setIsVoiceModeOpen(false)}
+                onSend={(msg) => handleSendMessage(msg)}
+                currentMessage={messages.filter(m => m.role === 'assistant').slice(-1)[0]?.content || ''}
+            />
         </div>
     );
 };

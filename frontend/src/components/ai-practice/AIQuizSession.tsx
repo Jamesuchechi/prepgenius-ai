@@ -5,13 +5,15 @@ import { QuestionService } from '../../services/questions'
 import QuestionCard from './QuestionCard'
 import { Button } from '../ui/Button'
 import { Trophy, ArrowRight, RotateCcw } from 'lucide-react'
+import { quizApi, Quiz } from '../../lib/api/quiz'
 
 interface AIQuizSessionProps {
     questions: Question[]
+    quiz: Quiz
     onExit: () => void
 }
 
-export default function AIQuizSession({ questions, onExit }: AIQuizSessionProps) {
+export default function AIQuizSession({ questions, quiz, onExit }: AIQuizSessionProps) {
     const [index, setIndex] = useState(0)
     // Flexible answer state: could be ID (number), text (string), ordering (string[]) etc.
     // Storing as { [questionId]: any }
@@ -36,16 +38,6 @@ export default function AIQuizSession({ questions, onExit }: AIQuizSessionProps)
 
         setLoading(true)
         try {
-            // For MCQ, answer is the ID. For others it might be text or structured data.
-            // API expectation needs to be handled.
-            // Currently API expects `selected_answer_id` or `text_answer`.
-            // We might need to update API call to support other formats or serialize them.
-            // Assuming backend can handle `text_answer` for these new formats or we overload it.
-
-            // For now, let's assume we pass:
-            // MCQ -> selected_answer_id
-            // Theory/FillBlank/TrueFalse -> text_answer
-            // Matching/Ordering -> text_answer (JSON stringified)
 
             let selectedId: number | undefined = undefined
             let textAnswer: string | undefined = undefined
@@ -69,9 +61,31 @@ export default function AIQuizSession({ questions, onExit }: AIQuizSessionProps)
         }
     }
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (isLast) {
-            setFinished(true)
+            setLoading(true)
+            try {
+                // Prepare submission
+                const submission = {
+                    answers: Object.entries(answers).map(([qId, val]) => {
+                        const q = questions.find(question => question.id === Number(qId))
+                        return {
+                            question_id: Number(qId),
+                            selected_answer_id: q?.question_type === 'MCQ' ? Number(val) : undefined,
+                            text_response: q?.question_type !== 'MCQ' ? String(val) : undefined
+                        }
+                    })
+                }
+
+                await quizApi.submit(quiz.id, submission)
+                setFinished(true)
+            } catch (err) {
+                console.error("Failed to submit quiz:", err)
+                alert("Failed to submit quiz results. Your score might not be saved.")
+                setFinished(true) // Still show results to user
+            } finally {
+                setLoading(false)
+            }
         } else {
             setIndex(i => i + 1)
         }

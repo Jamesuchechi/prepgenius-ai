@@ -1,15 +1,17 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent, useEffect } from 'react';
-import { Send, Image as ImageIcon, X, Mic, MicOff, Loader2 } from 'lucide-react';
+import { Send, Image as ImageIcon, X, Mic, MicOff, Loader2, Headphones } from 'lucide-react';
 import api from '@/lib/axios';
 
 interface ChatInputProps {
     onSend: (message: string, imageData?: string) => void;
+    onVoiceMode?: () => void;
     disabled?: boolean;
     placeholder?: string;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
     onSend,
+    onVoiceMode,
     disabled = false,
     placeholder = 'Type your message...',
 }) => {
@@ -300,6 +302,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     onChange={handleImageChange}
                     className="hidden"
                 />
+
+                {/* Voice Mode Button */}
+                {onVoiceMode && (
+                    <button
+                        onClick={onVoiceMode}
+                        disabled={disabled}
+                        className="flex-shrink-0 w-12 h-12 rounded-full border border-gray-200 text-gray-400 hover:text-purple-500 hover:border-purple-200 flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Enter Voice Mode"
+                    >
+                        <Headphones size={20} />
+                    </button>
+                )}
 
                 {/* Voice Input Button */}
                 <button

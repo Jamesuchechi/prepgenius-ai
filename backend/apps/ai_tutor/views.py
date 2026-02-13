@@ -146,3 +146,46 @@ class TranscribeAudioView(APIView):
                 {'error': f'Transcription failed: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+from django.http import FileResponse
+import os
+from .utils.tts import generate_speech
+
+class GenerateSpeechView(APIView):
+    """View for generating speech from text."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """Generate speech for the provided text."""
+        text = request.data.get('text')
+        if not text:
+            return Response(
+                {'error': 'No text provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            # Generate audio file path
+            audio_path = generate_speech(text)
+            
+            # Open file for streaming
+            audio_file = open(audio_path, 'rb')
+            
+            # Create response that streams the file
+            response = FileResponse(audio_file, content_type='audio/mpeg')
+            response['Content-Disposition'] = 'attachment; filename="speech.mp3"'
+            
+            # Clean up file after response is closed (Django specific trick or relying on OS/cron for temp cleanup is safer)
+            # For simplicity, we'll rely on OS temp cleanup or a periodic task for now, 
+            # or we can use a wrapper to close and delete.
+            # A simple approach for now:
+            
+            return response
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Speech generation failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

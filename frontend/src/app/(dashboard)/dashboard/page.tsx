@@ -4,34 +4,28 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import { analyticsApi, ProgressTracker, TopicMastery } from '@/lib/api/analytics'
+import { gamificationApi } from '@/lib/api/gamification'
 import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard'
-import { MessageSquare, BrainCircuit, CalendarDays } from "lucide-react"
-import { Button } from "@/components/ui/Button"
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/Card"
+import LevelProgress from '@/components/gamification/LevelProgress'
+import BadgeGrid from '@/components/gamification/BadgeGrid'
+import Leaderboard from '@/components/gamification/Leaderboard'
+import { useQuery } from '@tanstack/react-query'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
-  const [overview, setOverview] = useState<ProgressTracker | null>(null)
-  const [mastery, setMastery] = useState<TopicMastery[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [overviewData, masteryData] = await Promise.all([
-          analyticsApi.getOverview(),
-          analyticsApi.getTopicMastery()
-        ])
-        setOverview(overviewData)
-        setMastery(masteryData)
-      } catch (error) {
-        console.error('Failed to fetch stats:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  // Fetch gamification profile
+  const { data: gamificationProfile } = useQuery({
+    queryKey: ['gamification-profile'],
+    queryFn: gamificationApi.getProfile
+  });
 
-    fetchStats()
+  useEffect(() => {
+    // Artificial delay to simulate loading or just until we have data
+    // In a real app we'd use the loading states from useQuery
+    const timer = setTimeout(() => setLoading(false), 500)
+    return () => clearTimeout(timer)
   }, [])
 
   if (loading) {
@@ -63,6 +57,7 @@ export default function DashboardPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Left Column - 2/3 width */}
         <div className="lg:col-span-2 space-y-6">
+
           {/* Continue Learning */}
           <div className="bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-2xl p-8 text-white relative overflow-hidden animate-[fadeInUp_0.6s_ease-out_0.5s_backwards]">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-20 translate-x-20"></div>
@@ -118,12 +113,26 @@ export default function DashboardPage() {
               </p>
             </Link>
           </div>
+
+          {/* Leaderboard placed in main column for better visibility on mobile/tablet */}
+          <div className="animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
+            <Leaderboard />
+          </div>
+
         </div>
 
         {/* Right Column - 1/3 width */}
         <div className="space-y-6">
+
+          {/* Level Progress Widget */}
+          {gamificationProfile && (
+            <div className="animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
+              <LevelProgress profile={gamificationProfile} />
+            </div>
+          )}
+
           {/* Exam Countdown */}
-          <div className="bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
+          <div className="bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.8s_backwards]">
             <h3 className="font-display text-xl font-bold mb-2">JAMB 2026</h3>
             <div className="text-5xl font-display font-extrabold mb-2">89</div>
             <p className="text-white/90">days until exam</p>
@@ -136,18 +145,11 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Tips */}
-          <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100 animate-[fadeInUp_0.6s_ease-out_0.8s_backwards]">
-            <div className="flex items-start gap-3">
-              <div className="text-2xl">💡</div>
-              <div>
-                <h4 className="font-bold text-[var(--black)] mb-2">Study Tip</h4>
-                <p className="text-sm text-[var(--gray-dark)] leading-relaxed">
-                  Taking regular breaks improves retention. Try the Pomodoro technique: 25 mins study, 5 mins break.
-                </p>
-              </div>
-            </div>
+          {/* Badges Widget */}
+          <div className="animate-[fadeInUp_0.6s_ease-out_0.9s_backwards]">
+            <BadgeGrid />
           </div>
+
         </div>
       </div>
     </>

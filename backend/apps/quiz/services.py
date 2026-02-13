@@ -79,22 +79,23 @@ class QuizService:
 
         # Save to DB
         with transaction.atomic():
-            # Create Quiz
             # Resolve Subject if None
             final_subject = subject
             if not final_subject:
-                # Try to get or create General subject
-                 from apps.content.models import Subject
-                 try:
-                     final_subject = Subject.objects.get(name="General Knowledge")
-                 except Subject.DoesNotExist:
-                     # Create if missing (though unlikely in prod without migrations)
-                     final_subject = Subject.objects.create(name="General Knowledge", category="STEM", description="General")
+                from apps.content.models import Subject
+                final_subject, _ = Subject.objects.get_or_create(
+                    name="General Knowledge",
+                    defaults={
+                        'category': 'STEM',
+                        'description': 'General context for AI generated quizzes'
+                    }
+                )
 
+            # Create Quiz
             quiz = Quiz.objects.create(
                 created_by=user,
                 title=f"Quiz: {topic} ({difficulty})",
-                subject=final_subject if hasattr(final_subject, 'id') else None,
+                subject=final_subject,
                 topic=topic,
                 difficulty=difficulty,
                 exam_type=exam_type_obj, 
@@ -104,8 +105,7 @@ class QuizService:
             for q_data in questions_data:
                 # Create Question
                 question = Question.objects.create(
-                    subject=final_subject if hasattr(final_subject, 'id') else None,
-                    
+                    subject=final_subject,
                     content=q_data.get("question") or q_data.get("content"),
                     question_type=question_type,
                     difficulty=difficulty,
@@ -116,22 +116,27 @@ class QuizService:
                 options = q_data.get("options", [])
                 correct_ans = q_data.get("correct_answer") or q_data.get("answer")
                 
-                # Handle MCQ
                 if question_type == "MCQ":
-                    # If options is list: ["A. Option", "B. Option"] or just ["Option 1", "Option 2"]
-                    # We need standardizing.
-                    pass # Simplified logic for now
-                    
                     for opt in options:
+                        if not opt: continue
+                        
                         is_correct = False
-                        # Check if this option matches correct answer
-                        # AI usually returns "A" or "Option 1"
-                        if correct_ans and (str(correct_ans) in str(opt) or str(opt).startswith(str(correct_ans))):
+                        # Robust matching for correct answer
+                        # AI returns "Option Text" or "A. Option Text" or just "A"
+                        str_opt = str(opt).strip()
+                        str_correct = str(correct_ans).strip()
+                        
+                        if str_correct == str_opt:
+                            is_correct = True
+                        elif str_opt.lower().startswith(str_correct.lower()):
+                            # Handle "A. Text" match "A"
+                            is_correct = True
+                        elif str_correct.lower().startswith(str_opt.lower()) and len(str_opt) > 1:
                             is_correct = True
                         
                         Answer.objects.create(
                             question=question,
-                            content=opt,
+                            content=str_opt,
                             is_correct=is_correct,
                             explanation=q_data.get("explanation", "") if is_correct else ""
                         )
