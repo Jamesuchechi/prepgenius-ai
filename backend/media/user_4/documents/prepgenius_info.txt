@@ -1,0 +1,1 @@
+PrepGenius is an AI tutor designed for Nigerian students. It covers JAMB, WAEC, and NECO exams.

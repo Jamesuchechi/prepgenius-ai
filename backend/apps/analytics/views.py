@@ -1,68 +1,57 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import ProgressTracker, TopicMastery, StudySession
-from .serializers import ProgressTrackerSerializer, TopicMasterySerializer, StudySessionSerializer
-from django.utils import timezone
-from django.shortcuts import get_object_or_404
+from .models import ProgressTracker, TopicMastery
+from .serializers import ProgressTrackerSerializer, TopicMasterySerializer
+from apps.quiz.models import QuizAttempt
+from apps.quiz.serializers import QuizAttemptSerializer
 
 class AnalyticsViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=False, methods=['get'])
-    def overview(self, request):
-        tracker, created = ProgressTracker.objects.get_or_create(user=request.user)
-        # Ensure streak is up to date
-        tracker.update_streak()
-        serializer = ProgressTrackerSerializer(tracker)
+    def progress(self, request):
+        """
+        Get overall user progress.
+        """
+        progress, _ = ProgressTracker.objects.get_or_create(user=request.user)
+        serializer = ProgressTrackerSerializer(progress)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='topic-mastery')
-    def topic_mastery(self, request):
-        masteries = TopicMastery.objects.filter(user=request.user).order_by('-mastery_percentage')
-        serializer = TopicMasterySerializer(masteries, many=True)
+    @action(detail=False, methods=['get'])
+    def mastery(self, request):
+        """
+        Get topic mastery scores.
+        """
+        mastery_qs = TopicMastery.objects.filter(user=request.user).order_by('-mastery_score')
+        serializer = TopicMasterySerializer(mastery_qs, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='weak-areas')
-    def weak_areas(self, request):
-        # Weak areas are topics with low mastery (< 50%) but at least some attempts (> 5)
-        # or just sort by lowest mastery
-        weak_areas = TopicMastery.objects.filter(
-            user=request.user, 
-            mastery_percentage__lt=60.0,
-            total_attempts__gt=0
-        ).order_by('mastery_percentage')[:5]
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """
+        Get a summary for the dashboard (streak + top weak/strong topics).
+        """
+        progress, _ = ProgressTracker.objects.get_or_create(user=request.user)
         
-        serializer = TopicMasterySerializer(weak_areas, many=True)
-        return Response(serializer.data)
+        # Weakest topics (bottom 3 less than 70%)
+        weak_qs = TopicMastery.objects.filter(user=request.user, mastery_score__lt=70).order_by('mastery_score')[:3]
         
-    @action(detail=False, methods=['get'], url_path='performance-history')
-    def performance_history(self, request):
-        # For now, return study sessions as history
-        # Ideally this would be aggregated daily performance
-        sessions = StudySession.objects.filter(user=request.user).order_by('-start_time')[:10]
-        serializer = StudySessionSerializer(sessions, many=True)
-        return Response(serializer.data)
+        # Strongest topics (top 3 above 70%)
+        strong_qs = TopicMastery.objects.filter(user=request.user, mastery_score__gte=70).order_by('-mastery_score')[:3]
+        
+        return Response({
+            "streak": progress.current_streak,
+            "total_questions": progress.total_quizzes_taken,
+            "weak_topics": TopicMasterySerializer(weak_qs, many=True).data,
+            "strong_topics": TopicMasterySerializer(strong_qs, many=True).data,
+        })
 
-    @action(detail=False, methods=['get'], url_path='study-sessions')
-    def study_sessions(self, request):
-        sessions = StudySession.objects.filter(user=request.user).order_by('-start_time')
-        page = self.paginate_queryset(sessions) # ViewSet needs pagination mixin or manual
-        # Simple list for now
-        serializer = StudySessionSerializer(sessions[:20], many=True)
+    @action(detail=False, methods=['get'])
+    def history(self, request):
+        """
+        Get recent quiz attempts history.
+        """
+        attempts = QuizAttempt.objects.filter(user=request.user).order_by('-completed_at')[:10]
+        serializer = QuizAttemptSerializer(attempts, many=True)
         return Response(serializer.data)
-
-    @action(detail=False, methods=['post'], url_path='log-session')
-    def log_session(self, request):
-        serializer = StudySessionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)
-            
-            # Update total study time
-            tracker, _ = ProgressTracker.objects.get_or_create(user=request.user)
-            tracker.total_study_time_seconds += serializer.validated_data.get('duration_seconds', 0)
-            tracker.save()
-            
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

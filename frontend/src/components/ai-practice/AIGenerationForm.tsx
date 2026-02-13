@@ -3,10 +3,10 @@ import { motion } from 'framer-motion'
 import { getExamTypes, ExamType, Topic } from '../../lib/api'
 import { QuestionService, GenerateQuestionsPayload } from '../../services/questions'
 import { ContentService } from '../../services/content'
-import Button from '../ui/Button'
+import { Button } from '../ui/Button'
 import { BrainCircuit, BookOpen, Layers, Target, Wand2, Calculator, Search, Loader2 } from 'lucide-react'
 import clsx from 'clsx'
-import { toast } from 'sonner' // Assuming sonner is used or just alert
+import { toast } from 'sonner'
 
 interface AIGenerationFormProps {
     onQuestionsGenerated: (questions: any[]) => void
@@ -57,11 +57,11 @@ export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationF
                 // All topics for this query belong to the same subject ID returned by backend
                 setSelectedSubjectId(String(fetchedTopics[0].subject))
             } else {
-                alert("No topics found or generated for this subject. Try a different name.")
+                toast.error("No topics found or generated for this subject. Try a different name.")
             }
         } catch (err) {
             console.error("Failed to load topics", err)
-            alert("Failed to load topics. Please try again.")
+            toast.error("Failed to load topics. Please try again.")
         } finally {
             setTopicsLoading(false)
         }
@@ -80,10 +80,11 @@ export default function AIGenerationForm({ onQuestionsGenerated }: AIGenerationF
                 count
             }
             const questions = await QuestionService.generate(payload)
+            toast.success(`${questions.length} questions generated successfully! ✨`)
             onQuestionsGenerated(questions)
         } catch (err) {
             console.error("Failed to generate questions", err)
-            alert("AI Generation failed. Please try again.")
+            toast.error("AI Generation failed. Please try again.")
         } finally {
             setLoading(false)
         }

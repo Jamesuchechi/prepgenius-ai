@@ -1,13 +1,12 @@
-import os
-import json
 import logging
 from django.conf import settings
-from groq import Groq
+import json
 
 logger = logging.getLogger(__name__)
 
 class GroqClient:
     def __init__(self):
+        from groq import Groq
         self.api_key = settings.GROQ_API_KEY
         if not self.api_key:
             logger.warning("GROQ_API_KEY is not set.")

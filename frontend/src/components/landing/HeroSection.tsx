@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 
 export default function HeroSection() {
   return (
@@ -16,7 +16,7 @@ export default function HeroSection() {
           <div className="inline-block bg-gradient-to-br from-[rgba(10,77,140,0.1)] to-[rgba(10,77,140,0.05)] text-[var(--blue)] px-6 py-2 rounded-full text-sm font-semibold mb-6 border border-[rgba(10,77,140,0.2)]">
             🚀 Trusted by 10,000+ Students
           </div>
-          
+
           <h1 className="font-display text-[5rem] font-extrabold leading-[1.03] mb-6 text-[var(--black)] max-md:text-5xl">
             Master Your Exams with{' '}
             <span className="bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] bg-clip-text text-transparent">
@@ -74,10 +74,10 @@ export default function HeroSection() {
               <p className="text-[var(--black)] mb-4">
                 If 3x - 2y = 10 and x + y = 5, find the value of x.
               </p>
-              
+
               {/* Options */}
               {['A', 'B', 'C', 'D'].map((letter, idx) => (
-                <div 
+                <div
                   key={letter}
                   className="bg-white p-3 rounded-lg mb-2 flex items-center gap-3 cursor-pointer transition-all duration-300 border-2 border-transparent hover:border-[var(--orange)] hover:translate-x-1"
                 >

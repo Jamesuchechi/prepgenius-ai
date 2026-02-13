@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     "apps.questions",
     "apps.study_plans",
     "apps.subscriptions",
+    "apps.study_tools",
+    "apps.quiz",
 ]
 
 # ============================================================================

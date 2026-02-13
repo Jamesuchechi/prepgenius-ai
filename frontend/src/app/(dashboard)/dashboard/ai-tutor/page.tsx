@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { ChatHistory } from '@/components/chat/ChatHistory';
+import { StudySidebar } from '@/components/study/StudySidebar';
 import { chatService, ChatSession } from '@/services/chatService';
 import { useChatStore } from '@/store/chatStore';
 import { Loader2, Menu, X } from 'lucide-react';
@@ -17,6 +18,7 @@ export default function AITutorPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarTab, setSidebarTab] = useState<'chat' | 'study'>('chat');
 
     const {
         sessions,
@@ -159,7 +161,6 @@ export default function AITutorPage() {
                 />
             )}
 
-            {/* Sidebar */}
             <div
                 className={`
                     fixed md:relative
@@ -168,16 +169,46 @@ export default function AITutorPage() {
                     ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                     z-50 md:z-auto
                     ${sidebarOpen ? 'block' : 'hidden md:block'}
+                    flex flex-col bg-gray-50 border-r border-gray-100
                 `}
             >
-                <ChatHistory
-                    sessions={sessions}
-                    activeSessionId={activeSessionId}
-                    onSessionSelect={handleSessionSelect}
-                    onSessionDelete={handleSessionDelete}
-                    onNewChat={handleNewChat}
-                    loading={loading}
-                />
+                {/* Sidebar Tabs */}
+                <div className="flex border-b border-gray-200 bg-white">
+                    <button
+                        onClick={() => setSidebarTab('chat')}
+                        className={`flex-1 py-3 text-sm font-medium border-b-2 ${sidebarTab === 'chat'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        Chats
+                    </button>
+                    <button
+                        onClick={() => setSidebarTab('study')}
+                        className={`flex-1 py-3 text-sm font-medium border-b-2 ${sidebarTab === 'study'
+                            ? 'border-indigo-600 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        Files
+                    </button>
+                </div>
+
+                {/* Sidebar Content */}
+                <div className="flex-1 overflow-hidden">
+                    {sidebarTab === 'chat' ? (
+                        <ChatHistory
+                            sessions={sessions}
+                            activeSessionId={activeSessionId}
+                            onSessionSelect={handleSessionSelect}
+                            onSessionDelete={handleSessionDelete}
+                            onNewChat={handleNewChat}
+                            loading={loading}
+                        />
+                    ) : (
+                        <StudySidebar />
+                    )}
+                </div>
             </div>
 
             {/* Main Chat Area */}

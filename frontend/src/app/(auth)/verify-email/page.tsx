@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 // import { useAuthStore } from '@/store/authStore' // Assuming this exists or mocking it
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 
 // Mocking useAuthStore since I cannot verify its existence and content easily right now
 // and to ensure the file is valid.

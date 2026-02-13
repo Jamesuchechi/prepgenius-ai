@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode, useEffect } from 'react'
+import { Toaster } from 'sonner'
 
 export function LayoutClient({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -49,5 +50,10 @@ export function LayoutClient({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  return <>{children}</>
+  return (
+    <>
+      {children}
+      <Toaster position="top-right" richColors closeButton />
+    </>
+  )
 }

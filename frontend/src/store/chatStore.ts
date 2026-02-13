@@ -9,6 +9,7 @@ interface ChatStore {
     // State
     sessions: ChatSession[];
     activeSessionId: string | null;
+    activeDocumentId: string | null;
     messages: ChatMessage[];
     isTyping: boolean;
     activeStreamingId: string | null;
@@ -21,6 +22,7 @@ interface ChatStore {
     removeSession: (sessionId: string) => void;
     updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
     setActiveSessionId: (sessionId: string | null) => void;
+    setActiveDocumentId: (documentId: string | null) => void;
     addMessage: (message: ChatMessage) => void;
     appendMessageContent: (messageId: string, content: string) => void;
     replaceMessageId: (oldId: string, newId: string, updates?: Partial<ChatMessage>) => void;
@@ -37,6 +39,7 @@ export const useChatStore = create<ChatStore>((set) => ({
     // Initial state
     sessions: [],
     activeSessionId: null,
+    activeDocumentId: null,
     messages: [],
     isTyping: false,
     activeStreamingId: null,
@@ -63,6 +66,8 @@ export const useChatStore = create<ChatStore>((set) => ({
     })),
 
     setActiveSessionId: (sessionId) => set({ activeSessionId: sessionId }),
+
+    setActiveDocumentId: (documentId) => set({ activeDocumentId: documentId }),
 
     addMessage: (message) => set((state) => {
         if (state.messages.some(m => m.id === message.id)) {
@@ -109,6 +114,7 @@ export const useChatStore = create<ChatStore>((set) => ({
     reset: () => set({
         sessions: [],
         activeSessionId: null,
+        activeDocumentId: null,
         messages: [],
         isTyping: false,
         activeStreamingId: null,

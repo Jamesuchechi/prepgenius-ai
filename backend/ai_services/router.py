@@ -72,6 +72,7 @@ class AIRouter:
         error_msg = f"All AI providers failed to generate topics. Errors: {'; '.join(errors)}"
         logger.error(error_msg)
         raise Exception(error_msg)
+
     def generate_study_plan(self, exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days):
         """Generate a study plan using AI providers."""
         errors = []
@@ -131,6 +132,14 @@ Return a JSON response with:
 
                 logger.info(f"Attempting chat response generation with {name}...")
                 
+                # Check for active document context
+                document_context = ""
+                active_document_id = (context or {}).get('active_document_id')
+                
+                if active_document_id:
+                    # Use RAG to get relevant context
+                    document_context = self._get_document_context(active_document_id, message)
+
                 # Build the prompt with conversation history
                 if conversation_history:
                     # Format history for context
@@ -138,9 +147,9 @@ Return a JSON response with:
                         f"{'Student' if msg['role'] == 'user' else 'Tutor'}: {msg['content']}"
                         for msg in conversation_history[-5:]  # Last 5 messages
                     ])
-                    full_message = f"{history_context}\nStudent: {message}\nTutor:"
+                    full_message = f"{document_context}\n{history_context}\nStudent: {message}\nTutor:"
                 else:
-                    full_message = message
+                    full_message = f"{document_context}\nStudent: {message}\nTutor:"
                 
                 # Use the base generate_response method
                 if hasattr(client, 'generate_response'):
@@ -184,15 +193,23 @@ Return a JSON response with:
 
                 logger.info(f"Attempting streaming chat response generation with {name}...")
                 
-                # Build the prompt with conversation history (same as non-streaming)
+                # Check for active document context
+                document_context = ""
+                active_document_id = (context or {}).get('active_document_id')
+                
+                if active_document_id:
+                     # Use RAG to get relevant context
+                    document_context = self._get_document_context(active_document_id, message)
+
+                # Build the prompt with conversation history
                 if conversation_history:
                     history_context = "\n".join([
                         f"{'Student' if msg['role'] == 'user' else 'Tutor'}: {msg['content']}"
                         for msg in conversation_history[-5:]
                     ])
-                    full_message = f"{history_context}\nStudent: {message}\nTutor:"
+                    full_message = f"{document_context}\n{history_context}\nStudent: {message}\nTutor:"
                 else:
-                    full_message = message
+                    full_message = f"{document_context}\nStudent: {message}\nTutor:"
                 
                 # Check if client supports streaming
                 if hasattr(client, 'stream_response'):
@@ -232,3 +249,95 @@ Return a JSON response with:
         # Don't raise exception here as it breaks the generator pattern easily, 
         # or yield an error message? Better to raise so caller knows.
         raise Exception(error_msg)
+
+    def generate_embedding(self, text):
+        """
+        Generate vector embedding for text using available clients.
+        Prioritizes clients that support embedding (Cohere, Mistral).
+        """
+        errors = []
+        for name, client in self.clients:
+            try:
+                if hasattr(client, 'client') and client.client is None:
+                    continue
+                
+                # Check if client supports embedding
+                if not hasattr(client, 'generate_embedding'):
+                    continue
+
+                logger.info(f"Attempting embedding generation with {name}...")
+                return client.generate_embedding(text)
+                
+            except Exception as e:
+                logger.warning(f"{name} failed to generate embedding: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
+
+        error_msg = f"All AI providers failed to generate embedding. Errors: {'; '.join(errors)}"
+        logger.error(error_msg)
+        raise Exception(error_msg)
+
+    def _get_document_context(self, document_id, query, k=3):
+        """
+        Retrieves relevant document chunks using vector similarity.
+        """
+        try:
+            from apps.study_tools.models import Document, DocumentChunk
+            import numpy as np
+
+            # Get document and check existence
+            try:
+                doc = Document.objects.get(id=document_id)
+            except Document.DoesNotExist:
+                return ""
+
+            # If no chunks (old document or failed processing), fallback to content field if small enough
+            if not doc.chunks.exists():
+                logger.warning(f"Document {document_id} has no chunks. Returning first 5000 chars.")
+                return f"\n\nCONTEXT FROM DOCUMENT '{doc.title}':\n{doc.content[:5000] if doc.content else ''}\n\nINSTRUCTION: Answer based on the context above."
+
+            # Generate query embedding
+            query_embedding = self.generate_embedding(query)
+            
+            # Retrieve all chunks for the document
+            # Note: For production with millions of rows, use pgvector. 
+            # For <10k chunks per user, in-memory numpy is fast enough.
+            chunks = list(doc.chunks.all().values('id', 'content', 'embedding', 'chunk_index'))
+            
+            if not chunks:
+                 return ""
+
+            # Calculate cosine similarity
+            # Sim(A, B) = dot(A, B) / (norm(A) * norm(B))
+            
+            query_vec = np.array(query_embedding)
+            query_norm = np.linalg.norm(query_vec)
+            
+            scored_chunks = []
+            for chunk in chunks:
+                chunk_vec = np.array(chunk['embedding'])
+                chunk_norm = np.linalg.norm(chunk_vec)
+                
+                if chunk_norm == 0 or query_norm == 0:
+                    similarity = 0
+                else:
+                    similarity = np.dot(query_vec, chunk_vec) / (query_norm * chunk_norm)
+                
+                scored_chunks.append((similarity, chunk))
+            
+            # Sort by similarity desc
+            scored_chunks.sort(key=lambda x: x[0], reverse=True)
+            
+            # Take top K
+            top_chunks = scored_chunks[:k]
+            
+            # Format context
+            context_text = "\n...\n".join([c[1]['content'] for c in top_chunks])
+            
+            logger.info(f"Retrieved {len(top_chunks)} chunks for document {document_id}")
+            
+            return f"\n\nCONTEXT FROM DOCUMENT '{doc.title}':\n{context_text}\n\nINSTRUCTION: Answer based on the context above."
+
+        except Exception as e:
+            logger.error(f"Error retrieving document context: {e}")
+            return ""

@@ -1,6 +1,6 @@
 import React from 'react'
 import SectionHeader from '@/components/ui/SectionHeader'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 
 const plans = [
 	{
@@ -44,14 +44,14 @@ const plans = [
 
 export default function PricingSection() {
 	return (
-			<section id="pricing" className="py-[100px] px-8 bg-white fade-in-section">
-				<SectionHeader
-					badge="💰 Pricing"
-					title="Affordable Plans for Every Student"
-					description="Choose the plan that fits your needs and budget. Cancel anytime."
-				/>
+		<section id="pricing" className="py-[100px] px-8 bg-white fade-in-section">
+			<SectionHeader
+				badge="💰 Pricing"
+				title="Affordable Plans for Every Student"
+				description="Choose the plan that fits your needs and budget. Cancel anytime."
+			/>
 
-				<div className="max-w-[1200px] mx-auto grid md:grid-cols-3 gap-8">
+			<div className="max-w-[1200px] mx-auto grid md:grid-cols-3 gap-8">
 				{plans.map((plan) => (
 					<div
 						key={plan.id}
@@ -69,7 +69,7 @@ export default function PricingSection() {
 						</div>
 
 						<div className="price mb-6">
-					<span className="price-amount font-display text-[3rem] font-extrabold text-[var(--black)]">{plan.price}</span>
+							<span className="price-amount font-display text-[3rem] font-extrabold text-[var(--black)]">{plan.price}</span>
 						</div>
 
 						<ul className="features-list mb-6">

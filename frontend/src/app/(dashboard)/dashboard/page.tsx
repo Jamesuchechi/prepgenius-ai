@@ -4,6 +4,10 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/authStore'
 import { analyticsApi, ProgressTracker, TopicMastery } from '@/lib/api/analytics'
+import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard'
+import { MessageSquare, BrainCircuit, CalendarDays } from "lucide-react"
+import { Button } from "@/components/ui/Button"
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/Card"
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
@@ -50,59 +54,9 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
-        {/* Total Questions */}
-        <div className="bg-white rounded-2xl p-6 border-2 border-transparent hover:border-[var(--orange)]/20 transition-all duration-300 hover:shadow-lg group animate-[fadeInUp_0.6s_ease-out_0.1s_backwards]">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[var(--orange)]/10 to-[var(--orange)]/5 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
-              📝
-            </div>
-          </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{overview?.total_questions_attempted || 0}</h3>
-          <p className="text-sm text-[var(--gray-dark)]">Questions Solved</p>
-        </div>
-
-        {/* Accuracy Rate */}
-        <div className="bg-white rounded-2xl p-6 border-2 border-transparent hover:border-[var(--blue)]/20 transition-all duration-300 hover:shadow-lg group animate-[fadeInUp_0.6s_ease-out_0.2s_backwards]">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[var(--blue)]/10 to-[var(--blue)]/5 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
-              🎯
-            </div>
-          </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">
-            {overview?.total_questions_attempted
-              ? Math.round((overview.total_correct_answers / overview.total_questions_attempted) * 100)
-              : 0}%
-          </h3>
-          <p className="text-sm text-[var(--gray-dark)]">Accuracy Rate</p>
-        </div>
-
-        {/* Study Hours */}
-        <div className="bg-white rounded-2xl p-6 border-2 border-transparent hover:border-[var(--orange)]/20 transition-all duration-300 hover:shadow-lg group animate-[fadeInUp_0.6s_ease-out_0.3s_backwards]">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
-              ⏰
-            </div>
-          </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">
-            {overview?.total_study_time_seconds
-              ? (overview.total_study_time_seconds / 3600).toFixed(1)
-              : 0}h
-          </h3>
-          <p className="text-sm text-[var(--gray-dark)]">Total Study Time</p>
-        </div>
-
-        {/* Mock Exams */}
-        <div className="bg-white rounded-2xl p-6 border-2 border-transparent hover:border-[var(--blue)]/20 transition-all duration-300 hover:shadow-lg group animate-[fadeInUp_0.6s_ease-out_0.4s_backwards]">
-          <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
-              📊
-            </div>
-          </div>
-          <h3 className="text-3xl font-display font-extrabold text-[var(--black)] mb-1">{overview?.current_streak || 0}</h3>
-          <p className="text-sm text-[var(--gray-dark)]">Day Streak</p>
-        </div>
+      {/* Analytics Dashboard (Replaces old Stats Grid) */}
+      <div className="mb-8">
+        <AnalyticsDashboard />
       </div>
 
       {/* Main Grid */}
@@ -135,36 +89,6 @@ export default function DashboardPage() {
           {/* Quick Actions */}
           <div className="grid md:grid-cols-2 gap-4 animate-[fadeInUp_0.6s_ease-out_0.6s_backwards]">
             <Link
-              href="/practice"
-              className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-[var(--orange)] hover:shadow-lg transition-all duration-300 group"
-            >
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--orange)]/10 to-[var(--orange)]/5 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                🎯
-              </div>
-              <h3 className="font-display text-xl font-bold text-[var(--black)] mb-2">
-                Practice Questions
-              </h3>
-              <p className="text-sm text-[var(--gray-dark)]">
-                Start a new practice session with AI-generated questions
-              </p>
-            </Link>
-
-            <Link
-              href="/dashboard/exams"
-              className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-[var(--blue)] hover:shadow-lg transition-all duration-300 group"
-            >
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--blue)]/10 to-[var(--blue)]/5 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                ⏱️
-              </div>
-              <h3 className="font-display text-xl font-bold text-[var(--black)] mb-2">
-                Take Mock Exam
-              </h3>
-              <p className="text-sm text-[var(--gray-dark)]">
-                Simulate real exam conditions with timed tests
-              </p>
-            </Link>
-
-            <Link
               href="/dashboard/ai-tutor"
               className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-purple-500 hover:shadow-lg transition-all duration-300 group"
             >
@@ -180,17 +104,17 @@ export default function DashboardPage() {
             </Link>
 
             <Link
-              href="/dashboard/analytics"
-              className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-green-500 hover:shadow-lg transition-all duration-300 group"
+              href="/dashboard/quiz"
+              className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-[var(--orange)] hover:shadow-lg transition-all duration-300 group"
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                📈
+              <div className="w-12 h-12 bg-gradient-to-br from-[var(--orange)]/10 to-[var(--orange)]/5 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                🎯
               </div>
               <h3 className="font-display text-xl font-bold text-[var(--black)] mb-2">
-                View Analytics
+                Take a Quiz
               </h3>
               <p className="text-sm text-[var(--gray-dark)]">
-                Track your progress and identify weak areas
+                Test your knowledge with AI generated quizzes
               </p>
             </Link>
           </div>
@@ -198,43 +122,6 @@ export default function DashboardPage() {
 
         {/* Right Column - 1/3 width */}
         <div className="space-y-6">
-          {/* Subject Progress */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200 animate-[fadeInUp_0.6s_ease-out_0.5s_backwards]">
-            <h3 className="font-display text-xl font-bold text-[var(--black)] mb-4">
-              Topic Mastery
-            </h3>
-            <div className="space-y-4">
-              {mastery && mastery.length > 0 ? (
-                mastery.slice(0, 5).map((m: TopicMastery, idx: number) => (
-                  <div key={idx}>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="font-semibold text-[var(--black)] truncate max-w-[150px]">
-                        {m.topic_details?.name || 'Unknown Topic'}
-                      </span>
-                      <span className="text-[var(--gray-dark)]">{Math.round(m.mastery_percentage)}%</span>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full bg-gradient-to-r from-[var(--orange)] to-[var(--orange-light)] rounded-full transition-all duration-1000`}
-                        style={{ width: `${m.mastery_percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-400 italic">No practice data yet. Start practicing to see stats!</p>
-              )}
-            </div>
-            {mastery && mastery.length > 5 && (
-              <Link
-                href="/dashboard/analytics"
-                className="mt-4 block text-center text-sm font-semibold text-[var(--blue)] hover:underline"
-              >
-                View all topics
-              </Link>
-            )}
-          </div>
-
           {/* Exam Countdown */}
           <div className="bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
             <h3 className="font-display text-xl font-bold mb-2">JAMB 2026</h3>

@@ -2,13 +2,13 @@
 import os
 import json
 import logging
-import cohere
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 class CohereClient:
     def __init__(self):
+        import cohere
         self.api_key = settings.COHERE_API_KEY
         self.model = settings.COHERE_MODEL or "command-r-plus"
         
@@ -100,4 +100,22 @@ class CohereClient:
             
         except Exception as e:
             logger.error(f"Error streaming chat response with Cohere: {e}")
+            raise
+
+    def generate_embedding(self, text):
+        """Generate vector embedding for text."""
+        if not self.client:
+            raise ValueError("Cohere API key not configured")
+
+        try:
+            # Cohere embed API
+            response = self.client.embed(
+                texts=[text],
+                model="embed-english-v3.0", # or make this configurable
+                input_type="components"  # correct for RAG content
+            )
+            return response.embeddings[0]
+            
+        except Exception as e:
+            logger.error(f"Error generating embedding with Cohere: {e}")
             raise

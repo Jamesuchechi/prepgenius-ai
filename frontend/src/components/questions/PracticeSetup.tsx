@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { getExamTypes, getSubjects, getTopics, ExamType, Subject, Topic } from '../../lib/api'
-import Button from '../ui/Button'
+import { Button } from '../ui/Button'
 import DifficultySelector from './DifficultySelector'
 
 interface PracticeSetupProps {

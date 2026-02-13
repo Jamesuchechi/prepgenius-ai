@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Question, QuestionAttemptResult } from '../../lib/api'
 import { QuestionService } from '../../services/questions'
 import QuestionCard from './QuestionCard'
-import Button from '../ui/Button'
+import { Button } from '../ui/Button'
 import { Trophy, ArrowRight, RotateCcw } from 'lucide-react'
 
 interface AIQuizSessionProps {

@@ -1,5 +1,5 @@
 import React from 'react'
-import Button from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 
 export default function CTASection() {
   return (
@@ -15,8 +15,8 @@ export default function CTASection() {
           Join thousands of students who have already improved their scores with PrepGenius AI.
         </p>
         <div className="flex gap-4 justify-center">
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             href="/signup"
             className="text-lg px-10 py-4"
           >

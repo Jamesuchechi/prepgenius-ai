@@ -15,6 +15,7 @@ import { useChatStore } from '@/store/chatStore';
 import { chatService, ChatMessage } from '@/services/chatService';
 import { Wifi, WifiOff, AlertCircle, Settings } from 'lucide-react';
 import { ChatSettingsModal } from './ChatSettingsModal';
+import { DocumentSelector } from './DocumentSelector';
 
 interface ChatInterfaceProps {
     sessionId: string;
@@ -30,6 +31,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
     const {
         messages,
         sessions,
+        activeSessionId,
+        activeDocumentId,
         isTyping,
         activeStreamingId,
         connectionStatus,
@@ -215,7 +218,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
         addMessage(userMessage);
 
         // Send via WebSocket
-        const sent = sendMessage(message, imageData, { tempId });
+        const sent = sendMessage(message, imageData, {
+            tempId,
+            context: {
+                active_document_id: activeDocumentId
+            }
+        });
         if (!sent) {
             setError('Failed to send message');
         } else {
@@ -273,6 +281,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
                         >
                             <Settings size={20} />
                         </button>
+
+                        <div className="h-6 w-px bg-gray-200 mx-1" />
+
+                        <DocumentSelector />
 
                         <ExportChatButton messages={messages} sessionTitle="Chat Session" />
 

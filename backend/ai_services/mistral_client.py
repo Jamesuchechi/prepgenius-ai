@@ -3,13 +3,10 @@ import os
 import json
 import logging
 from django.conf import settings
-from mistralai import Mistral
-from mistralai.models import UserMessage, SystemMessage
-
-logger = logging.getLogger(__name__)
-
 class MistralClient:
     def __init__(self):
+        from mistralai import Mistral
+        
         self.api_key = settings.MISTRAL_API_KEY
         self.model = settings.MISTRAL_MODEL or "mistral-small-latest"
         
@@ -26,6 +23,7 @@ class MistralClient:
         prompt = self._build_prompt(topic, difficulty, count, q_type, additional_context)
         
         try:
+            from mistralai.models import UserMessage, SystemMessage
             messages = [
                 SystemMessage(content="You are an expert exam question generator. Output ONLY valid JSON."),
                 UserMessage(content=prompt)
@@ -105,3 +103,19 @@ class MistralClient:
         except json.JSONDecodeError:
             logger.error(f"Failed to parse Mistral response: {response_text}")
             raise ValueError("Invalid JSON response from Mistral AI")
+
+    def generate_embedding(self, text):
+        """Generate vector embedding for text."""
+        if not self.client:
+            raise ValueError("Mistral API key not configured")
+
+        try:
+            embeddings_batch_response = self.client.embeddings.create(
+                model="mistral-embed",
+                inputs=[text]
+            )
+            return embeddings_batch_response.data[0].embedding
+            
+        except Exception as e:
+            logger.error(f"Error generating embedding with Mistral: {e}")
+            raise

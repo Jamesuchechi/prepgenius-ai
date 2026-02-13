@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Question, attemptQuestion, QuestionAttemptResult } from '../../lib/api'
 import MCQQuestion from './MCQQuestion'
-import Button from '../ui/Button'
+import { Button } from '../ui/Button'
 
 interface QuestionSessionProps {
     questions: Question[]
@@ -100,7 +100,7 @@ export default function QuestionSession({ questions, onFinish }: QuestionSession
                     selectedAnswerId={selectedAnswerId}
                     onSelect={setSelectedAnswerId}
                     disabled={result !== null || loading}
-                    result={result ? { correct: result.correct, correctAnswerId: result.correct_answer_id } : null}
+                    result={result ? { correct: result.correct, correctAnswerId: result.correct_answer_id || 0 } : null}
                 />
 
                 {result && (
