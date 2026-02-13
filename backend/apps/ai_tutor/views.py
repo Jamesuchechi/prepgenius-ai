@@ -108,3 +108,41 @@ class SuggestedQuestionsView(APIView):
         
         serializer = SuggestedQuestionSerializer(question_data, many=True)
         return Response(serializer.data)
+
+
+class TranscribeAudioView(APIView):
+    """View for transcribing audio files."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """Transcribe uploaded audio file."""
+        if 'audio' not in request.FILES:
+            return Response(
+                {'error': 'No audio file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        audio_file = request.FILES['audio']
+        
+        try:
+            from ai_services.groq_client import GroqClient
+            client = GroqClient()
+            
+            # Create a temporary file to handle the upload if needed, 
+            # or pass the file handle directly if Groq client supports it.
+            # Groq Python client expects a tuple (filename, file, content_type) for file-like objects
+            # or just the file path.
+            
+            # Django's UploadedFile can be passed but let's ensure it has a name
+            # The client usually needs a filename extension to determine format
+            
+            text = client.transcribe_audio((audio_file.name, audio_file, audio_file.content_type))
+            
+            return Response({'text': text})
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Transcription failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

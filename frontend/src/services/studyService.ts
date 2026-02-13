@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axiosInstance from '../lib/axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = '/study-tools/documents/';
 
 export interface Document {
     id: string;
@@ -13,16 +13,13 @@ export interface Document {
     created_at: string;
 }
 
-const getAuthHeader = () => {
-    const token = localStorage.getItem('accessToken');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 export const studyService = {
     getDocuments: async (): Promise<Document[]> => {
-        const response = await axios.get(`${API_URL}/study-tools/documents/`, {
-            headers: getAuthHeader(),
-        });
+        const response = await axiosInstance.get(API_BASE_URL);
+        // Handle paginated response (DRF default)
+        if (response.data.results) {
+            return response.data.results;
+        }
         return response.data;
     },
 
@@ -31,9 +28,8 @@ export const studyService = {
         formData.append('file', file);
         formData.append('title', title);
 
-        const response = await axios.post(`${API_URL}/study-tools/documents/`, formData, {
+        const response = await axiosInstance.post(API_BASE_URL, formData, {
             headers: {
-                ...getAuthHeader(),
                 'Content-Type': 'multipart/form-data',
             },
         });
@@ -41,8 +37,6 @@ export const studyService = {
     },
 
     deleteDocument: async (id: string): Promise<void> => {
-        await axios.delete(`${API_URL}/study-tools/documents/${id}/`, {
-            headers: getAuthHeader(),
-        });
+        await axiosInstance.delete(`${API_BASE_URL}${id}/`);
     },
 };

@@ -8,5 +8,6 @@ router.register(r'sessions', views.ChatSessionViewSet, basename='chat-session')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('transcribe/', views.TranscribeAudioView.as_view(), name='transcribe-audio'),
     path('suggested-questions/', views.SuggestedQuestionsView.as_view(), name='suggested-questions'),
 ]

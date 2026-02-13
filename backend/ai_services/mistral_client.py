@@ -3,6 +3,9 @@ import os
 import json
 import logging
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
 class MistralClient:
     def __init__(self):
         from mistralai import Mistral
@@ -43,7 +46,7 @@ class MistralClient:
             logger.error(f"Error generating questions with Mistral: {e}")
             raise
 
-    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024, image_data=None):
         """Standard chat completion response."""
         if not self.client:
             raise ValueError("Mistral API key not configured")
@@ -67,7 +70,7 @@ class MistralClient:
             logger.error(f"Error generating chat response with Mistral: {e}")
             raise
 
-    def stream_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+    def stream_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024, image_data=None):
         """Streaming chat completion response."""
         if not self.client:
             raise ValueError("Mistral API key not configured")

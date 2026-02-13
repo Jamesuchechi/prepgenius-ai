@@ -128,10 +128,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 {image && (
                     <div className="mb-2 rounded-xl overflow-hidden border border-gray-100 shadow-sm transition-all hover:shadow-md max-w-full">
                         <img
-                            src={image}
+                            src={image.startsWith('/media/')
+                                ? `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000'}${image}`
+                                : image
+                            }
                             alt="Attachment"
                             className="max-h-72 w-auto object-contain cursor-zoom-in"
-                            onClick={() => window.open(image, '_blank')}
+                            onClick={() => window.open(image.startsWith('/media/')
+                                ? `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000'}${image}`
+                                : image, '_blank')}
                         />
                     </div>
                 )}

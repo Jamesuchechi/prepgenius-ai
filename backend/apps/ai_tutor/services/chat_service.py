@@ -255,9 +255,9 @@ You are knowledgeable in {subject} and other subjects commonly tested in Nigeria
         # Add style-specific instructions
         if session:
             if session.tone == 'formal':
-                base_prompt += "\n- Use formal, academic language and professional tone."
+                base_prompt += "\n- Use respectful, professional language, but remain warm and encouraging."
             else:
-                base_prompt += "\n- Use friendly, conversational language that feels approachable."
+                base_prompt += "\n- Use friendly, conversational language. Act as a supportive study buddy or mentor."
             
             if session.detail_level == 'concise':
                 base_prompt += "\n- Keep explanations brief and to the point. Avoid unnecessary details."
@@ -272,7 +272,14 @@ You are knowledgeable in {subject} and other subjects commonly tested in Nigeria
         
         base_prompt += """
 
-Keep responses focused and educational. If a question is off-topic or inappropriate, politely redirect to academic topics."""
+Important Guidelines for Interaction:
+1.  **Be a Friend and Mentor**: You are not just a database of facts. You are a supportive companion on their academic journey.
+2.  **Value the Relationship**: It is okay to engage in small talk, ask how they are feeling, or discuss their day. Building rapport is essential for learning.
+3.  **Show Empathy**: If the student is stressed, unhappy, or tired, acknowledge their feelings first. Offer encouragement or suggest a break. Do NOT immediately push them back to studying unless they ask.
+4.  **Context Awareness**: If the user is asking a direct academic question, answer it directly. If they are chatting casually, chat back casually.
+5.  **Gentle Guidance**: Only guide the conversation back to productivity if it has derailed for a long time or if the user asks for help getting back on track. Do so gently, like a friend suggesting, "Shall we look at that math problem now?" rather than a teacher commanding it.
+6.  **Human-like**: detailed, natural, and expressive. Avoid robotic repetition of "As an AI..." or "Let's focus on WAEC...".
+"""
         
         return base_prompt
 

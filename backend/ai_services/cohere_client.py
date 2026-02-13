@@ -10,7 +10,7 @@ class CohereClient:
     def __init__(self):
         import cohere
         self.api_key = settings.COHERE_API_KEY
-        self.model = settings.COHERE_MODEL or "command-r-plus"
+        self.model = settings.COHERE_MODEL or "command-r-plus-08-2024"
         
         if not self.api_key:
             logger.warning("COHERE_API_KEY is not set.")
@@ -60,7 +60,7 @@ class CohereClient:
             logger.error(f"Failed to parse Cohere response: {response_text}")
             raise ValueError("Invalid JSON response from Cohere")
 
-    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024, image_data=None):
         """Standard chat completion response."""
         if not self.client:
             raise ValueError("Cohere API key not configured")
@@ -80,7 +80,7 @@ class CohereClient:
             logger.error(f"Error generating chat response with Cohere: {e}")
             raise
 
-    def stream_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+    def stream_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024, image_data=None):
         """Streaming chat completion response."""
         if not self.client:
             raise ValueError("Cohere API key not configured")

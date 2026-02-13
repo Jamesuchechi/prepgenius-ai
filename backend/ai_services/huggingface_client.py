@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class HuggingFaceClient:
     def __init__(self):
         self.api_key = settings.HUGGINGFACE_API_KEY
-        self.model = settings.HUGGINGFACE_MODEL or "mistralai/Mistral-7B-Instruct-v0.2"
+        self.model = settings.HUGGINGFACE_MODEL or "meta-llama/Meta-Llama-3-8B-Instruct"
         self.api_url = f"https://api-inference.huggingface.co/models/{self.model}"
         
         if not self.api_key:
@@ -49,7 +49,7 @@ class HuggingFaceClient:
             logger.error(f"Error generating questions with HuggingFace: {e}")
             raise
 
-    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
+    def generate_response(self, prompt, system_prompt=None, temperature=0.7, max_tokens=1024, image_data=None):
         """Standard chat completion response."""
         if not self.api_key:
              raise ValueError("HuggingFace API key not configured")

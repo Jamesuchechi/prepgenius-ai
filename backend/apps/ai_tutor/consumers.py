@@ -156,9 +156,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             # Add image_data to context for AI router
             if image_data:
-                # Strip prefix if present for clean processing by GroqClient
-                raw_base64 = image_data.split(';base64,')[-1] if ';base64,' in image_data else image_data
-                context['image_data'] = raw_base64
+                # Pass full data URI for correct mime type handling
+                context['image_data'] = image_data
             
             # Create iterator in sync context
             iterator = await database_sync_to_async(

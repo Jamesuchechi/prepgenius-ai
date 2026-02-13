@@ -120,7 +120,7 @@ class GroqClient:
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/jpeg;base64,{image_data}",
+                            "url": image_data,
                         },
                     },
                 ]
@@ -133,7 +133,7 @@ class GroqClient:
             })
             
             # Switch to vision model if image is provided
-            model = "llama-3.2-11b-vision-preview" if image_data else self.model
+            model = "meta-llama/llama-4-maverick-17b-128e-instruct" if image_data else self.model
             
             chat_completion = self.client.chat.completions.create(
                 messages=messages,
@@ -171,7 +171,7 @@ class GroqClient:
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/jpeg;base64,{image_data}",
+                            "url": image_data,
                         },
                     },
                 ]
@@ -184,7 +184,7 @@ class GroqClient:
             })
             
             # Switch to vision model if image is provided
-            model = "llama-3.2-11b-vision-preview" if image_data else self.model
+            model = "meta-llama/llama-4-maverick-17b-128e-instruct" if image_data else self.model
             
             stream = self.client.chat.completions.create(
                 messages=messages,
@@ -201,4 +201,26 @@ class GroqClient:
             
         except Exception as e:
             logger.error(f"Error streaming response with Groq: {e}")
+            raise
+
+    def transcribe_audio(self, audio_file):
+        """
+        Transcribes audio file using Groq's Whisper model.
+        
+        Args:
+            audio_file: File-like object or path to audio file.
+            
+        Returns:
+            str: Transcribed text.
+        """
+        try:
+            transcription = self.client.audio.transcriptions.create(
+                file=audio_file,
+                model="whisper-large-v3",
+                response_format="json",
+                temperature=0.0
+            )
+            return transcription.text
+        except Exception as e:
+            logger.error(f"Error transcribing audio with Groq: {e}")
             raise

@@ -1,5 +1,6 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent, useEffect } from 'react';
-import { Send, Image as ImageIcon, X, Mic, MicOff } from 'lucide-react';
+import { Send, Image as ImageIcon, X, Mic, MicOff, Loader2 } from 'lucide-react';
+import api from '@/lib/axios';
 
 interface ChatInputProps {
     onSend: (message: string, imageData?: string) => void;
@@ -16,29 +17,44 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const [image, setImage] = useState<string | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
+    const [isTranscribing, setIsTranscribing] = useState(false);
+
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const messageRef = useRef(message);
+
+    // Keep messageRef in sync with message state
+    useEffect(() => {
+        messageRef.current = message;
+    }, [message]);
+
+    // Speech Recognition Refs
     const recognitionRef = useRef<any>(null);
+    const useNativeSpeech = useRef<boolean>(false);
+
+    // Media Recorder Refs (Fallback)
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+
     const maxLength = 2000;
 
-    // Initialize Speech Recognition
+    // Initialize Speech Recognition or Check Support
     useEffect(() => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
         if (SpeechRecognition) {
+            useNativeSpeech.current = true;
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = true;
             recognitionRef.current.interimResults = true;
             recognitionRef.current.lang = 'en-US';
 
             recognitionRef.current.onresult = (event: any) => {
-                let interimTranscript = '';
                 let finalTranscript = '';
 
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
                         finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
                     }
                 }
 
@@ -49,32 +65,129 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
             recognitionRef.current.onend = () => {
                 setIsListening(false);
+                // Auto-send for native speech
+                if (messageRef.current.trim()) {
+                    onSend(messageRef.current.trim(), undefined);
+                    setMessage('');
+                    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+                }
             };
 
             recognitionRef.current.onerror = (event: any) => {
                 console.error('Speech recognition error:', event.error);
                 setIsListening(false);
             };
+        } else {
+            console.log("Native speech recognition not supported. Using backend fallback.");
+            useNativeSpeech.current = false;
         }
 
         return () => {
             if (recognitionRef.current) {
                 recognitionRef.current.stop();
             }
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop();
+            }
         };
     }, []);
 
-    const toggleListening = () => {
-        if (!recognitionRef.current) {
-            alert('Speech recognition is not supported in your browser.');
-            return;
-        }
+    const startRecordingFallback = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
 
-        if (isListening) {
-            recognitionRef.current.stop();
-        } else {
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+                // Stop all tracks
+                stream.getTracks().forEach(track => track.stop());
+
+                if (audioBlob.size > 0) {
+                    handleTranscribe(audioBlob);
+                }
+            };
+
+            mediaRecorder.start();
             setIsListening(true);
-            recognitionRef.current.start();
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+            alert("Could not access microphone. Please check permissions.");
+            setIsListening(false);
+        }
+    };
+
+    const stopRecordingFallback = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+            setIsListening(false);
+        }
+    };
+
+    const handleTranscribe = async (audioBlob: Blob) => {
+        setIsTranscribing(true);
+        const formData = new FormData();
+        // Use .webm extension as typical for MediaRecorder
+        formData.append('audio', audioBlob, 'recording.webm');
+
+        try {
+            // Use shared axios instance which handles auth and tokens
+            const response = await api.post(
+                '/chat/transcribe/',
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    }
+                }
+            );
+
+            if (response.data.text) {
+                const transcribedText = response.data.text;
+                // Auto-send immediately
+                const finalMessage = (messageRef.current ? messageRef.current + ' ' : '') + transcribedText;
+
+                onSend(finalMessage, image || undefined);
+                setMessage('');
+                setImage(null);
+                setImagePreview(null);
+                if (textareaRef.current) {
+                    textareaRef.current.style.height = 'auto';
+                }
+            }
+        } catch (error) {
+            console.error("Transcription failed:", error);
+            alert("Failed to transcribe audio.");
+        } finally {
+            setIsTranscribing(false);
+        }
+    };
+
+    const toggleListening = () => {
+        if (isTranscribing) return;
+
+        if (useNativeSpeech.current) {
+            if (isListening) {
+                recognitionRef.current.stop();
+            } else {
+                setIsListening(true);
+                recognitionRef.current.start();
+            }
+        } else {
+            // Fallback to MediaRecorder + Backend
+            if (isListening) {
+                stopRecordingFallback();
+            } else {
+                startRecordingFallback();
+            }
         }
     };
 
@@ -82,7 +195,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         const trimmedMessage = message.trim();
         if ((trimmedMessage || image) && !disabled) {
             if (isListening) {
-                recognitionRef.current.stop();
+                if (useNativeSpeech.current) {
+                    recognitionRef.current.stop();
+                } else {
+                    stopRecordingFallback();
+                }
             }
             onSend(trimmedMessage, image || undefined);
             setMessage('');
@@ -187,14 +304,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 {/* Voice Input Button */}
                 <button
                     onClick={toggleListening}
-                    disabled={disabled}
+                    disabled={disabled || isTranscribing}
                     className={`flex-shrink-0 w-12 h-12 rounded-full border flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isListening
                         ? 'bg-red-50 border-red-200 text-red-500 animate-pulse'
                         : 'border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-200'
                         }`}
                     title={isListening ? 'Stop listening' : 'Speak message'}
                 >
-                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                    {isTranscribing ? <Loader2 size={20} className="animate-spin text-blue-500" /> : (isListening ? <MicOff size={20} /> : <Mic size={20} />)}
                 </button>
 
                 <div className="flex-1 relative">
@@ -203,7 +320,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         value={message}
                         onChange={handleChange}
                         onKeyDown={handleKeyDown}
-                        placeholder={isListening ? 'Listening...' : placeholder}
+                        placeholder={isListening ? 'Listening...' : (isTranscribing ? 'Transcribing...' : placeholder)}
                         disabled={disabled}
                         rows={1}
                         className="w-full px-4 py-3 pr-12 rounded-2xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
@@ -229,7 +346,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </div>
 
             <p className="text-xs text-gray-400 mt-2 text-center font-medium">
-                {isListening ? 'AI is listening... speak clearly' : 'Press Enter to send, Shift+Enter for new line'}
+                {isListening ? 'AI is listening... speak clearly' : (isTranscribing ? 'Processing audio...' : 'Press Enter to send, Shift+Enter for new line')}
             </p>
         </div>
     );
