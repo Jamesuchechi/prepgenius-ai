@@ -14,9 +14,9 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'phone_number',
-            'profile_picture', 'bio', 'student_type', 'grade_level',
+            'profile_picture', 'cover_picture', 'bio', 'student_type', 'grade_level',
             'exam_targets', 'is_email_verified', 'timezone', 'language',
+            'is_superuser', 'is_staff',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'is_email_verified']

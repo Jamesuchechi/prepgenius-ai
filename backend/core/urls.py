@@ -15,6 +15,9 @@ urlpatterns = [
     path('api/study-tools/', include('apps.study_tools.urls')),
     path('api/quiz/', include('apps.quiz.urls')),
     path('api/gamification/', include('apps.gamification.urls')),
+    path('api/subscriptions/', include('apps.subscriptions.urls', namespace='subscriptions')),
+    path('api/institutions/', include('apps.institutions.urls', namespace='institutions')),
+    path('api/webhooks/', include('apps.subscriptions.webhooks_urls', namespace='webhooks')),
 ]
 
 # Serve media files in development

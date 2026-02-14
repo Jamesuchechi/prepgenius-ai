@@ -38,6 +38,11 @@ class User(AbstractUser):
         blank=True,
         null=True
     )
+    cover_picture = models.ImageField(
+        upload_to='cover_pictures/',
+        blank=True,
+        null=True
+    )
     bio = models.TextField(blank=True, null=True, max_length=500)
     
     # Student type and exam info

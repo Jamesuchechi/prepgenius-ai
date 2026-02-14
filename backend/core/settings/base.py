@@ -271,6 +271,16 @@ ALOC_TIMEOUT = int(os.getenv("ALOC_TIMEOUT", 60))
 
 
 # ============================================================================
+# PAYSTACK SETTINGS
+# ============================================================================
+
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY", "")
+PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY", "")
+PAYSTACK_BASE_URL = os.getenv("PAYSTACK_BASE_URL", "https://api.paystack.co")
+PAYSTACK_TIMEOUT = int(os.getenv("PAYSTACK_TIMEOUT", 60))
+
+
+# ============================================================================
 # CELERY SETTINGS
 # ============================================================================
 

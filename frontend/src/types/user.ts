@@ -11,6 +11,7 @@ export interface User {
   last_name: string
   phone_number?: string
   profile_picture?: string
+  cover_picture?: string
   bio?: string
   student_type: StudentType
   grade_level?: GradeLevel
@@ -21,6 +22,8 @@ export interface User {
   created_at: string
   updated_at: string
   last_login_date?: string
+  is_superuser?: boolean
+  is_staff?: boolean
 }
 
 export interface AuthTokens {

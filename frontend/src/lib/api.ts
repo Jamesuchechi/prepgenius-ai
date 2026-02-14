@@ -32,6 +32,7 @@ export interface UserProfile {
   last_name: string
   phone_number?: string
   profile_picture?: string
+  cover_picture?: string
   bio?: string
   student_type: string
   grade_level?: string
@@ -61,23 +62,71 @@ function getAuthHeaders(): HeadersInit {
 }
 
 // Generic API call handler with error handling
-async function apiCall<T>(
+export async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`
 
   try {
+    const defaultHeaders: Record<string, string> = {
+      'Content-Type': 'application/json'
+    }
+
+    // If body is FormData, remove Content-Type to let browser set it with boundary
+    if (options.body instanceof FormData) {
+      delete defaultHeaders['Content-Type']
+    }
+
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        ...defaultHeaders,
         ...options.headers
       }
     })
 
     // Handle session expiry (401 Unauthorized)
     if (response.status === 401) {
+      // Don't attempt refresh if we're already trying to refresh or login
+      if (!endpoint.includes('/auth/refresh/') && !endpoint.includes('/auth/login/') && typeof window !== 'undefined') {
+        try {
+          const refreshToken = localStorage.getItem('refresh_token');
+          if (refreshToken) {
+            // Try to get new access token
+            // We use direct fetch here to avoid circular dependency/recursion with apiCall
+            const refreshResponse = await fetch(`${API_URL}/auth/refresh/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ refresh: refreshToken })
+            });
+
+            if (refreshResponse.ok) {
+              const data = await refreshResponse.json();
+              if (data.access) {
+                // Update storage
+                localStorage.setItem('access_token', data.access);
+                document.cookie = `token=${data.access}; path=/; max-age=${60 * 60 * 24 * 7}`;
+
+                // Retry original request with new token
+                return apiCall<T>(endpoint, {
+                  ...options,
+                  headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${data.access}`
+                  }
+                });
+              }
+            }
+          }
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+        }
+      }
+
+      // If we get here, either it was a refresh attempt that failed, or refresh failed above
       if (typeof window !== 'undefined') {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
@@ -170,17 +219,25 @@ export async function confirmPasswordReset(
 
 // User Profile APIs
 export async function getCurrentUser(): Promise<UserProfile> {
-  return apiCall('/users/me/', {
+  return apiCall('/auth/users/me/', {
     method: 'GET',
     headers: getAuthHeaders()
   })
 }
 
-export async function updateProfile(data: Partial<UserProfile>): Promise<UserProfile> {
-  return apiCall('/users/me/update_profile/', {
+export async function updateProfile(data: Partial<UserProfile> | FormData): Promise<UserProfile> {
+  const isFormData = data instanceof FormData;
+  const headers = getAuthHeaders();
+
+  // If sending FormData, let the browser set the Content-Type header with boundary
+  if (isFormData) {
+    delete (headers as any)['Content-Type'];
+  }
+
+  return apiCall('/auth/users/update_profile/', {
     method: 'PATCH',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data)
+    headers,
+    body: isFormData ? data : JSON.stringify(data)
   })
 }
 
@@ -188,7 +245,7 @@ export async function changePassword(
   oldPassword: string,
   newPassword: string
 ): Promise<{ detail: string }> {
-  return apiCall('/users/me/change_password/', {
+  return apiCall('/auth/users/change_password/', {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({

@@ -8,6 +8,7 @@ export interface User {
   last_name: string
   phone_number?: string
   profile_picture?: string
+  cover_picture?: string
   bio?: string
   student_type: string
   grade_level?: string
@@ -15,6 +16,8 @@ export interface User {
   is_email_verified: boolean
   created_at: string
   last_login_date?: string
+  is_superuser?: boolean
+  is_staff?: boolean
 }
 
 interface AuthTokens {
@@ -261,7 +264,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-          const response = await fetch(`${API_URL}/users/me/`, {
+          const response = await fetch(`${API_URL}/auth/users/me/`, {
             headers: {
               'Authorization': `Bearer ${tokens.access}`
             }
@@ -273,7 +276,7 @@ export const useAuthStore = create<AuthState>()(
             // Retry with new token
             const newTokens = get().tokens
             if (newTokens) {
-              const retryResponse = await fetch(`${API_URL}/users/me/`, {
+              const retryResponse = await fetch(`${API_URL}/auth/users/me/`, {
                 headers: {
                   'Authorization': `Bearer ${newTokens.access}`
                 }

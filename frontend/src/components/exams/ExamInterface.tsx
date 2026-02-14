@@ -98,9 +98,9 @@ export function ExamInterface({
       <ExamTimer durationMinutes={durationMinutes} onTimeUp={handleTimeUp} />
 
       <div className="flex h-[calc(100vh-80px)]">
-        {/* Sidebar */}
+        {/* Sidebar - Desktop */}
         {showNavigator && (
-          <div className="w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto p-4">
+          <div className="hidden md:block w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto p-4 flex-shrink-0">
             <QuestionNavigator
               totalQuestions={questions.length}
               currentQuestion={currentQuestionIndex}
@@ -111,9 +111,39 @@ export function ExamInterface({
           </div>
         )}
 
+        {/* Sidebar - Mobile Drawer */}
+        {showNavigator && (
+          <div className="md:hidden fixed inset-0 z-50 flex">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setShowNavigator(false)}
+            />
+            {/* Drawer */}
+            <div className="relative w-4/5 max-w-sm bg-white h-full shadow-xl overflow-y-auto p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-lg">Question Navigator</h3>
+                <button onClick={() => setShowNavigator(false)} className="text-gray-500 hover:text-gray-700">
+                  ✕
+                </button>
+              </div>
+              <QuestionNavigator
+                totalQuestions={questions.length}
+                currentQuestion={currentQuestionIndex}
+                answeredQuestions={answeredQuestions}
+                onSelectQuestion={(index) => {
+                  handleSelectQuestion(index)
+                  setShowNavigator(false)
+                }}
+                reviewMode={false}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto p-8">
+          <div className="max-w-3xl mx-auto p-4 md:p-8">
             {/* Exam Title */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{examTitle}</h1>
@@ -123,7 +153,7 @@ export function ExamInterface({
             </div>
 
             {/* Question Card */}
-            <div className="bg-white rounded-lg border border-gray-200 p-8 mb-8">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-8 mb-6 md:mb-8">
               {/* Question Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex-1">
@@ -190,8 +220,8 @@ export function ExamInterface({
                     <label
                       key={answer.id}
                       className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${responses[currentQuestion.id] === answer.id
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <input
@@ -251,7 +281,7 @@ export function ExamInterface({
             </div>
 
             {/* Submit Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6 mb-8">
               <p className="text-sm text-gray-600 mb-4">
                 You have answered <span className="font-bold">{answeredQuestions.size}</span> out
                 of <span className="font-bold">{questions.length}</span> questions.
@@ -277,7 +307,7 @@ export function ExamInterface({
         {/* Toggle Navigator Button */}
         <button
           onClick={() => setShowNavigator(!showNavigator)}
-          className="fixed bottom-8 right-8 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors"
+          className="fixed bottom-6 right-6 md:bottom-8 md:right-8 p-3 md:p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors z-40"
           title={showNavigator ? 'Hide navigator' : 'Show navigator'}
         >
           {showNavigator ? '✕' : '☰'}

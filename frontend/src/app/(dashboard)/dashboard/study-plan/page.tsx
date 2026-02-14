@@ -156,9 +156,9 @@ export default function StudyPlanPage() {
             </>
           )}
           <button
-            onClick={() => setView('create')}
+            onClick={() => setView('create' as ViewType)}
             className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ml-auto ${
-              view === 'create'
+              (view as string) === 'create'
                 ? 'border-orange-500 text-orange-600'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}

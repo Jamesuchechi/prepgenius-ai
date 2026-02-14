@@ -22,6 +22,31 @@ module.exports = {
           light: '#1E6BB8',
           dark: '#083A6B',
         },
+        gray: {
+          50: '#FAFAFA',
+          100: '#F5F5F5',
+          200: '#E5E5E5',
+          300: '#D4D4D4',
+          400: '#A3A3A3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+        },
+        green: {
+          DEFAULT: '#10B981',
+          500: '#10B981',
+          400: '#34D399',
+        },
+        purple: {
+          DEFAULT: '#8B5CF6',
+          light: '#A78BFA',
+        },
+        red: {
+          300: '#F87171',
+          400: '#EF4444',
+        },
       },
       animation: {
         slideDown: 'slideDown 0.6s ease-out',

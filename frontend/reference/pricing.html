@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing & Subscription - PrepGenius AI Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --white: #FFFFFF;
+            --orange: #FF6B35;
+            --orange-light: #FF8C61;
+            --orange-dark: #E5522A;
+            --blue: #0A4D8C;
+            --blue-light: #1E6BB8;
+            --blue-dark: #083A6B;
+            --black: #0D0D0D;
+            --gray: #F5F5F5;
+            --gray-dark: #8B8B8B;
+            --green: #10B981;
+            --purple: #8B5CF6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Bricolage Grotesque', sans-serif;
+            background: #FAFAFA;
+            color: var(--black);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .page-header {
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .page-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--black);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            color: var(--gray-dark);
+        }
+
+        /* Current Plan Card */
+        .current-plan {
+            background: linear-gradient(135deg, var(--blue) 0%, var(--blue-light) 100%);
+            border-radius: 24px;
+            padding: 2.5rem;
+            color: white;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out 0.1s backwards;
+        }
+
+        .current-plan::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(5deg); }
+            66% { transform: translate(-20px, 20px) rotate(-3deg); }
+        }
+
+        .current-plan-content {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .plan-info h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .plan-price {
+            font-family: 'Syne', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .plan-price .currency {
+            font-size: 1.5rem;
+            vertical-align: super;
+        }
+
+        .plan-price .period {
+            font-size: 1rem;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .renewal-date {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+        }
+
+        .plan-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-white {
+            background: white;
+            color: var(--blue);
+        }
+
+        .btn-white:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Usage Stats */
+        .usage-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--black);
+        }
+
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .usage-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .usage-card:nth-child(1) { animation-delay: 0.2s; }
+        .usage-card:nth-child(2) { animation-delay: 0.3s; }
+        .usage-card:nth-child(3) { animation-delay: 0.4s; }
+        .usage-card:nth-child(4) { animation-delay: 0.5s; }
+
+        .usage-card:hover {
+            border-color: var(--orange);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .usage-label {
+            font-size: 0.85rem;
+            color: var(--gray-dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .usage-icon {
+            font-size: 1.2rem;
+        }
+
+        .usage-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--black);
+            margin-bottom: 0.5rem;
+        }
+
+        .usage-limit {
+            font-size: 0.85rem;
+            color: var(--gray-dark);
+        }
+
+        .usage-bar {
+            height: 6px;
+            background: var(--gray);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .usage-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease-out;
+        }
+
+        .usage-bar-fill.high {
+            background: linear-gradient(90deg, var(--green), #34D399);
+        }
+
+        .usage-bar-fill.medium {
+            background: linear-gradient(90deg, var(--orange), var(--orange-light));
+        }
+
+        .usage-bar-fill.low {
+            background: linear-gradient(90deg, #EF4444, #F87171);
+        }
+
+        /* Billing Toggle */
+        .billing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out 0.3s backwards;
+        }
+
+        .toggle-option {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            border: 2px solid transparent;
+        }
+
+        .toggle-option.active {
+            background: linear-gradient(135deg, var(--orange), var(--orange-light));
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .toggle-option:not(.active):hover {
+            border-color: var(--orange);
+        }
+
+        .savings-badge {
+            background: var(--green);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        /* Pricing Cards */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            border: 2px solid #E5E5E5;
+            transition: all 0.4s ease;
+            position: relative;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .pricing-card:nth-child(1) { animation-delay: 0.4s; }
+        .pricing-card:nth-child(2) { animation-delay: 0.5s; }
+        .pricing-card:nth-child(3) { animation-delay: 0.6s; }
+
+        .pricing-card.featured {
+            border-color: var(--orange);
+            box-shadow: 0 20px 60px rgba(255, 107, 53, 0.15);
+            transform: scale(1.05);
+        }
+
+        .pricing-card.current {
+            border-color: var(--blue);
+            box-shadow: 0 20px 60px rgba(10, 77, 140, 0.15);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-10px);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--orange), var(--orange-light));
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .current-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--blue), var(--blue-light));
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .plan-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--black);
+        }
+
+        .plan-description {
+            color: var(--gray-dark);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .plan-pricing {
+            margin-bottom: 2rem;
+        }
+
+        .price-amount {
+            font-family: 'Syne', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--black);
+        }
+
+        .price-currency {
+            font-size: 1.8rem;
+            vertical-align: super;
+        }
+
+        .price-period {
+            color: var(--gray-dark);
+            font-size: 1rem;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: var(--gray-dark);
+            font-size: 1rem;
+            margin-left: 0.5rem;
+        }
+
+        .features-list {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .features-list li {
+            padding: 0.75rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            border-bottom: 1px solid #F0F0F0;
+        }
+
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 107, 53, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--orange);
+            font-size: 0.7rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .feature-icon.pro {
+            background: rgba(138, 92, 246, 0.1);
+            color: var(--purple);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--orange), var(--orange-light));
+            color: white;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 25px rgba(255, 107, 53, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: transparent;
+            color: var(--black);
+            border: 2px solid #E5E5E5;
+            padding: 1rem;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--orange);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .btn-current {
+            width: 100%;
+            background: var(--blue);
+            color: white;
+            padding: 1rem;
+            cursor: default;
+        }
+
+        .btn-current:hover {
+            transform: none;
+        }
+
+        /* Features Comparison */
+        .comparison-section {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out 0.7s backwards;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table thead th {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 2px solid #E5E5E5;
+        }
+
+        .comparison-table thead th:first-child {
+            width: 40%;
+        }
+
+        .comparison-table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid #F0F0F0;
+        }
+
+        .comparison-table tbody tr:hover {
+            background: #FAFAFA;
+        }
+
+        .check-icon {
+            color: var(--green);
+            font-size: 1.2rem;
+        }
+
+        .cross-icon {
+            color: #E5E5E5;
+            font-size: 1.2rem;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out 0.8s backwards;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .faq-item {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            border-color: var(--orange);
+        }
+
+        .faq-question {
+            font-weight: 600;
+            color: var(--black);
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        .faq-answer {
+            color: var(--gray-dark);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .usage-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .faq-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .current-plan-content {
+                grid-template-columns: 1fr;
+            }
+
+            .plan-actions {
+                flex-direction: column;
+            }
+
+            .usage-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-table {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Pricing & Subscription</h1>
+            <p>Choose the plan that fits your learning goals</p>
+        </div>
+
+        <!-- Current Plan -->
+        <div class="current-plan">
+            <div class="current-plan-content">
+                <div class="plan-info">
+                    <div class="plan-badge">CURRENT PLAN</div>
+                    <h2>Monthly Plan</h2>
+                    <div class="plan-price">
+                        <span class="currency">₦</span>2,500<span class="period">/month</span>
+                    </div>
+                    <p class="renewal-date">Renews on March 15, 2026</p>
+                </div>
+                <div class="plan-actions">
+                    <a href="#" class="btn btn-white">Upgrade Plan</a>
+                    <a href="#" class="btn btn-outline">Cancel Subscription</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Stats -->
+        <div class="usage-section">
+            <h2 class="section-title">Your Usage This Month</h2>
+            <div class="usage-grid">
+                <div class="usage-card">
+                    <div class="usage-label">
+                        <span class="usage-icon">📝</span>
+                        Questions Generated
+                    </div>
+                    <div class="usage-value">847</div>
+                    <div class="usage-limit">of Unlimited</div>
+                    <div class="usage-bar">
+                        <div class="usage-bar-fill high" style="width: 85%;"></div>
+                    </div>
+                </div>
+
+                <div class="usage-card">
+                    <div class="usage-label">
+                        <span class="usage-icon">⏱️</span>
+                        Mock Exams Taken
+                    </div>
+                    <div class="usage-value">12</div>
+                    <div class="usage-limit">of Unlimited</div>
+                    <div class="usage-bar">
+                        <div class="usage-bar-fill high" style="width: 70%;"></div>
+                    </div>
+                </div>
+
+                <div class="usage-card">
+                    <div class="usage-label">
+                        <span class="usage-icon">🤖</span>
+                        AI Tutor Sessions
+                    </div>
+                    <div class="usage-value">28</div>
+                    <div class="usage-limit">of Unlimited</div>
+                    <div class="usage-bar">
+                        <div class="usage-bar-fill high" style="width: 60%;"></div>
+                    </div>
+                </div>
+
+                <div class="usage-card">
+                    <div class="usage-label">
+                        <span class="usage-icon">⏰</span>
+                        Study Hours
+                    </div>
+                    <div class="usage-value">24h</div>
+                    <div class="usage-limit">This Month</div>
+                    <div class="usage-bar">
+                        <div class="usage-bar-fill medium" style="width: 45%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Toggle -->
+        <div class="billing-toggle">
+            <div class="toggle-option active">Monthly Billing</div>
+            <div class="toggle-option">
+                Annual Billing
+                <span class="savings-badge">SAVE 33%</span>
+            </div>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="pricing-grid">
+            <!-- Free Plan -->
+            <div class="pricing-card">
+                <h3 class="plan-name">Free</h3>
+                <p class="plan-description">Perfect for trying out PrepGenius</p>
+                
+                <div class="plan-pricing">
+                    <div class="price-amount">
+                        <span class="price-currency">₦</span>0
+                    </div>
+                    <div class="price-period">forever</div>
+                </div>
+
+                <ul class="features-list">
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>10 questions per day</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>Basic progress tracking</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>1 subject selection</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>Community support</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>Basic analytics</span>
+                    </li>
+                </ul>
+
+                <button class="btn btn-secondary">Downgrade to Free</button>
+            </div>
+
+            <!-- Monthly Plan -->
+            <div class="pricing-card current">
+                <div class="current-badge">CURRENT PLAN</div>
+                <h3 class="plan-name">Monthly</h3>
+                <p class="plan-description">Best for focused exam prep</p>
+                
+                <div class="plan-pricing">
+                    <div class="price-amount">
+                        <span class="price-currency">₦</span>2,500
+                    </div>
+                    <div class="price-period">per month</div>
+                </div>
+
+                <ul class="features-list">
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>Unlimited questions</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>All subjects & exam types</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>Unlimited mock exams</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>24/7 AI tutor access</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>Advanced analytics</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <span>Priority support</span>
+                    </li>
+                </ul>
+
+                <button class="btn btn-current">Current Plan</button>
+            </div>
+
+            <!-- Annual Plan -->
+            <div class="pricing-card featured">
+                <div class="popular-badge">BEST VALUE</div>
+                <h3 class="plan-name">Annual</h3>
+                <p class="plan-description">Save 33% with annual billing</p>
+                
+                <div class="plan-pricing">
+                    <div class="price-amount">
+                        <span class="price-currency">₦</span>20,000
+                    </div>
+                    <div class="price-period">
+                        per year
+                        <span class="original-price">₦30,000</span>
+                    </div>
+                </div>
+
+                <ul class="features-list">
+                    <li>
+                        <span class="feature-icon pro">✓</span>
+                        <span><strong>Everything in Monthly</strong></span>
+                    </li>
+                    <li>
+                        <span class="feature-icon pro">✓</span>
+                        <span>Offline study mode</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon pro">✓</span>
+                        <span>Premium content library</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon pro">✓</span>
+                        <span>Parent dashboard</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon pro">✓</span>
+                        <span>Personalized coaching</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon pro">✓</span>
+                        <span>Money-back guarantee</span>
+                    </li>
+                </ul>
+
+                <button class="btn btn-primary">Upgrade to Annual</button>
+            </div>
+        </div>
+
+        <!-- Features Comparison -->
+        <div class="comparison-section">
+            <h2 class="section-title">Feature Comparison</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th style="text-align: center;">Free</th>
+                        <th style="text-align: center;">Monthly</th>
+                        <th style="text-align: center;">Annual</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Questions per day</td>
+                        <td style="text-align: center;">10</td>
+                        <td style="text-align: center;">Unlimited</td>
+                        <td style="text-align: center;">Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>Mock exams</td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;">Unlimited</td>
+                        <td style="text-align: center;">Unlimited</td>
+                    </tr>
+                    <tr>
+                        <td>AI Tutor access</td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Advanced analytics</td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Offline mode</td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Premium content</td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Parent dashboard</td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td>Priority support</td>
+                        <td style="text-align: center;"><span class="cross-icon">✕</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                        <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FAQ -->
+        <div class="faq-section">
+            <h2 class="section-title">Frequently Asked Questions</h2>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h4 class="faq-question">Can I change my plan anytime?</h4>
+                    <p class="faq-answer">Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate the charges.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4 class="faq-question">What payment methods do you accept?</h4>
+                    <p class="faq-answer">We accept all major payment methods including card payments, bank transfers, and mobile money (MTN, Airtel).</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4 class="faq-question">Is there a money-back guarantee?</h4>
+                    <p class="faq-answer">Annual plans come with a 30-day money-back guarantee. If you're not satisfied, we'll refund your payment in full.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4 class="faq-question">Can I cancel my subscription?</h4>
+                    <p class="faq-answer">Yes, you can cancel anytime. You'll continue to have access until the end of your billing period, and no future charges will be made.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4 class="faq-question">Do you offer student discounts?</h4>
+                    <p class="faq-answer">We offer group discounts for schools and tutorial centers. Contact our support team for institutional pricing.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h4 class="faq-question">What happens to my data if I cancel?</h4>
+                    <p class="faq-answer">Your data is retained for 90 days after cancellation. You can reactivate your account anytime during this period.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Animate usage bars on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const bars = document.querySelectorAll('.usage-bar-fill');
+            bars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 300);
+            });
+        });
+
+        // Billing toggle
+        const toggleOptions = document.querySelectorAll('.toggle-option');
+        toggleOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                toggleOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                
+                // Here you would update prices for annual/monthly
+                // This is just a visual demo
+            });
+        });
+    </script>
+</body>
+</html>

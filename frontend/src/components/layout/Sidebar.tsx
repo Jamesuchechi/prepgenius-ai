@@ -17,7 +17,9 @@ import {
     Search,
     Bell,
     Settings as SettingsIcon,
-    Trophy
+    Trophy,
+    DollarSign,
+    Building2
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -53,11 +55,19 @@ export default function Sidebar({
         { name: 'Mock Exams', href: '/dashboard/exams', icon: BookOpen },
         { name: 'Quizzes', href: '/dashboard/quiz', icon: BookOpen },
         { name: 'Study Plan', href: '/dashboard/study-plan', icon: GraduationCap },
-        { name: 'AI Tutor', href: '/dashboard/ai-tutor', icon: BrainCircuit }, // Using BrainCircuit as placeholder if robot icon not available, or import specific icon
+        { name: 'AI Tutor', href: '/dashboard/ai-tutor', icon: BrainCircuit },
         { name: 'Analytics', href: '/dashboard/analytics', icon: LineChart },
         { name: 'Achievements', href: '/dashboard/achievements', icon: Trophy },
         { name: 'Profile', href: '/dashboard/profile', icon: User },
+        { name: 'Pricing', href: '/dashboard/pricing', icon: DollarSign },
     ]
+
+    // Add Institution Portal if user is institutional student OR admin OR superuser
+    // Note: We'll assume for now that if student_type is 'institutional', they can see it.
+    // Ideally we also check if they are an institution admin.
+    if (user?.student_type === 'institutional' || user?.is_superuser || user?.is_staff) {
+        navigation.splice(7, 0, { name: 'Institution', href: '/dashboard/institution', icon: Building2 })
+    }
 
     return (
         <>
@@ -162,19 +172,6 @@ export default function Sidebar({
                             })}
                         </ul>
                     </nav>
-
-                    {/* Upgrade Banner */}
-                    {!isCollapsed && (
-                        <div className="p-4 border-t border-gray-200">
-                            <div className="bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-xl p-4 text-white">
-                                <h4 className="font-bold mb-2">Upgrade to Pro</h4>
-                                <p className="text-sm text-white/90 mb-3">Get unlimited access to all features</p>
-                                <button className="w-full bg-white text-[var(--blue)] py-2 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors">
-                                    Upgrade Now
-                                </button>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Logout */}
                     <div className="p-4 border-t border-gray-200">

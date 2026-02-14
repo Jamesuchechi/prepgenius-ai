@@ -1,88 +1,62 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useAuthStore } from '@/store/authStore'
-import { updateProfile, changePassword } from '@/lib/api'
+
+interface SubscriptionPlan {
+    name: string;
+    display_name: string;
+    price: number;
+}
+
+interface UserSubscription {
+    plan_details?: SubscriptionPlan;
+    plan?: { display_name?: string };
+    status: string;
+    next_billing_date?: string;
+    expires_at?: string;
+}
 
 export default function ProfilePage() {
-    const { user, setUser } = useAuthStore()
-    const [isEditing, setIsEditing] = useState(false)
-    const [isChangingPassword, setIsChangingPassword] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const { user } = useAuthStore()
+    const router = useRouter()
 
-    const [profileData, setProfileData] = useState({
-        first_name: '',
-        last_name: '',
-        phone_number: '',
-        bio: '',
-        exam_targets: [] as string[],
-        grade_level: ''
-    })
-
-    const [passwordData, setPasswordData] = useState({
-        oldPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-    })
+    // START: Subscription fetching logic
+    const [subscription, setSubscription] = useState<UserSubscription | null>(null)
+    const [loadingSub, setLoadingSub] = useState(true)
 
     useEffect(() => {
-        if (user) {
-            setProfileData({
-                first_name: user.first_name || '',
-                last_name: user.last_name || '',
-                phone_number: user.phone_number || '',
-                bio: user.bio || '',
-                exam_targets: user.exam_targets || [],
-                grade_level: user.grade_level || ''
-            })
-        }
-    }, [user])
+        const fetchSubscription = async () => {
+            if (!user) return;
+            try {
+                const token = localStorage.getItem('access_token');
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-    const handleProfileUpdate = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
-        setMessage(null)
+                if (token) {
+                    const response = await fetch(`${apiUrl}/subscriptions/my-subscription/`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    });
 
-        try {
-            const updatedUser = await updateProfile(profileData)
-            setUser(updatedUser)
-            setIsEditing(false)
-            setMessage({ type: 'success', text: 'Profile updated successfully!' })
-        } catch (error: any) {
-            setMessage({ type: 'error', text: error.message || 'Failed to update profile' })
-        } finally {
-            setLoading(false)
-        }
-    }
+                    if (response.ok) {
+                        const data = await response.json();
+                        setSubscription(data);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to fetch subscription:', err);
+            } finally {
+                setLoadingSub(false);
+            }
+        };
 
-    const handlePasswordChange = async (e: React.FormEvent) => {
-        e.preventDefault()
-
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            setMessage({ type: 'error', text: 'New passwords do not match' })
-            return
-        }
-
-        if (passwordData.newPassword.length < 8) {
-            setMessage({ type: 'error', text: 'Password must be at least 8 characters' })
-            return
-        }
-
-        setLoading(true)
-        setMessage(null)
-
-        try {
-            await changePassword(passwordData.oldPassword, passwordData.newPassword)
-            setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' })
-            setIsChangingPassword(false)
-            setMessage({ type: 'success', text: 'Password changed successfully!' })
-        } catch (error: any) {
-            setMessage({ type: 'error', text: error.message || 'Failed to change password' })
-        } finally {
-            setLoading(false)
-        }
-    }
+        fetchSubscription();
+    }, [user]);
+    // END: Subscription fetching logic
 
     if (!user) {
         return (
@@ -95,6 +69,11 @@ export default function ProfilePage() {
         )
     }
 
+    // Determine current plan name
+    const planName = subscription?.plan_details?.display_name ||
+        subscription?.plan?.display_name ||
+        'Free Tier';
+
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             {/* Page Header */}
@@ -103,323 +82,180 @@ export default function ProfilePage() {
                     My Profile
                 </h1>
                 <p className="text-lg text-[var(--gray-dark)]">
-                    Manage your account settings and preferences
+                    View your account details and subscription status
                 </p>
             </div>
 
-            {/* Success/Error Message */}
-            {message && (
-                <div className={`p-4 rounded-xl border-l-4 animate-[fadeInUp_0.3s_ease-out] ${message.type === 'success'
-                        ? 'bg-green-50 border-green-500 text-green-700'
-                        : 'bg-red-50 border-red-500 text-red-700'
-                    }`}>
-                    {message.text}
+            {/* Profile Header Card (Read Only) */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 animate-[fadeInUp_0.6s_ease-out_0.1s_backwards]">
+                {/* Cover Picture Banner */}
+                <div className="h-48 bg-gray-100 relative">
+                    {user.cover_picture ? (
+                        <Image
+                            src={user.cover_picture}
+                            alt="Cover"
+                            fill
+                            className="object-cover"
+                            priority
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-r from-[var(--blue)]/20 to-[var(--orange)]/20"></div>
+                    )}
                 </div>
-            )}
 
-            {/* Profile Header Card */}
-            <div className="bg-white rounded-2xl p-8 border border-gray-200 animate-[fadeInUp_0.6s_ease-out_0.1s_backwards]">
-                <div className="flex items-start gap-6">
-                    {/* Profile Picture */}
-                    <div className="relative">
-                        <div className="w-24 h-24 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-full flex items-center justify-center text-white font-bold text-3xl">
-                            {user.first_name?.[0]}{user.last_name?.[0]}
+                <div className="px-8 pb-8">
+                    <div className="flex flex-col md:flex-row items-center md:items-end gap-6 relative z-10">
+                        {/* Profile Picture */}
+                        <div className="relative -mt-12">
+                            <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-white flex items-center justify-center relative">
+                                {user.profile_picture ? (
+                                    <Image
+                                        src={user.profile_picture}
+                                        alt={user.first_name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] flex items-center justify-center text-white font-bold text-4xl">
+                                        {user.first_name?.[0]}{user.last_name?.[0]}
+                                    </div>
+                                )}
+                            </div>
+                            {user.is_email_verified && (
+                                <div className="absolute bottom-2 right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm shadow-sm border-2 border-white">
+                                    ✓
+                                </div>
+                            )}
                         </div>
-                        {user.is_email_verified && (
-                            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm">
-                                ✓
+
+                        {/* User Info */}
+                        <div className="flex-1 mb-2">
+                            <h2 className="font-display text-3xl font-bold text-[var(--black)] mb-1">
+                                {user.first_name} {user.last_name}
+                            </h2>
+                            <p className="text-[var(--gray-dark)] mb-2">{user.email}</p>
+                            <div className="flex items-center gap-4 text-sm">
+                                <span className={`px-3 py-1 rounded-full ${user.is_email_verified
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                    {user.is_email_verified ? '✓ Email Verified' : '⚠ Email Not Verified'}
+                                </span>
+                                <span className="text-[var(--gray-dark)]">
+                                    Joined {new Date(user.created_at).toLocaleDateString()}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Edit Button */}
+                        <div className="mb-4">
+                            <button
+                                onClick={() => router.push('/dashboard/profile/edit')}
+                                className="px-6 py-3 bg-[var(--orange)] text-white rounded-xl font-semibold hover:bg-[var(--orange-dark)] transition-colors shadow-sm"
+                            >
+                                Edit Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Account Information Grid */}
+            <div className="grid md:grid-cols-2 gap-6 animate-[fadeInUp_0.6s_ease-out_0.2s_backwards]">
+                {/* Personal Details */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200">
+                    <h3 className="font-display text-xl font-bold text-[var(--black)] mb-4">
+                        Details
+                    </h3>
+                    <dl className="space-y-4">
+                        <div>
+                            <dt className="text-sm font-semibold text-[var(--gray-dark)]">Phone Number</dt>
+                            <dd className="text-[var(--black)] mt-1">{user.phone_number || 'Not provided'}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-sm font-semibold text-[var(--gray-dark)]">Grade Level</dt>
+                            <dd className="text-[var(--black)] mt-1 capitalize">{user.grade_level?.replace('_', ' ') || 'Not specified'}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-sm font-semibold text-[var(--gray-dark)]">Student Type</dt>
+                            <dd className="text-[var(--black)] mt-1 capitalize">{user.student_type}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-sm font-semibold text-[var(--gray-dark)]">Bio</dt>
+                            <dd className="text-[var(--black)] mt-1">{user.bio || 'No bio provided'}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-sm font-semibold text-[var(--gray-dark)]">Exam Targets</dt>
+                            <dd className="flex flex-wrap gap-2 mt-1">
+                                {user.exam_targets && user.exam_targets.length > 0 ? (
+                                    user.exam_targets.map((exam) => (
+                                        <span key={exam} className="px-2 py-1 bg-[var(--blue)]/10 text-[var(--blue)] text-xs rounded-md font-medium">
+                                            {exam.toUpperCase()}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className="text-[var(--gray-dark)]">None selected</span>
+                                )}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+
+                {/* Subscription & Verification */}
+                <div className="space-y-6">
+                    {/* Subscription Status */}
+                    <div className="bg-white rounded-2xl p-8 border border-gray-200">
+                        <h3 className="font-display text-xl font-bold text-[var(--black)] mb-4 flex items-center justify-between">
+                            <span>Subscription</span>
+                            {!loadingSub && (
+                                <span className={`text-sm px-3 py-1 rounded-full ${planName === 'Free Tier' ? 'bg-gray-100 text-gray-600' : 'bg-[var(--orange)]/10 text-[var(--orange)]'
+                                    }`}>
+                                    {planName}
+                                </span>
+                            )}
+                        </h3>
+
+                        {loadingSub ? (
+                            <div className="animate-pulse space-y-3">
+                                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-[var(--gray-dark)]">
+                                    Current Plan: <span className="font-semibold text-[var(--black)]">{planName}</span>
+                                </p>
+                                {subscription?.next_billing_date && (
+                                    <p className="text-[var(--gray-dark)]">
+                                        Renews on: <span className="font-semibold text-[var(--black)]">
+                                            {new Date(subscription.next_billing_date).toLocaleDateString()}
+                                        </span>
+                                    </p>
+                                )}
+                                <button
+                                    onClick={() => router.push('/dashboard/pricing')}
+                                    className="text-[var(--blue)] font-semibold hover:underline text-sm"
+                                >
+                                    Manage Subscription →
+                                </button>
                             </div>
                         )}
                     </div>
 
-                    {/* User Info */}
-                    <div className="flex-1">
-                        <h2 className="font-display text-2xl font-bold text-[var(--black)] mb-1">
-                            {user.first_name} {user.last_name}
-                        </h2>
-                        <p className="text-[var(--gray-dark)] mb-2">{user.email}</p>
-                        <div className="flex items-center gap-4 text-sm">
-                            <span className={`px-3 py-1 rounded-full ${user.is_email_verified
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                {user.is_email_verified ? '✓ Email Verified' : '⚠ Email Not Verified'}
-                            </span>
-                            <span className="text-[var(--gray-dark)]">
-                                Joined {new Date(user.created_at).toLocaleDateString()}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Edit Button */}
-                    {!isEditing && (
-                        <button
-                            onClick={() => setIsEditing(true)}
-                            className="px-6 py-3 bg-[var(--orange)] text-white rounded-xl font-semibold hover:bg-[var(--orange-dark)] transition-colors"
-                        >
-                            Edit Profile
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Profile Information Form */}
-            <div className="bg-white rounded-2xl p-8 border border-gray-200 animate-[fadeInUp_0.6s_ease-out_0.2s_backwards]">
-                <h3 className="font-display text-xl font-bold text-[var(--black)] mb-6">
-                    Personal Information
-                </h3>
-
-                <form onSubmit={handleProfileUpdate} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                        {/* First Name */}
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                First Name
-                            </label>
-                            <input
-                                type="text"
-                                value={profileData.first_name}
-                                onChange={(e) => setProfileData({ ...profileData, first_name: e.target.value })}
-                                disabled={!isEditing}
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors disabled:bg-gray-50 disabled:cursor-not-allowed"
-                            />
-                        </div>
-
-                        {/* Last Name */}
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                Last Name
-                            </label>
-                            <input
-                                type="text"
-                                value={profileData.last_name}
-                                onChange={(e) => setProfileData({ ...profileData, last_name: e.target.value })}
-                                disabled={!isEditing}
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors disabled:bg-gray-50 disabled:cursor-not-allowed"
-                            />
-                        </div>
-
-                        {/* Phone Number */}
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                Phone Number
-                            </label>
-                            <input
-                                type="tel"
-                                value={profileData.phone_number}
-                                onChange={(e) => setProfileData({ ...profileData, phone_number: e.target.value })}
-                                disabled={!isEditing}
-                                placeholder="+234 XXX XXX XXXX"
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors disabled:bg-gray-50 disabled:cursor-not-allowed"
-                            />
-                        </div>
-
-                        {/* Grade Level */}
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                Grade Level
-                            </label>
-                            <select
-                                value={profileData.grade_level}
-                                onChange={(e) => setProfileData({ ...profileData, grade_level: e.target.value })}
-                                disabled={!isEditing}
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors disabled:bg-gray-50 disabled:cursor-not-allowed"
-                            >
-                                <option value="">Select grade level</option>
-                                <option value="ss1">Senior Secondary 1</option>
-                                <option value="ss2">Senior Secondary 2</option>
-                                <option value="ss3">Senior Secondary 3</option>
-                                <option value="post_secondary">Post-Secondary</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Bio */}
-                    <div>
-                        <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                            Bio
-                        </label>
-                        <textarea
-                            value={profileData.bio}
-                            onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                            disabled={!isEditing}
-                            rows={4}
-                            maxLength={500}
-                            placeholder="Tell us about yourself..."
-                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors disabled:bg-gray-50 disabled:cursor-not-allowed resize-none"
-                        />
-                        <p className="text-sm text-[var(--gray-dark)] mt-1">
-                            {profileData.bio.length}/500 characters
-                        </p>
-                    </div>
-
-                    {/* Exam Targets */}
-                    <div>
-                        <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                            Exam Targets
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {user.exam_targets.map((exam) => (
-                                <span
-                                    key={exam}
-                                    className="px-4 py-2 bg-[var(--blue)]/10 text-[var(--blue)] rounded-lg font-medium"
-                                >
-                                    {exam.toUpperCase()}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    {isEditing && (
-                        <div className="flex gap-4 pt-4">
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="flex-1 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white py-3 rounded-xl font-semibold hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? 'Saving...' : 'Save Changes'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsEditing(false)
-                                    // Reset to original user data
-                                    if (user) {
-                                        setProfileData({
-                                            first_name: user.first_name || '',
-                                            last_name: user.last_name || '',
-                                            phone_number: user.phone_number || '',
-                                            bio: user.bio || '',
-                                            exam_targets: user.exam_targets || [],
-                                            grade_level: user.grade_level || ''
-                                        })
-                                    }
-                                }}
-                                className="px-8 py-3 border-2 border-gray-200 rounded-xl font-semibold text-[var(--black)] hover:bg-gray-50 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    )}
-                </form>
-            </div>
-
-            {/* Security Section */}
-            <div className="bg-white rounded-2xl p-8 border border-gray-200 animate-[fadeInUp_0.6s_ease-out_0.3s_backwards]">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h3 className="font-display text-xl font-bold text-[var(--black)]">
-                            Security
+                    {/* Verification Status */}
+                    <div className="bg-white rounded-2xl p-8 border border-gray-200">
+                        <h3 className="font-display text-xl font-bold text-[var(--black)] mb-4">
+                            Verification
                         </h3>
-                        <p className="text-sm text-[var(--gray-dark)] mt-1">
-                            Manage your password and security settings
-                        </p>
-                    </div>
-                    {!isChangingPassword && (
-                        <button
-                            onClick={() => setIsChangingPassword(true)}
-                            className="px-6 py-3 bg-[var(--blue)] text-white rounded-xl font-semibold hover:bg-[var(--blue-dark)] transition-colors"
-                        >
-                            Change Password
-                        </button>
-                    )}
-                </div>
-
-                {isChangingPassword && (
-                    <form onSubmit={handlePasswordChange} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                Current Password
-                            </label>
-                            <input
-                                type="password"
-                                value={passwordData.oldPassword}
-                                onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
-                                required
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--blue)] focus:outline-none transition-colors"
-                            />
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[var(--gray-dark)]">Email Verified</span>
+                                <span className={user.is_email_verified ? "text-green-500 font-bold" : "text-yellow-500 font-bold"}>
+                                    {user.is_email_verified ? 'Yes' : 'No'}
+                                </span>
+                            </div>
+                            {/* Add other verification types if they exist later (e.g. Phone) */}
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                New Password
-                            </label>
-                            <input
-                                type="password"
-                                value={passwordData.newPassword}
-                                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                required
-                                minLength={8}
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--blue)] focus:outline-none transition-colors"
-                            />
-                            <p className="text-sm text-[var(--gray-dark)] mt-1">
-                                Must be at least 8 characters
-                            </p>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--black)] mb-2">
-                                Confirm New Password
-                            </label>
-                            <input
-                                type="password"
-                                value={passwordData.confirmPassword}
-                                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                required
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--blue)] focus:outline-none transition-colors"
-                            />
-                        </div>
-
-                        <div className="flex gap-4 pt-4">
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="flex-1 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] text-white py-3 rounded-xl font-semibold hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? 'Changing...' : 'Change Password'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsChangingPassword(false)
-                                    setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' })
-                                }}
-                                className="px-8 py-3 border-2 border-gray-200 rounded-xl font-semibold text-[var(--black)] hover:bg-gray-50 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                )}
-
-                {!isChangingPassword && user.last_login_date && (
-                    <div className="text-sm text-[var(--gray-dark)]">
-                        Last login: {new Date(user.last_login_date).toLocaleString()}
-                    </div>
-                )}
-            </div>
-
-            {/* Account Stats */}
-            <div className="grid md:grid-cols-3 gap-6 animate-[fadeInUp_0.6s_ease-out_0.4s_backwards]">
-                <div className="bg-white rounded-2xl p-6 border border-gray-200">
-                    <div className="text-sm text-[var(--gray-dark)] mb-1">Account Type</div>
-                    <div className="font-display text-2xl font-bold text-[var(--black)] capitalize">
-                        {user.student_type}
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-6 border border-gray-200">
-                    <div className="text-sm text-[var(--gray-dark)] mb-1">Member Since</div>
-                    <div className="font-display text-2xl font-bold text-[var(--black)]">
-                        {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-6 border border-gray-200">
-                    <div className="text-sm text-[var(--gray-dark)] mb-1">Email Status</div>
-                    <div className="font-display text-2xl font-bold text-[var(--black)]">
-                        {user.is_email_verified ? '✓ Verified' : '⚠ Pending'}
                     </div>
                 </div>
             </div>
