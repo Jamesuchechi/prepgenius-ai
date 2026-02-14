@@ -14,7 +14,7 @@ const subjects = [
 
 export default function SignUpPage() {
   const router = useRouter()
-  const { signup, isLoading, error: authError, clearError, isAuthenticated } = useAuthStore()
+  const { signup, user, isLoading, error: authError, clearError, isAuthenticated } = useAuthStore()
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     fullName: '',
@@ -27,12 +27,12 @@ export default function SignUpPage() {
   })
   const [error, setError] = useState('')
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and verified
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && ((user as any)?.is_email_verified || (user as any)?.is_superuser)) {
       router.push('/dashboard')
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, user, router])
 
   // Sync auth store error with local error
   useEffect(() => {
@@ -102,8 +102,8 @@ export default function SignUpPage() {
         subjects: formData.subjects
       })
 
-      // Redirect to dashboard on success
-      router.push('/dashboard')
+      // Redirect to verification page on success
+      router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`)
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.')
     }

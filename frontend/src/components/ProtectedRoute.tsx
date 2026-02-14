@@ -25,7 +25,11 @@ export function ProtectedRoute({
             }
 
             if (requiredEmailVerification && user && !user.is_email_verified) {
-                router.push('/auth/verify-email')
+                if (user.email && user.email !== 'undefined') {
+                    router.push(`/verify-email?email=${encodeURIComponent(user.email)}`)
+                } else {
+                    router.push(`/verify-email`)
+                }
                 return
             }
         }

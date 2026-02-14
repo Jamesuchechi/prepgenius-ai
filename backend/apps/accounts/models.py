@@ -109,7 +109,7 @@ class EmailVerificationToken(models.Model):
         on_delete=models.CASCADE,
         related_name='email_verification_token'
     )
-    token = models.CharField(max_length=255, unique=True)
+    token = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_used = models.BooleanField(default=False)

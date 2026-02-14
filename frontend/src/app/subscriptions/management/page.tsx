@@ -40,10 +40,10 @@ const SubscriptionManagementPage: React.FC = () => {
 
       try {
         const [transactionsRes, invoicesRes] = await Promise.all([
-          fetch('/api/subscriptions/transactions/', {
+          fetch('/api/subscriptions/transactions', {
             headers: { 'Authorization': `Bearer ${token}` },
           }),
-          fetch('/api/subscriptions/invoices/', {
+          fetch('/api/subscriptions/invoices', {
             headers: { 'Authorization': `Bearer ${token}` },
           }),
         ]);
@@ -72,15 +72,20 @@ const SubscriptionManagementPage: React.FC = () => {
       const token = localStorage.getItem('access_token');
       if (!token) return;
 
-      const response = await fetch(`/api/subscriptions/invoices/${invoiceId}/download/`, {
+      const response = await fetch(`/api/subscriptions/invoices/${invoiceId}/download`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Download invoice response:', data);
         if (data.pdf_url) {
           window.open(data.pdf_url, '_blank');
+        } else {
+          console.error('No PDF URL found in response');
         }
+      } else {
+        console.error('Failed to fetching invoice URL:', response.status);
       }
     } catch (err) {
       console.error('Failed to download invoice:', err);
@@ -108,11 +113,10 @@ const SubscriptionManagementPage: React.FC = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 font-semibold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-4 py-3 font-semibold border-b-2 transition-colors ${activeTab === tab
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
@@ -163,13 +167,12 @@ const SubscriptionManagementPage: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              tx.status === 'completed'
-                                ? 'bg-green-100 text-green-800'
-                                : tx.status === 'pending'
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${tx.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : tx.status === 'pending'
                                 ? 'bg-yellow-100 text-yellow-800'
                                 : 'bg-red-100 text-red-800'
-                            }`}
+                              }`}
                           >
                             {tx.status}
                           </span>
@@ -221,25 +224,28 @@ const SubscriptionManagementPage: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              invoice.status === 'paid'
-                                ? 'bg-green-100 text-green-800'
-                                : invoice.status === 'issued'
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${invoice.status === 'paid'
+                              ? 'bg-green-100 text-green-800'
+                              : invoice.status === 'issued'
                                 ? 'bg-blue-100 text-blue-800'
                                 : 'bg-gray-100 text-gray-800'
-                            }`}
+                              }`}
                           >
                             {invoice.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() => downloadInvoice(invoice.id)}
-                            className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-700 font-semibold"
-                          >
-                            <Download className="w-4 h-4" />
-                            <span className="text-sm">Download</span>
-                          </button>
+                          {invoice.pdf_file ? (
+                            <button
+                              onClick={() => downloadInvoice(invoice.id)}
+                              className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-700 font-semibold"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span className="text-sm">Download</span>
+                            </button>
+                          ) : (
+                            <span className="text-sm text-gray-500 italic">Generating...</span>
+                          )}
                         </td>
                       </tr>
                     ))}

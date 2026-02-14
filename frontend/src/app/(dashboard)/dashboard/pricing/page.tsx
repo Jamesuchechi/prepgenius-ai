@@ -157,7 +157,13 @@ const PricingPage: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to initiate payment');
+          if (response.status === 401) {
+            localStorage.removeItem('access_token');
+            router.push('/auth/login?next=/dashboard/pricing');
+            return;
+          }
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to initiate payment');
         }
 
         const data = await response.json();
@@ -207,6 +213,22 @@ const PricingPage: React.FC = () => {
         { label: '24/7 AI tutor access', enabled: true },
         { label: 'Advanced analytics', enabled: true },
         { label: 'Priority support', enabled: true },
+      ],
+      weekly: [
+        { label: 'Unlimited questions', enabled: true },
+        { label: 'All subjects & exam types', enabled: true },
+        { label: 'Unlimited mock exams', enabled: true },
+        { label: '24/7 AI tutor access', enabled: true },
+        { label: 'Basic analytics', enabled: true },
+        { label: 'Community support', enabled: true },
+      ],
+      bi_annual: [
+        { label: 'Everything in Monthly', enabled: true },
+        { label: 'Offline study mode', enabled: true },
+        { label: 'Premium content library', enabled: true },
+        { label: 'Personalized coaching', enabled: true },
+        { label: 'Priority support', enabled: true },
+        { label: 'Money-back guarantee', enabled: true },
       ],
       quarterly: [
         { label: 'Unlimited questions', enabled: true },
@@ -271,8 +293,10 @@ const PricingPage: React.FC = () => {
       name: 'Questions per day',
       values: {
         free: '10',
+        weekly: 'Unlimited',
         monthly: 'Unlimited',
         quarterly: 'Unlimited',
+        bi_annual: 'Unlimited',
         annual: 'Unlimited',
       },
     },
@@ -280,8 +304,10 @@ const PricingPage: React.FC = () => {
       name: 'Mock exams',
       values: {
         free: false,
+        weekly: true,
         monthly: true,
         quarterly: true,
+        bi_annual: true,
         annual: true,
       },
     },
@@ -289,8 +315,10 @@ const PricingPage: React.FC = () => {
       name: 'AI Tutor access',
       values: {
         free: false,
+        weekly: true,
         monthly: true,
         quarterly: true,
+        bi_annual: true,
         annual: true,
       },
     },
@@ -298,8 +326,10 @@ const PricingPage: React.FC = () => {
       name: 'Advanced analytics',
       values: {
         free: false,
+        weekly: false,
         monthly: true,
         quarterly: true,
+        bi_annual: true,
         annual: true,
       },
     },
@@ -307,8 +337,10 @@ const PricingPage: React.FC = () => {
       name: 'Offline mode',
       values: {
         free: false,
+        weekly: false,
         monthly: false,
         quarterly: false,
+        bi_annual: true,
         annual: true,
       },
     },
@@ -316,8 +348,10 @@ const PricingPage: React.FC = () => {
       name: 'Premium content',
       values: {
         free: false,
+        weekly: false,
         monthly: false,
         quarterly: false,
+        bi_annual: true,
         annual: true,
       },
     },
@@ -325,8 +359,10 @@ const PricingPage: React.FC = () => {
       name: 'Parent dashboard',
       values: {
         free: false,
+        weekly: false,
         monthly: false,
         quarterly: false,
+        bi_annual: true,
         annual: true,
       },
     },
@@ -334,8 +370,10 @@ const PricingPage: React.FC = () => {
       name: 'Priority support',
       values: {
         free: false,
+        weekly: false,
         monthly: true,
         quarterly: true,
+        bi_annual: true,
         annual: true,
       },
     },
@@ -391,7 +429,9 @@ const PricingPage: React.FC = () => {
             planName={currentPlanData.display_name || 'Monthly Plan'}
             price={currentPlanData.price || 2500}
             renewalDate={renewalDate}
-            onUpgrade={() => { }}
+            onUpgrade={() => {
+              document.getElementById('plans-grid')?.scrollIntoView({ behavior: 'smooth' });
+            }}
             onCancel={() => { }}
           />
         )}
@@ -410,7 +450,7 @@ const PricingPage: React.FC = () => {
         )}
 
         {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div id="plans-grid" className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {plans.map((plan) => (
             <PricingCardNew
               key={plan.id}
@@ -419,23 +459,31 @@ const PricingPage: React.FC = () => {
               description={
                 plan.name === 'free'
                   ? 'Perfect for trying out PrepGenius'
-                  : plan.name === 'monthly'
-                    ? 'Best for focused exam prep'
-                    : plan.name === 'quarterly'
-                      ? 'Great value for 3 months'
-                      : 'Save 33% with annual billing'
+                  : plan.name === 'weekly'
+                    ? 'Great for short-term revision'
+                    : plan.name === 'monthly'
+                      ? 'Best for focused exam prep'
+                      : plan.name === 'quarterly'
+                        ? 'Great value for 3 months'
+                        : plan.name === 'bi_annual'
+                          ? 'Covers a full semester'
+                          : 'Save 33% with annual billing'
               }
               price={plan.price}
               period={
                 plan.name === 'free'
                   ? 'forever'
-                  : plan.name === 'monthly'
-                    ? 'per month'
-                    : plan.name === 'quarterly'
-                      ? 'per quarter'
-                      : 'per year'
+                  : plan.name === 'weekly'
+                    ? 'per week'
+                    : plan.name === 'monthly'
+                      ? 'per month'
+                      : plan.name === 'quarterly'
+                        ? 'per quarter'
+                        : plan.name === 'bi_annual'
+                          ? 'every 6 months'
+                          : 'per year'
               }
-              originalPrice={plan.name === 'annual' ? 30000 : undefined}
+              originalPrice={plan.name === 'annual' ? 30000 : plan.name === 'bi_annual' ? 12000 : undefined}
               features={buildFeatures(plan)}
               isBadge={plan.name !== 'free'}
               badgeText={
@@ -443,9 +491,25 @@ const PricingPage: React.FC = () => {
                   ? 'CURRENT PLAN'
                   : plan.name === 'annual'
                     ? 'BEST VALUE'
-                    : ''
+                    : plan.name === 'bi_annual'
+                      ? 'POPULAR'
+                      : plan.name === 'quarterly'
+                        ? 'SAVINGS'
+                        : plan.name === 'monthly'
+                          ? 'RECOMMENDED'
+                          : plan.name === 'weekly'
+                            ? 'FLEXIBLE'
+                            : ''
               }
-              badgeColor={currentPlanData?.name === plan.name ? 'blue' : 'orange'}
+              badgeColor={
+                currentPlanData?.name === plan.name
+                  ? 'blue'
+                  : plan.name === 'annual'
+                    ? 'orange'
+                    : plan.name === 'bi_annual' || plan.name === 'quarterly'
+                      ? 'purple'
+                      : 'blue'
+              }
               isCurrentPlan={currentPlanData?.name === plan.name}
               onSelect={() => handleSelectPlan(plan.id)}
               isLoading={selectedPlanLoading === plan.id}

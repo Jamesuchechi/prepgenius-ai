@@ -1,8 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
 import Footer from '@/components/layout/Footer'
+import { useAuthStore } from '@/store/authStore'
+import { useRouter } from 'next/navigation'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -11,6 +13,25 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Mobile state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Desktop state
+  const { user, isAuthenticated, isLoading } = useAuthStore()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      if (!user.is_email_verified && !user.is_superuser) {
+        // Only redirect if we have an email to pass and it's not "undefined"
+        if (user.email && user.email !== 'undefined') {
+          router.push(`/verify-email?email=${encodeURIComponent(user.email)}`)
+        } else {
+          // If no email, just go to verify page and let it handle it (or let user type it)
+          router.push(`/verify-email`)
+        }
+      }
+    } else if (!isLoading && !isAuthenticated) {
+      // Optional: Redirect to login if not authenticated (if not handled by middleware)
+      // router.push('/auth/signin')
+    }
+  }, [user, isAuthenticated, isLoading, router])
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed)

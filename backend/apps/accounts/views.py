@@ -87,10 +87,13 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         
-        # Generate and save email verification token
-        token = secrets.token_urlsafe(32)
+        # Generate 6-digit OTP
+        token = str(secrets.randbelow(1000000)).zfill(6)
         expires_at = timezone.now() + timedelta(hours=24)
         
+        # Deactivate existing tokens if any (though OneToOne handles this, create() might error if exists)
+        # Since it's OneToOne, we should use update_or_create or delete old one first if we are re-registering?
+        # But this is registration, so user is new.
         EmailVerificationToken.objects.create(
             user=user,
             token=token,
@@ -114,11 +117,11 @@ class UserRegistrationView(generics.CreateAPIView):
     
     def _send_verification_email(self, user, token):
         """Send verification email to user."""
-        verification_url = f"{settings.FRONTEND_URL}/auth/verify-email/{token}"
+        # verification_url = f"{settings.FRONTEND_URL}/auth/verify-email/{token}"
         
         context = {
             'user_name': user.get_full_name() or user.email,
-            'verification_url': verification_url,
+            'verification_code': token, # Using code instead of URL
             'expires_in_hours': 24
         }
         
@@ -177,10 +180,9 @@ class EmailVerificationView(views.APIView):
         serializer = EmailVerificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        token_str = serializer.validated_data['token']
-        token = EmailVerificationToken.objects.get(token=token_str)
+        user = serializer.validated_data['user']
+        token = serializer.validated_data['verification_token']
         
-        user = token.user
         user.is_email_verified = True
         user.email_verified_at = timezone.now()
         user.save()
@@ -192,6 +194,68 @@ class EmailVerificationView(views.APIView):
         return Response({
             'detail': 'Email verified successfully.',
             'user': UserSerializer(user).data
+        }, status=status.HTTP_200_OK)
+
+
+class ResendVerificationView(views.APIView):
+    """Endpoint for resending verification email."""
+    
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        """Resend verification email to user."""
+        email = request.data.get('email')
+        
+        if not email:
+            return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Return 200 even if user not found to prevent enumeration, or 400 if we don't care about that for now.
+            # For UX/Dev ease, let's return 404 or 400. Or, just say "If account exists..."
+            return Response({
+                'detail': 'If an account exists with this email, a new code has been sent.'
+            }, status=status.HTTP_200_OK)
+            
+        if user.is_email_verified:
+            return Response({'detail': 'This account is already verified.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate new 6-digit OTP
+        token = str(secrets.randbelow(1000000)).zfill(6)
+        expires_at = timezone.now() + timedelta(hours=24)
+        
+        # Update or create token
+        EmailVerificationToken.objects.update_or_create(
+            user=user,
+            defaults={
+                'token': token,
+                'expires_at': expires_at,
+                'is_used': False
+            }
+        )
+        
+        # Send email (Reusing logic from UserRegistrationView, duplicated for now for decoupling)
+        context = {
+            'user_name': user.get_full_name() or user.email,
+            'verification_code': token,
+            'expires_in_hours': 24
+        }
+        
+        html_message = render_to_string('email/verify_email.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject='Resend: Verify your PrepGenius account',
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html_message,
+            fail_silently=True
+        )
+        
+        return Response({
+            'detail': 'A new verification code has been sent.'
         }, status=status.HTTP_200_OK)
 
 

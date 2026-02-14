@@ -207,21 +207,33 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 class EmailVerificationSerializer(serializers.Serializer):
     """Serializer for email verification."""
     
+    email = serializers.EmailField(required=True)
     token = serializers.CharField(required=True)
     
-    def validate_token(self, value):
+    def validate(self, attrs):
         """Validate email verification token."""
+        email = attrs.get('email')
+        token_str = attrs.get('token')
+        
         try:
-            token = EmailVerificationToken.objects.get(token=value)
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'email': 'User with this email does not exist.'})
+            
+        try:
+            verification_token = user.email_verification_token
         except EmailVerificationToken.DoesNotExist:
-            raise serializers.ValidationError('Invalid token.')
+            raise serializers.ValidationError('No verification token found for this user.')
+            
+        if verification_token.token != token_str:
+             raise serializers.ValidationError({'token': 'Invalid verification code.'})
         
-        if token.is_used:
-            raise serializers.ValidationError(
-                'This token has already been used.'
-            )
+        if verification_token.is_used:
+            raise serializers.ValidationError('This code has already been used.')
         
-        if token.is_expired:
-            raise serializers.ValidationError('This token has expired.')
-        
-        return value
+        if verification_token.is_expired:
+            raise serializers.ValidationError('This code has expired.')
+            
+        attrs['user'] = user
+        attrs['verification_token'] = verification_token
+        return attrs

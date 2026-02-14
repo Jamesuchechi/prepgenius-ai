@@ -14,9 +14,10 @@ export default function SignInPage() {
   })
   const [error, setError] = useState('')
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and verified
   useEffect(() => {
-    if (isAuthenticated) {
+    const user = useAuthStore.getState().user
+    if (isAuthenticated && ((user as any)?.is_email_verified || (user as any)?.is_superuser)) {
       router.push('/dashboard')
     }
   }, [isAuthenticated, router])

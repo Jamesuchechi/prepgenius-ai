@@ -11,8 +11,10 @@ class SubscriptionPlan(models.Model):
     """
     PLAN_TIER_CHOICES = [
         ('free', 'Free'),
+        ('weekly', 'Weekly'),
         ('monthly', 'Monthly'),
         ('quarterly', 'Quarterly'),
+        ('bi_annual', 'Bi-Annual'),
         ('annual', 'Annual'),
     ]
 

@@ -126,7 +126,7 @@ const PaymentSuccessPage: React.FC = () => {
                 Go to Dashboard
               </Link>
               <Link
-                href="/subscriptions/my-subscription"
+                href="/subscriptions/management"
                 className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-900 py-3 rounded-lg font-semibold transition-colors text-center"
               >
                 View Subscription

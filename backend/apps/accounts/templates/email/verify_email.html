@@ -115,24 +115,23 @@
             
             <p>Welcome to <strong>PrepGenius</strong>! We're thrilled to have you on board.</p>
             
-            <p>To get started, please verify your email address by clicking the button below:</p>
+            <p>To get started, please use the verification code below to activate your account:</p>
 
-            <!-- CTA Button -->
+            <!-- OTP Code -->
             <div class="button-container">
-                <a href="{{ verification_url }}" class="verify-button">Verify Email Address</a>
+                <div style="background-color: #f0f4f8; padding: 20px; border-radius: 8px; display: inline-block;">
+                    <span style="font-family: monospace; font-size: 32px; letter-spacing: 5px; font-weight: bold; color: #1e3c72;">{{ verification_code }}</span>
+                </div>
             </div>
 
             <!-- Info Box -->
             <div class="info-box">
-                <strong>⏱️ This link expires in {{ expires_in_hours }} hours</strong><br>
-                If you need a new verification link, you can request one on the login page.
+                <strong>⏱️ This code expires in {{ expires_in_hours }} hours</strong><br>
+                If you didn't request this code, you can safely ignore this email.
             </div>
 
             <!-- Fallback Text -->
-            <p>If the button doesn't work, copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px; color: #666;">
-                {{ verification_url }}
-            </p>
+            <p>Copy and paste the code above into the verification page.</p>
 
             <!-- Divider -->
             <div class="divider"></div>

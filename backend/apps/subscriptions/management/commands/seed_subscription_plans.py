@@ -29,6 +29,24 @@ class Command(BaseCommand):
                 'is_active': True,
             },
             {
+                'name': 'weekly',
+                'display_name': 'Weekly Plan (₦800)',
+                'price': Decimal('800.00'),
+                'duration_days': 7,
+                'questions_per_day': 0,  # Unlimited
+                'has_mock_exams': True,
+                'has_ai_tutor': True,
+                'has_audio_mode': False,
+                'has_document_mode': False,
+                'has_offline_mode': False,
+                'has_premium_content': False,
+                'has_priority_support': False,
+                'study_sessions_per_month': 0,  # Unlimited
+                'max_topics': 0,  # Unlimited
+                'description': 'Short-term access to all core features. Great for last-minute revision.',
+                'is_active': True,
+            },
+            {
                 'name': 'monthly',
                 'display_name': 'Monthly Plan (₦2,500)',
                 'price': Decimal('2500.00'),
@@ -62,6 +80,24 @@ class Command(BaseCommand):
                 'study_sessions_per_month': 0,  # Unlimited
                 'max_topics': 0,  # Unlimited
                 'description': 'Everything in Monthly plus priority support for 3 months. Best value!',
+                'is_active': True,
+            },
+            {
+                'name': 'bi_annual',
+                'display_name': 'Bi-Annual Plan (₦11,000)',
+                'price': Decimal('11000.00'),
+                'duration_days': 180,
+                'questions_per_day': 0,  # Unlimited
+                'has_mock_exams': True,
+                'has_ai_tutor': True,
+                'has_audio_mode': True,
+                'has_document_mode': True,
+                'has_offline_mode': True,
+                'has_premium_content': True,
+                'has_priority_support': True,
+                'study_sessions_per_month': 0,  # Unlimited
+                'max_topics': 0,  # Unlimited
+                'description': 'Semester-long access with all premium features including offline mode.',
                 'is_active': True,
             },
             {

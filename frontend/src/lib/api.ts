@@ -200,6 +200,13 @@ export async function verifyEmail(token: string): Promise<{ detail: string; user
   })
 }
 
+export async function resendVerificationEmail(email: string): Promise<{ detail: string }> {
+  return apiCall('/auth/verify-email/resend/', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  })
+}
+
 export async function requestPasswordReset(email: string): Promise<{ detail: string }> {
   return apiCall('/auth/password-reset/', {
     method: 'POST',

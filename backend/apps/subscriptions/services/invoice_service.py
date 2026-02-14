@@ -4,6 +4,7 @@ from django.template.loader import render_to_string
 from decimal import Decimal
 from io import BytesIO
 import uuid
+from django.core.files.base import ContentFile
 
 from ..models import Invoice, PaymentTransaction
 
@@ -71,6 +72,18 @@ class InvoiceService:
             notes=notes,
             due_date=timezone.now() + timezone.timedelta(days=30)
         )
+
+        # Generate PDF
+        pdf_buffer = InvoiceService.generate_pdf(invoice)
+        if pdf_buffer:
+            invoice.pdf_file.save(
+                f"{invoice_number}.pdf",
+                ContentFile(pdf_buffer.getvalue()),
+                save=True
+            )
+            logger.info(f"PDF generated for invoice {invoice_number}")
+        else:
+            logger.error(f"Failed to generate PDF for invoice {invoice_number}")
 
         logger.info(f"Invoice {invoice_number} created for user {user.id}")
 

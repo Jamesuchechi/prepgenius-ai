@@ -38,26 +38,72 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
         const token = localStorage.getItem('access_token');
         if (!token) {
           setLoading(false);
+          setError('Please log in to view your subscription.');
           return;
         }
 
-        const response = await fetch('/api/subscriptions/my-subscription/status/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        console.log('Fetching subscription status from /api/subscriptions/my-subscription/status/');
+        console.log('Token being used:', token ? `${token.substring(0, 15)}...` : 'No token');
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch subscription status');
+        try {
+          const response = await fetch('/api/subscriptions/my-subscription/status', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            // signal: controller.signal, // Removed signal
+          });
+
+          // clearTimeout(timeoutId); // Removed timeout
+
+          if (!response.ok) {
+            if (response.status === 401) {
+              // Token expired or invalid
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('refresh_token');
+              setError('Your session has expired. Please log in again.');
+              setLoading(false);
+              return;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          setSubscription(data);
+          setError(null);
+        } catch (fetchError) {
+          // clearTimeout(timeoutId);
+          throw fetchError;
         }
-
-        const data = await response.json();
-        setSubscription(data);
-        setError(null);
       } catch (err) {
         console.error('Error fetching subscription:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load subscription');
+        if (err instanceof Error) {
+          console.error('Error name:', err.name);
+          console.error('Error message:', err.message);
+          console.error('Error stack:', err.stack);
+        }
+
+        // Check if it's a 401 Unauthorized error
+        if (err instanceof TypeError && err.message === 'Failed to fetch') {
+          setError('Unable to connect to server. Please check your connection.');
+        } else if (err instanceof Error) {
+          // Check for common error patterns
+          const errorMessage = err.message;
+          if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+            setError('Your session has expired. Please log in again.');
+            // Optionally redirect to login
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('refresh_token');
+            }
+          } else if (errorMessage.includes('Failed to fetch')) {
+            setError('Unable to connect to server. Please try again.');
+          } else {
+            setError(err.message);
+          }
+        } else {
+          setError('Failed to load subscription');
+        }
       } finally {
         setLoading(false);
       }
@@ -68,6 +114,14 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
 
   if (loading) {
     return null;
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        <p className="text-sm">{error}</p>
+      </div>
+    );
   }
 
   if (!subscription) {
@@ -82,11 +136,10 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
   if (displayMode === 'badge') {
     return (
       <div
-        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-          isActive
-            ? 'bg-green-100 text-green-800'
-            : 'bg-gray-100 text-gray-800'
-        }`}
+        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${isActive
+          ? 'bg-green-100 text-green-800'
+          : 'bg-gray-100 text-gray-800'
+          }`}
       >
         {isActive ? (
           <>
@@ -145,11 +198,10 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
             </div>
           </div>
           <span
-            className={`px-3 py-1 rounded-full text-sm font-semibold ${
-              isActive
-                ? 'bg-green-100 text-green-800'
-                : 'bg-orange-100 text-orange-800'
-            }`}
+            className={`px-3 py-1 rounded-full text-sm font-semibold ${isActive
+              ? 'bg-green-100 text-green-800'
+              : 'bg-orange-100 text-orange-800'
+              }`}
           >
             {subscription.user_subscription.status}
           </span>
@@ -179,9 +231,8 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
             {!isFree && daysRemaining !== null && (
               <div>
                 <p className="text-xs text-gray-600">Days Remaining</p>
-                <p className={`text-sm font-semibold ${
-                  daysRemaining < 7 ? 'text-red-600' : 'text-green-600'
-                }`}>
+                <p className={`text-sm font-semibold ${daysRemaining < 7 ? 'text-red-600' : 'text-green-600'
+                  }`}>
                   {daysRemaining} days
                 </p>
               </div>

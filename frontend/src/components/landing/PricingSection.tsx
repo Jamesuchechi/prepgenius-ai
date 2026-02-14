@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/Button'
 const plans = [
 	{
 		id: 'basic',
-		name: 'Basic',
-		price: 'Free',
+		name: 'Free',
+		price: '₦0',
 		period: '',
 		features: [
-			'Access to free question bank',
+			'10 questions per day',
 			'Basic performance tracking',
 			'Community support'
 		],
@@ -17,28 +17,29 @@ const plans = [
 	},
 	{
 		id: 'pro',
-		name: 'Pro',
-		price: '₦3,000',
+		name: 'Monthly',
+		price: '₦2,500',
 		period: '/mo',
 		features: [
-			'Unlimited AI-generated questions',
-			'Personalized study plans',
-			'Mock exam simulator',
-			'Detailed performance analytics'
-		],
-		featured: true
-	},
-	{
-		id: 'enterprise',
-		name: 'Institution',
-		price: 'Contact',
-		period: 'Sales',
-		features: [
-			'Multi-user accounts & administration',
-			'Custom integrations',
+			'Unlimited questions',
+			'AI Tutor & Mock Exams',
+			'Detailed analytics',
 			'Priority support'
 		],
 		featured: false
+	},
+	{
+		id: 'annual',
+		name: 'Annual',
+		price: '₦20,000',
+		period: '/yr',
+		features: [
+			'Everything in Monthly',
+			'Offline Mode',
+			'Premium Content',
+			'Save 33% vs Monthly'
+		],
+		featured: true
 	}
 ]
 
@@ -83,11 +84,11 @@ export default function PricingSection() {
 
 						<div>
 							{plan.featured ? (
-								<Button variant="primary" href="/signup" className="w-full py-3 text-lg">Get Pro</Button>
+								<Button variant="primary" href="/signup" className="w-full py-3 text-lg">Get Annual</Button>
 							) : plan.id === 'basic' ? (
 								<Button variant="secondary" href="/signup" className="w-full py-3 text-lg">Start Free</Button>
 							) : (
-								<Button variant="secondary" href="/contact" className="w-full py-3 text-lg">Contact Sales</Button>
+								<Button variant="secondary" href="/signup" className="w-full py-3 text-lg">Get Monthly</Button>
 							)}
 						</div>
 					</div>

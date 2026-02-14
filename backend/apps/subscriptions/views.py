@@ -173,6 +173,10 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
         try:
             paystack_service = PaystackService()
             
+            # Construct callback URL
+            from django.conf import settings
+            callback_url = f"{settings.FRONTEND_URL}/payment/success"
+            
             authorization_url = paystack_service.initialize_transaction(
                 reference=transaction.paystack_reference,
                 amount=int(plan.price * 100),  # Paystack uses kobo
@@ -182,7 +186,8 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
                     'plan_id': plan.id,
                     'plan_name': plan.name,
                     'enable_auto_renew': serializer.validated_data['enable_auto_renew']
-                }
+                },
+                callback_url=callback_url
             )
 
             transaction.paystack_reference = authorization_url['data']['reference']
@@ -210,7 +215,7 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
                 'message': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='verify-payment')
     def verify_payment(self, request):
         """
         Verify a payment using Paystack reference.
@@ -260,12 +265,15 @@ class UserSubscriptionViewSet(viewsets.ViewSet):
                 auto_renew=True
             )
 
-            # Create invoice
-            invoice_service = InvoiceService()
-            invoice = invoice_service.create_invoice(
-                user=request.user,
-                payment_transaction=transaction
-            )
+            # Create invoice if it doesn't exist
+            if hasattr(transaction, 'invoice'):
+                invoice = transaction.invoice
+            else:
+                invoice_service = InvoiceService()
+                invoice = invoice_service.create_invoice(
+                    user=request.user,
+                    payment_transaction=transaction
+                )
 
             response_serializer = UserSubscriptionSerializer(subscription)
             return Response({

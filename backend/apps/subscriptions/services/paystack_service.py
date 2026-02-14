@@ -40,7 +40,8 @@ class PaystackService:
         email: str,
         reference: Optional[str] = None,
         user_id: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        callback_url: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Initialize a Paystack transaction.
@@ -51,6 +52,7 @@ class PaystackService:
             reference: Unique reference for the transaction
             user_id: User ID for metadata
             metadata: Additional metadata
+            callback_url: Optional callback URL for redirect after payment
         
         Returns:
             Response from Paystack API
@@ -64,6 +66,9 @@ class PaystackService:
             'reference': reference,
             'metadata': metadata or {'user_id': user_id}
         }
+
+        if callback_url:
+            payload['callback_url'] = callback_url
 
         try:
             response = requests.post(
