@@ -598,38 +598,89 @@ def generate_mock_exam_by_subject_name(
 
 		remaining = num_questions - len(selected_questions)
 
-		# Generate missing questions using AI
+		# Generate missing questions using AI (Parallelized)
 		if remaining > 0:
-			try:
-				generated = ai.generate_questions(
-					topic=subject.name,
-					difficulty=difficulty,
-					count=remaining,
-					q_type='MCQ',
-					additional_context=f"Exam type: {exam_format or 'General'}"
-				)
-				items = generated.get('questions', generated) if isinstance(generated, dict) else generated
-				if not isinstance(items, list):
-					raise ValueError('AI returned unexpected format for questions')
-
-				topic = Topic.objects.filter(subject=subject).first()
-				if not topic:
-					topic = Topic.objects.create(
-						subject=subject,
-						name='General',
-						difficulty='BEGINNER',
-						order=0,
-						estimated_hours=1.0,
-						description='Auto-generated topic',
-						learning_objectives=[]
+			import asyncio
+			from asgiref.sync import async_to_sync
+			
+			batch_size = 10
+			# Calculate number of batches needed
+			num_batches = (remaining + batch_size - 1) // batch_size
+			
+			logger.info(f"Generating {remaining} questions in {num_batches} parallel async batches...")
+			
+			generated_items = []
+			
+			async def fetch_batch_async(batch_idx):
+				try:
+					batch_context = f"Exam type: {exam_format or 'General'}. Batch {batch_idx+1}."
+					current_ai = AIRouter() # New instance for safety, though stateless usually
+					
+					generated = await current_ai.generate_questions_async(
+						topic=subject.name,
+						difficulty=difficulty,
+						count=batch_size,
+						q_type='MCQ',
+						additional_context=batch_context
 					)
+					
+					items = generated.get('questions', generated) if isinstance(generated, dict) else generated
+					if isinstance(items, list):
+						return items
+					return []
+				except Exception as e:
+					logger.error(f"Async Batch {batch_idx+1} failed: {e}")
+					return []
 
-				for q_data in items:
+			async def run_all_batches():
+				tasks = [fetch_batch_async(i) for i in range(num_batches)]
+				results = await asyncio.gather(*tasks)
+				return [item for sublist in results for item in sublist]
+
+			try:
+				generated_items = async_to_sync(run_all_batches)()
+			except Exception as e:
+				logger.error(f"Async generation failed: {e}")
+			
+			if not generated_items:
+				# If all parallel batches failed, raise error (or maybe we retry sequentially? No, just fail for now)
+				if not selected_questions:
+					logger.error("All AI batches failed to return questions.")
+					# Could raise, but maybe we have *some* cached questions?
+					# If strict req, raise.
+					raise ValueError('Unable to generate questions for the requested subject/format (AI service error).')
+			
+			# Process all generated items
+			logger.info(f"AI returned {len(generated_items)} raw items. Processing...")
+			
+			topic = Topic.objects.filter(subject=subject).first()
+			if not topic:
+				topic = Topic.objects.create(
+					subject=subject,
+					name='General',
+					difficulty='BEGINNER',
+					order=0,
+					estimated_hours=1.0,
+					description='Auto-generated topic',
+					learning_objectives=[]
+				)
+
+			for q_data in generated_items:
+				# Stop if we have enough
+				if len(selected_questions) >= num_questions:
+					break
+					
+				try:
+					# Deduplication check
+					content = q_data.get('content', 'No content provided')
+					if Question.objects.filter(subject=subject, content=content).exists():
+						continue
+						
 					q = Question.objects.create(
 						subject=subject,
 						topic=topic,
 						exam_type=exam_type,
-						content=q_data.get('content', 'No content provided'),
+						content=content,
 						question_type=q_data.get('type', 'MCQ'),
 						difficulty=q_data.get('difficulty', difficulty),
 						guidance=q_data.get('explanation', ''),
@@ -656,12 +707,9 @@ def generate_mock_exam_by_subject_name(
 							)
 
 					selected_questions.append(q)
-
-			except Exception as e:
-				logger.error(f"AI generation failed: {e}")
-				# If we have any questions collected so far, proceed; otherwise raise
-				if not selected_questions:
-					raise ValueError('Unable to generate or fetch questions for the requested subject/format')
+				except Exception as e:
+					logger.warning(f"Failed to save generated question: {e}")
+					continue
 
 	# Finalize: shuffle and trim
 	random.shuffle(selected_questions)

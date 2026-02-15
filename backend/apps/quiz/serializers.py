@@ -30,13 +30,31 @@ class QuizSerializer(serializers.ModelSerializer):
 class QuizListSerializer(serializers.ModelSerializer):
     """Lighter serializer for lists (no questions)"""
     question_count = serializers.SerializerMethodField()
+    attempts_count = serializers.SerializerMethodField()
+    avg_score = serializers.SerializerMethodField()
+    last_score = serializers.SerializerMethodField()
     
     class Meta:
         model = Quiz
-        fields = ['id', 'title', 'topic', 'difficulty', 'created_at', 'question_count']
+        fields = ['id', 'title', 'topic', 'difficulty', 'created_at', 'question_count', 'attempts_count', 'avg_score', 'last_score']
 
     def get_question_count(self, obj):
         return obj.questions.count()
+
+    def get_attempts_count(self, obj):
+        return obj.attempts.filter(user=self.context['request'].user).count()
+
+    def get_avg_score(self, obj):
+        from django.db.models import Avg
+        attempts = obj.attempts.filter(user=self.context['request'].user, status='COMPLETED')
+        if not attempts.exists():
+            return None
+        avg = attempts.aggregate(Avg('score'))['score__avg']
+        return round(avg, 1) if avg is not None else None
+
+    def get_last_score(self, obj):
+        attempt = obj.attempts.filter(user=self.context['request'].user, status='COMPLETED').order_by('-completed_at').first()
+        return round(attempt.score, 1) if attempt else None
 
 class QuizGenerationSerializer(serializers.Serializer):
     topic = serializers.CharField(required=True)

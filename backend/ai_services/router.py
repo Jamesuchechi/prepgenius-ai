@@ -46,6 +46,35 @@ class AIRouter:
         logger.error(error_msg)
         raise Exception(error_msg)
 
+    async def generate_questions_async(self, topic, difficulty, count=5, q_type="MCQ", additional_context=""):
+        errors = []
+        
+        for name, client in self.clients:
+            try:
+                # Check if client supports async generation
+                if not hasattr(client, 'generate_questions_async'):
+                    continue
+
+                if hasattr(client, 'async_client') and client.async_client is None:
+                     continue
+                
+                # HuggingFace check
+                if isinstance(client, HuggingFaceClient) and not client.api_key:
+                    continue
+
+                logger.info(f"Attempting async question generation with {name}...")
+                return await client.generate_questions_async(topic, difficulty, count, q_type, additional_context)
+                
+            except Exception as e:
+                logger.warning(f"{name} failed async: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
+        
+        # If we get here, all clients failed
+        error_msg = f"All AI providers failed async generation. Errors: {'; '.join(errors)}"
+        logger.error(error_msg)
+        raise Exception(error_msg)
+
     def generate_topics(self, subject):
         errors = []
         for name, client in self.clients:

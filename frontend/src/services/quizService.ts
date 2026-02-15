@@ -28,6 +28,7 @@ export interface Quiz {
 export interface AnswerSubmission {
     question_id: number;
     selected_option: string;
+    selected_answer_id?: number;
     text_response?: string;
 }
 
@@ -80,7 +81,10 @@ export const QuizService = {
     },
 
     getAttempts: async (): Promise<QuizAttempt[]> => {
-        const response = await axiosInstance.get<QuizAttempt[]>('/quiz/attempts/');
+        const response = await axiosInstance.get<any>('/quiz/attempts/');
+        if (response.data.results) {
+            return response.data.results;
+        }
         return response.data;
     },
 

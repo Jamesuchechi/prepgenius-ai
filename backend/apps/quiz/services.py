@@ -117,26 +117,32 @@ class QuizService:
                 correct_ans = q_data.get("correct_answer") or q_data.get("answer")
                 
                 if question_type == "MCQ":
-                    for opt in options:
+                    correct_idx = q_data.get("correct_answer_index")
+                    
+                    for idx, opt in enumerate(options):
                         if not opt: continue
                         
                         is_correct = False
-                        # Robust matching for correct answer
-                        # AI returns "Option Text" or "A. Option Text" or just "A"
-                        str_opt = str(opt).strip()
-                        str_correct = str(correct_ans).strip()
                         
-                        if str_correct == str_opt:
-                            is_correct = True
-                        elif str_opt.lower().startswith(str_correct.lower()):
-                            # Handle "A. Text" match "A"
-                            is_correct = True
-                        elif str_correct.lower().startswith(str_opt.lower()) and len(str_opt) > 1:
-                            is_correct = True
+                        # Use index if available and valid
+                        if correct_idx is not None and isinstance(correct_idx, int):
+                            if idx == correct_idx:
+                                is_correct = True
+                        else:
+                            # Fallback to robust matching
+                            str_opt = str(opt).strip()
+                            str_correct = str(correct_ans).strip()
+                            
+                            if str_correct == str_opt:
+                                is_correct = True
+                            elif str_opt.lower().startswith(str_correct.lower()):
+                                is_correct = True
+                            elif str_correct.lower().startswith(str_opt.lower()) and len(str_opt) > 1:
+                                is_correct = True
                         
                         Answer.objects.create(
                             question=question,
-                            content=str_opt,
+                            content=str(opt).strip(),
                             is_correct=is_correct,
                             explanation=q_data.get("explanation", "") if is_correct else ""
                         )

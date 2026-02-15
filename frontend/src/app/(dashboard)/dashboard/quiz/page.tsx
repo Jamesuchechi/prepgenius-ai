@@ -4,7 +4,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { useQuery } from '@tanstack/react-query'
-import { quizApi } from '@/lib/api/quiz'
+import { quizApi, type Quiz } from '@/lib/api/quiz'
 import Link from 'next/link'
 import { PlusCircle, Clock, CheckCircle, BookOpen, Trash2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -62,7 +62,7 @@ export default function QuizDashboardPage() {
                         Manage your generated quizzes and track performance.
                     </p>
                 </div>
-                <Link href="/practice">
+                <Link href="/dashboard/quiz/new">
                     <Button className="bg-[var(--orange)] hover:bg-[var(--orange-dark)] text-white">
                         <PlusCircle className="w-4 h-4 mr-2" />
                         Generate New Quiz
@@ -81,24 +81,38 @@ export default function QuizDashboardPage() {
                     ) : (
                         <div className="space-y-4">
                             {quizzes && quizzes.length > 0 ? (
-                                quizzes.map((quiz) => (
+                                quizzes.map((quiz: Quiz) => (
                                     <div key={quiz.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg hover:border-blue-300 transition-colors">
                                         <div className="mb-2 sm:mb-0">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h3 className="font-semibold text-lg">{quiz.title}</h3>
-                                                {/* <StatusBadge status={quiz.status} /> */}
-                                                {/* Assuming quiz doesn't have status on validaiton yet, using placeholders */}
+                                                {quiz.attempts_count && quiz.attempts_count > 0 ? (
+                                                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                                        {quiz.attempts_count} Attempt{quiz.attempts_count > 1 ? 's' : ''}
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                                                        New
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div className="text-sm text-gray-500 flex items-center gap-4">
+                                            <div className="text-sm text-gray-500 flex flex-wrap items-center gap-x-4 gap-y-1">
                                                 <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {quiz.topic}</span>
                                                 <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(quiz.created_at).toLocaleDateString()}</span>
+                                                {quiz.avg_score != null && (
+                                                    <span className="flex items-center gap-1 font-medium text-green-600">
+                                                        <CheckCircle className="w-3 h-3" /> Avg: {quiz.avg_score}%
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             {/* Logic to Resume or View Results would go here */}
-                                            <Button variant="outline" size="sm">
-                                                View Details
-                                            </Button>
+                                            <Link href={`/dashboard/quiz/${quiz.id}`}>
+                                                <Button variant="outline" size="sm">
+                                                    View Details
+                                                </Button>
+                                            </Link>
                                             <Button
                                                 variant="outline"
                                                 size="icon"
@@ -115,7 +129,7 @@ export default function QuizDashboardPage() {
                                 <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
                                     <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                                     <p className="mb-2">No quizzes found.</p>
-                                    <Link href="/practice">
+                                    <Link href="/dashboard/quiz/new">
                                         <Button variant="link" className="text-[var(--blue)]">
                                             Create your first quiz
                                         </Button>

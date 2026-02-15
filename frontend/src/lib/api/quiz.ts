@@ -7,6 +7,9 @@ export interface Quiz {
     topic: string;
     difficulty: string;
     question_count: number; // derived or stored
+    attempts_count?: number;
+    avg_score?: number | null;
+    last_score?: number | null;
     created_at: string;
     status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING';
     score?: number;
@@ -39,8 +42,11 @@ export interface QuizAttempt {
 }
 
 export const quizApi = {
-    list: async () => {
-        const response = await axios.get<Quiz[]>('/quiz/quizzes/');
+    list: async (): Promise<Quiz[]> => {
+        const response = await axios.get<any>('/quiz/quizzes/');
+        if (response.data.results) {
+            return response.data.results;
+        }
         return response.data;
     },
 

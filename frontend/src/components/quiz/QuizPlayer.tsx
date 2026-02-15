@@ -12,14 +12,14 @@ interface QuizPlayerProps {
 
 const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [answers, setAnswers] = useState<Record<number, string>>({}); // valid question IDs mapped to answers
+    const [answers, setAnswers] = useState<Record<number, { id?: number; content: string }>>({}); // valid question IDs mapped to answer objects
 
     const currentQuestion = quiz.questions?.[currentIndex];
     const totalQuestions = quiz.questions?.length || 0;
 
-    const handleSelectOption = (option: string) => {
+    const handleSelectOption = (content: string, id?: number) => {
         if (!currentQuestion) return;
-        setAnswers(prev => ({ ...prev, [currentQuestion.id]: option }));
+        setAnswers(prev => ({ ...prev, [currentQuestion.id]: { content, id } }));
     };
 
     const handleNext = () => {
@@ -38,7 +38,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete }) => {
         const submission: QuizSubmission = {
             answers: Object.entries(answers).map(([qId, val]) => ({
                 question_id: Number(qId),
-                selected_option: val,
+                selected_option: val.content,
+                selected_answer_id: val.id,
                 text_response: ''
             }))
         };
@@ -77,8 +78,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete }) => {
                         {currentQuestion.answers?.map((ans, idx) => (
                             <div
                                 key={idx}
-                                onClick={() => handleSelectOption(ans.content)}
-                                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedAnswer === ans.content
+                                onClick={() => handleSelectOption(ans.content, ans.id)}
+                                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedAnswer?.content === ans.content
                                     ? 'border-blue-500 bg-blue-50'
                                     : 'border-gray-200 hover:border-blue-300'
                                     }`}
@@ -94,7 +95,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete }) => {
                     <textarea
                         className="w-full p-3 border rounded-lg h-32"
                         placeholder="Type your answer here..."
-                        value={selectedAnswer || ''}
+                        value={selectedAnswer?.content || ''}
                         onChange={(e) => handleSelectOption(e.target.value)}
                     />
                 )}

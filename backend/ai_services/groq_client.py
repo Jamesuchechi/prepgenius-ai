@@ -6,11 +6,12 @@ logger = logging.getLogger(__name__)
 
 class GroqClient:
     def __init__(self):
-        from groq import Groq
+        from groq import Groq, AsyncGroq
         self.api_key = settings.GROQ_API_KEY
         if not self.api_key:
             logger.warning("GROQ_API_KEY is not set.")
         self.client = Groq(api_key=self.api_key)
+        self.async_client = AsyncGroq(api_key=self.api_key)
         self.model = settings.GROQ_MODEL
         self.timeout = settings.GROQ_TIMEOUT
 
@@ -55,6 +56,37 @@ class GroqClient:
             
         except Exception as e:
             logger.error(f"Error generating questions with Groq: {e}")
+            raise
+
+    async def generate_questions_async(self, topic, difficulty, count=5, q_type="MCQ", additional_context=""):
+        """
+        Generates questions using Groq API asynchronously.
+        """
+        prompt = self._build_prompt(topic, difficulty, count, q_type, additional_context)
+        
+        try:
+            chat_completion = await self.async_client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert exam question generator for Nigerian students (JAMB, WAEC, NECO). Output ONLY valid JSON."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                model=self.model,
+                temperature=0.7,
+                response_format={"type": "json_object"},
+                timeout=self.timeout
+            )
+            
+            response_content = chat_completion.choices[0].message.content
+            return self._parse_response(response_content)
+            
+        except Exception as e:
+            logger.error(f"Error generating questions async with Groq: {e}")
             raise
 
     def generate_topics(self, subject):

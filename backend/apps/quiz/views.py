@@ -91,6 +91,7 @@ class QuizViewSet(viewsets.ModelViewSet):
             feedback = ""
             
             # Grading Logic (Simple MCQ)
+            # Grading Logic (Simple MCQ)
             if question.question_type == 'MCQ':
                 # Find correct answer in DB
                 correct_answer_obj = question.answers.filter(is_correct=True).first()
@@ -99,10 +100,15 @@ class QuizViewSet(viewsets.ModelViewSet):
                      if selected_answer_id:
                          if int(selected_answer_id) == correct_answer_obj.id:
                              is_correct = True
-                     elif selected_option:
-                         if selected_option == correct_answer_obj.content:
+                     
+                     if not is_correct and selected_option:
+                         # Normalize strings for comparison
+                         sel_norm = selected_option.strip().lower()
+                         cor_norm = correct_answer_obj.content.strip().lower()
+                         
+                         if sel_norm == cor_norm:
                              is_correct = True
-                         elif correct_answer_obj.content.startswith(selected_option):
+                         elif cor_norm.startswith(sel_norm) and len(sel_norm) > 1: # Strict prefix match
                              is_correct = True
                          
                      if is_correct:
@@ -110,6 +116,9 @@ class QuizViewSet(viewsets.ModelViewSet):
                          feedback = "Correct! " + correct_answer_obj.explanation
                      else:
                          feedback = f"Incorrect. The correct answer was: {correct_answer_obj.content}. {correct_answer_obj.explanation}"
+                else:
+                    # Fallback if no correct answer is marked in DB
+                    feedback = "Error: Correct answer not defined in system. Please report this."
             
             # Save AnswerAttempt
             AnswerAttempt.objects.create(

@@ -47,14 +47,15 @@ class PromptTemplates:
                     {
                         "content": "Question text here",
                         "options": ["Option A", "Option B", "Option C", "Option D"],
-                        "correct_answer": "Option A",  # Must match one of the options exactly
+                        "correct_answer_index": 0,  # Integer 0-3 representing the index of the correct option
+                        "correct_answer": "Option A",  # Optional: text representation for verification
                         "explanation": "Brief explanation of why the answer is correct",
                         "difficulty": "EASY|MEDIUM|HARD",
                         "type": "MCQ"
                     }
                 ]
             }
-            Ensure keys are exactly as shown. 'options' must be a list of 4 strings.
+            Ensure keys are exactly as shown. 'options' must be a list of 4 strings. 'correct_answer_index' must be an integer 0-3.
             """
         elif q_type == "THEORY":
             type_specific_instructions = """

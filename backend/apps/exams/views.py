@@ -424,6 +424,11 @@ class UserExamStatsView(generics.GenericAPIView):
 			max_score=Max('percentage')
 		)['max_score'] or 0.0
 		
+		return Response({
+			'total_attempts': total_attempts,
+			'best_score': round(best_score, 1)
+		})
+		
 class ExplainQuestionView(generics.GenericAPIView):
 	"""
 	Generate an AI explanation for a specific question on demand.
