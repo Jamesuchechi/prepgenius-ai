@@ -59,7 +59,7 @@ class QuestionGenerationService:
             content=data.get('content', 'No content provided'),
             question_type=q_type,
             difficulty=difficulty,
-            guidance=data.get('guidance', ''),
+            guidance=data.get('guidance') or data.get('explanation', ''),
             metadata=data.get('metadata', {})
         )
 
@@ -84,22 +84,22 @@ class QuestionGenerationService:
         explanation = data.get('explanation', '')
         
         for option in options:
-            is_correct = (option == correct_answer) or (option.startswith(correct_answer) if len(correct_answer) == 1 else False) # naive check
-            # Better check: if correct_answer is an index or the full text
+            # Robust comparison: normalize strings
+            norm_option = str(option).strip().lower()
+            norm_correct = str(correct_answer).strip().lower()
             
-            # Robust check attempt
-            if str(correct_answer).isdigit():
-                 # checking by index handling if we had indices
-                 pass 
+            is_correct = (norm_option == norm_correct)
             
-            # Simple string matching for now, assuming AI returns exact string of the option
-            is_correct = (option == correct_answer)
+            if not is_correct and len(norm_correct) > 3:
+                 if norm_correct in norm_option:
+                     is_correct = True
 
             Answer.objects.create(
                 question=question,
                 content=option,
                 is_correct=is_correct,
-                explanation=explanation if is_correct else ""
+                explanation=explanation 
+                if is_correct else "" 
             )
 
     def _create_theory_answer(self, question, data):

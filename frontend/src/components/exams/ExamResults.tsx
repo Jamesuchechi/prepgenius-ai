@@ -1,8 +1,8 @@
 'use client'
 
-import React from 'react'
-import { CheckCircle2, XCircle, HelpCircle, TrendingUp, BarChart3, AlertCircle } from 'lucide-react'
-import { ExamResult, Question } from '@/services/exams'
+import React, { useState } from 'react'
+import { CheckCircle2, XCircle, HelpCircle, TrendingUp, BarChart3, AlertCircle, Sparkles } from 'lucide-react'
+import { ExamResult, Question, ExamService } from '@/services/exams'
 import { PerformanceChart } from './PerformanceChart'
 
 interface ExamResultsProps {
@@ -29,14 +29,34 @@ export function ExamResults({
     status: perf.status || 'weak',
   }))
 
+  const [explaining, setExplaining] = useState<string | null>(null)
+  const [localExplanations, setLocalExplanations] = useState<Record<string, string>>({})
+
+  const handleExplain = async (qId: string, qData: any) => {
+    try {
+      setExplaining(qId)
+      const data = await ExamService.explainQuestion(Number(qData.question_id), {
+        user_answer: qData.user_answer_id,
+        correct_answer: qData.correct_answer_text
+      })
+      setLocalExplanations(prev => ({
+        ...prev,
+        [qId]: data.explanation
+      }))
+    } catch (err) {
+      console.error("Failed to explain", err)
+    } finally {
+      setExplaining(null)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
         {/* Score Card */}
         <div
-          className={`bg-gradient-to-br rounded-xl p-8 mb-8 text-white shadow-lg ${
-            passed ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'
-          }`}
+          className={`bg-gradient-to-br rounded-xl p-8 mb-8 text-white shadow-lg ${passed ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'
+            }`}
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             {/* Score Circle */}
@@ -160,56 +180,77 @@ export function ExamResults({
 
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {Object.entries(result.detailed_breakdown.questions).map(
-                ([qId, qData]: [string, any], idx) => (
-                  <div
-                    key={qId}
-                    className={`border rounded-lg p-4 ${
-                      qData.is_correct ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 mb-2">
-                      {qData.is_correct ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-1" />
-                      )}
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900 mb-1">
-                          Question {idx + 1}
-                          {qData.topic && (
-                            <span className="ml-2 text-sm font-normal text-gray-600">
-                              • {qData.topic}
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-sm text-gray-700 mb-2">{qData.question_text}</p>
+                ([qId, qData]: [string, any], idx) => {
+                  const existingExpl = qData.explanation
+                  const currentExpl = localExplanations[qId] || existingExpl
+                  const isPoorExplanation = !currentExpl || currentExpl.length < 10
+
+                  return (
+                    <div
+                      key={qId}
+                      className={`border rounded-lg p-4 ${qData.is_correct ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                        }`}
+                    >
+                      <div className="flex items-start gap-3 mb-2">
                         {qData.is_correct ? (
-                          <p className="text-sm text-green-700">
-                            <span className="font-semibold">Correct Answer:</span>{' '}
-                            {qData.correct_answer_text}
-                          </p>
+                          <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
                         ) : (
-                          <>
-                            {qData.user_answer_id && (
-                              <p className="text-sm text-red-700 mb-1">
-                                <span className="font-semibold">Your Answer:</span> Wrong
-                              </p>
+                          <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-1" />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 mb-1">
+                            Question {idx + 1}
+                            {qData.topic && (
+                              <span className="ml-2 text-sm font-normal text-gray-600">
+                                • {qData.topic}
+                              </span>
                             )}
+                          </p>
+                          <p className="text-sm text-gray-700 mb-2">{qData.question_text}</p>
+                          {qData.is_correct ? (
                             <p className="text-sm text-green-700">
                               <span className="font-semibold">Correct Answer:</span>{' '}
                               {qData.correct_answer_text}
                             </p>
-                          </>
-                        )}
-                        {qData.explanation && (
-                          <p className="text-sm text-gray-700 mt-2 italic">
-                            <span className="font-semibold">Explanation:</span> {qData.explanation}
-                          </p>
-                        )}
+                          ) : (
+                            <>
+                              {qData.user_answer_id && (
+                                <p className="text-sm text-red-700 mb-1">
+                                  <span className="font-semibold">Your Answer:</span> Wrong
+                                </p>
+                              )}
+                              <p className="text-sm text-green-700">
+                                <span className="font-semibold">Correct Answer:</span>{' '}
+                                {qData.correct_answer_text}
+                              </p>
+                            </>
+                          )}
+
+                          {/* Explanation Section */}
+                          {currentExpl && !isPoorExplanation && (
+                            <p className="text-sm text-gray-700 mt-2 italic border-l-2 border-gray-300 pl-3">
+                              <span className="font-semibold not-italic">Explanation:</span> {currentExpl}
+                            </p>
+                          )}
+
+                          {/* Explain Button */}
+                          {isPoorExplanation && (
+                            <div className="mt-2">
+                              <button
+                                onClick={() => handleExplain(qId, qData)}
+                                disabled={explaining === qId}
+                                className="text-xs flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors disabled:opacity-50"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                {explaining === qId ? 'Generating...' : 'Explain with AI'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
+                  )
+                }
               )}
             </div>
           </div>

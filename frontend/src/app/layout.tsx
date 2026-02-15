@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { LayoutClient } from '@/components/LayoutClient'
 import QueryProvider from '@/components/QueryProvider'
+import { AuthContextProvider } from '@/components/AuthContextProvider'
 import Script from 'next/script'
 
 export const metadata: Metadata = {
@@ -31,7 +32,9 @@ export default function RootLayout({
       </head>
       <body className="bg-white text-black">
         <QueryProvider>
-          <LayoutClient>{children}</LayoutClient>
+          <AuthContextProvider>
+            <LayoutClient>{children}</LayoutClient>
+          </AuthContextProvider>
         </QueryProvider>
       </body>
     </html>

@@ -22,4 +22,10 @@ urlpatterns = [
 	
 	# Legacy endpoints (for backward compatibility)
 	path('create/', views.MockExamCreateView.as_view(), name='mockexam-create'),
+	
+	# Stats
+	path('stats/user-summary/', views.UserExamStatsView.as_view(), name='user-exam-stats'),
+	
+	# Explanations
+	path('explain/<int:question_id>/', views.ExplainQuestionView.as_view(), name='explain-question'),
 ]

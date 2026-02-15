@@ -59,11 +59,23 @@ class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
             try:
                 selected_answer = Answer.objects.get(id=selected_answer_id, question=question)
                 is_correct = selected_answer.is_correct
-                explanation = selected_answer.explanation if is_correct else "Incorrect."
-                # Find the correct answer for feedback
-                correct_ans = question.answers.filter(is_correct=True).first()
-                if not is_correct and correct_ans:
-                    explanation = f"Incorrect. {correct_ans.explanation}"
+                
+                # Base explanation
+                explanation = selected_answer.explanation
+                
+                if not explanation:
+                     # Fallback to general guidance if specific answer has no explanation
+                     explanation = question.guidance
+
+                if not is_correct:
+                    explanation = "Incorrect."
+                    # Append correct answer explanation if available
+                    correct_ans = question.answers.filter(is_correct=True).first()
+                    if correct_ans and correct_ans.explanation:
+                        explanation += f" {correct_ans.explanation}"
+                    elif question.guidance:
+                         explanation += f" {question.guidance}"
+                
             except Answer.DoesNotExist:
                  return Response({'error': 'Invalid answer ID'}, status=status.HTTP_400_BAD_REQUEST)
 

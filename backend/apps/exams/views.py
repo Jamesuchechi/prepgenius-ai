@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 
 class MockExamViewSet(ModelViewSet):
 	"""ViewSet for managing mock exams."""
-	queryset = MockExam.objects.filter(is_active=True, is_public=True).order_by('-created_at')
+	def get_queryset(self):
+		return MockExam.objects.filter(creator=self.request.user, is_active=True).order_by('-created_at')
+	
 	permission_classes = [permissions.IsAuthenticated]
 	
 	def get_serializer_class(self):
@@ -346,18 +348,22 @@ class ExamResultView(generics.RetrieveAPIView):
 	lookup_url_kwarg = 'exam_id'
 	
 	def get_object(self):
-		"""Get the result for the user's attempt."""
+		"""Get the result for the user's latest attempt."""
+		# Get the latest attempt for this exam
+		attempt = ExamAttempt.objects.filter(
+			user=self.request.user,
+			mock_exam_id=self.kwargs['exam_id']
+		).order_by('-started_at').first()
+
+		if not attempt:
+			from django.http import Http404
+			raise Http404("No exam attempt found.")
+
 		try:
-			attempt = get_object_or_404(
-				ExamAttempt,
-				user=self.request.user,
-				mock_exam_id=self.kwargs['exam_id']
-			)
 			return attempt.result
 		except ExamResult.DoesNotExist:
-			raise ExamResult.DoesNotExist(
-				"No result found. Please submit the exam first."
-			)
+			from rest_framework.exceptions import NotFound
+			raise NotFound("No result found. Please submit the exam first.")
 
 
 class MyExamAttemptsView(generics.ListAPIView):
@@ -399,3 +405,83 @@ class MockExamListView(generics.ListAPIView):
 	queryset = MockExam.objects.filter(is_active=True, is_public=True).order_by('-created_at')
 	serializer_class = MockExamSerializer
 	permission_classes = [permissions.IsAuthenticated]
+
+
+class UserExamStatsView(generics.GenericAPIView):
+	"""Get aggregated exam statistics for the current user."""
+	permission_classes = [permissions.IsAuthenticated]
+	
+	def get(self, request):
+		from django.db.models import Max
+		user = self.request.user
+		attempts = ExamAttempt.objects.filter(user=user)
+		
+		total_attempts = attempts.count()
+		
+		# Best score from graded/submitted attempts
+		# We use 'percentage' as the score metric
+		best_score = attempts.aggregate(
+			max_score=Max('percentage')
+		)['max_score'] or 0.0
+		
+class ExplainQuestionView(generics.GenericAPIView):
+	"""
+	Generate an AI explanation for a specific question on demand.
+	"""
+	permission_classes = [permissions.IsAuthenticated]
+	
+	def post(self, request, question_id):
+		"""
+		Request body:
+		{
+			"user_answer": "a", (optional)
+			"correct_answer": "b" (optional)
+		}
+		"""
+		from apps.questions.models import Question
+		from ai_services.router import AIRouter
+		
+		try:
+			question = get_object_or_404(Question, pk=question_id)
+			
+			user_answer = request.data.get('user_answer')
+			correct_answer = request.data.get('correct_answer')
+			
+			# Build context
+			options = []
+			if hasattr(question, 'answers'):
+				options = [f"{a.content} ({'Correct' if a.is_correct else 'Incorrect'})" for a in question.answers.all()]
+			
+			ai = AIRouter()
+			ai_response = ai.generate_questions(
+				topic=question.topic.name if question.topic else question.subject.name,
+				difficulty=question.difficulty or 'MEDIUM',
+				count=1,
+				q_type='EXPLAIN',
+				additional_context=(
+					f"QUESTION: {question.content}\n"
+					f"OPTIONS: {options}\n"
+					f"USER_ANSWER: {user_answer}\n"
+					f"CORRECT_ANSWER: {correct_answer}\n"
+					"Provide a clear, educative explanation for why the correct answer is right and why others might be wrong."
+				)
+			)
+			
+			# Extract explanation from response
+			explanation = "Explanation unavailable."
+			items = ai_response.get('questions', ai_response) if isinstance(ai_response, dict) else ai_response
+			
+			if isinstance(items, list) and len(items) > 0:
+				item = items[0]
+				explanation = item.get('explanation') or item.get('step_by_step') or item.get('correction')
+			elif isinstance(items, dict):
+				explanation = items.get('explanation') or items.get('step_by_step') or items.get('correction')
+				
+			return Response({'explanation': explanation})
+			
+		except Exception as e:
+			logger.error(f"Error generating explanation for question {question_id}: {str(e)}")
+			return Response(
+				{'error': 'Failed to generate explanation'},
+				status=status.HTTP_500_INTERNAL_SERVER_ERROR
+			)

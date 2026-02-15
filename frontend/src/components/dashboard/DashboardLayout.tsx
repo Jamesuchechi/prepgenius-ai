@@ -19,17 +19,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
       if (!user.is_email_verified && !user.is_superuser) {
-        // Only redirect if we have an email to pass and it's not "undefined"
+        // This IS a protected route (dashboard), so we MUST redirect unverified users
+        // unlike signin/signup where we want to let them stay.
         if (user.email && user.email !== 'undefined') {
           router.push(`/verify-email?email=${encodeURIComponent(user.email)}`)
         } else {
-          // If no email, just go to verify page and let it handle it (or let user type it)
           router.push(`/verify-email`)
         }
       }
     } else if (!isLoading && !isAuthenticated) {
-      // Optional: Redirect to login if not authenticated (if not handled by middleware)
-      // router.push('/auth/signin')
+      router.push('/signin')
     }
   }, [user, isAuthenticated, isLoading, router])
 

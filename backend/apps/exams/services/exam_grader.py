@@ -64,7 +64,26 @@ def auto_grade_exam(attempt: ExamAttempt):
 	unanswered_count = 0
 	
 	try:
-		for mq in attempt.mock_exam.mockexamquestion_set.all():
+		# Bulk fetch questions with optimizations
+		mock_questions = attempt.mock_exam.mockexamquestion_set.select_related(
+			'question', 'question__topic'
+		).all()
+		
+		# Get all question IDs
+		question_ids = [mq.question.id for mq in mock_questions]
+		
+		# Bulk fetch all correct answers
+		correct_answers = Answer.objects.filter(
+			question_id__in=question_ids,
+			is_correct=True
+		).select_related('question')
+		
+		# Map question_id -> correct_answer
+		correct_answer_map = {
+			str(a.question.id): a for a in correct_answers
+		}
+		
+		for mq in mock_questions:
 			qid = str(mq.question.id)
 			question = mq.question
 			
@@ -72,12 +91,10 @@ def auto_grade_exam(attempt: ExamAttempt):
 			user_answer_id = responses.get(qid)
 			
 			# Handle Theory/Essay questions
-			if question.question_type == 'THEORY' or question.question_type == 'ESSAY':
+			if question.question_type in ['THEORY', 'ESSAY']:
 				if user_answer_id:
 					attempted_questions += 1
 				
-				# For now, we don't auto-grade theory questions. 
-				# We mark them as None for correctness.
 				breakdown[qid] = {
 					'question_id': question.id,
 					'question_text': question.content[:100],
@@ -89,11 +106,8 @@ def auto_grade_exam(attempt: ExamAttempt):
 				}
 				continue
 
-			# Get correct answer
-			correct_answer = Answer.objects.filter(
-				question=question,
-				is_correct=True
-			).first()
+			# Get correct answer from map
+			correct_answer = correct_answer_map.get(qid)
 			
 			# Determine if answer is correct
 			is_correct = False
@@ -128,7 +142,7 @@ def auto_grade_exam(attempt: ExamAttempt):
 		raise ValueError(f"Error during grading: {str(e)}")
 	
 	# Calculate percentage
-	total_questions = attempt.mock_exam.mockexamquestion_set.count()
+	total_questions = len(mock_questions)
 	percentage = (total_score / total_questions * 100) if total_questions > 0 else 0
 	
 	# Update attempt

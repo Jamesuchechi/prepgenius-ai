@@ -730,3 +730,4 @@ POST /api/webhooks/paystack/
 **Next Review**: After completing Phase 1
 
 daphne -b 0.0.0.0 -p 8000 core.asgi:application
+uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --reload

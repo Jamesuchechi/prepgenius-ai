@@ -17,6 +17,8 @@ export default function SignInPage() {
   // Redirect if already authenticated and verified
   useEffect(() => {
     const user = useAuthStore.getState().user
+    // Only redirect to dashboard if verified. 
+    // If unverified, STAY HERE (or show a message), do NOT auto-redirect to verify-email
     if (isAuthenticated && ((user as any)?.is_email_verified || (user as any)?.is_superuser)) {
       router.push('/dashboard')
     }
@@ -36,8 +38,20 @@ export default function SignInPage() {
 
     try {
       await login(formData.email, formData.password)
-      // Redirect to dashboard on success
-      router.push('/dashboard')
+
+      // Check verification status from store (it should be updated by login)
+      const user = useAuthStore.getState().user
+
+      if (user?.is_email_verified || user?.is_superuser) {
+        router.push('/dashboard')
+      } else {
+        // If not verified, NOW we redirect to verify-email
+        if (user?.email) {
+          router.push(`/verify-email?email=${encodeURIComponent(user.email)}`)
+        } else {
+          router.push('/verify-email')
+        }
+      }
     } catch (err: any) {
       setError(err.message || 'Invalid email or password')
     }

@@ -123,6 +123,16 @@ export const ExamService = {
   },
 
   /**
+   * Get aggregated stats for the current user
+   */
+  getUserStats: async () => {
+    const response = await axiosInstance.get<{ total_attempts: number; best_score: number }>(
+      '/exams/stats/user-summary/'
+    )
+    return response.data
+  },
+
+  /**
    * Create a JAMB mock exam
    */
   createJAMBExam: async (payload: {
@@ -198,6 +208,14 @@ export const ExamService = {
    */
   getAttemptDetail: async (attemptId: number): Promise<ExamAttempt> => {
     const response = await axiosInstance.get<ExamAttempt>(`/exams/attempts/${attemptId}/`)
+    return response.data
+  },
+
+  /**
+   * Get AI explanation for a question
+   */
+  explainQuestion: async (questionId: number, context: { user_answer?: string; correct_answer?: string }): Promise<{ explanation: string }> => {
+    const response = await axiosInstance.post<{ explanation: string }>(`/exams/explain/${questionId}/`, context)
     return response.data
   },
 }

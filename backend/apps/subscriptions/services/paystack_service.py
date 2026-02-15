@@ -75,7 +75,7 @@ class PaystackService:
                 f'{self.base_url}/transaction/initialize',
                 json=payload,
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             return response.json()
@@ -100,7 +100,7 @@ class PaystackService:
             response = requests.get(
                 f'{self.base_url}/transaction/verify/{reference}',
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             return response.json()
@@ -139,7 +139,7 @@ class PaystackService:
                 f'{self.base_url}/customer',
                 json=payload,
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             return response.json()
@@ -183,7 +183,7 @@ class PaystackService:
                 f'{self.base_url}/plan',
                 json=payload,
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             return response.json()
@@ -226,7 +226,7 @@ class PaystackService:
                 f'{self.base_url}/subscription',
                 json=payload,
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             return response.json()
@@ -258,7 +258,7 @@ class PaystackService:
                 f'{self.base_url}/subscription/disable/{subscription_code}',
                 json=payload,
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             return response.json()
@@ -296,7 +296,7 @@ class PaystackService:
                 f'{self.base_url}/transaction',
                 params=params,
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             return response.json()
@@ -315,7 +315,7 @@ class PaystackService:
             response = requests.get(
                 f'{self.base_url}/transaction/export',
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30
             )
             response.raise_for_status()
             return response.json()

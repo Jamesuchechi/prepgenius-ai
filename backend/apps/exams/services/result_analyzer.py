@@ -35,8 +35,27 @@ def analyze_exam_result(attempt: ExamAttempt, grading_result: dict):
 	topic_performance = {}
 	
 	try:
-		ai = AIRouter()
-		for mq in attempt.mock_exam.mockexamquestion_set.all():
+		# Bulk fetch questions with topics
+		mock_questions = attempt.mock_exam.mockexamquestion_set.select_related(
+			'question', 'question__topic', 'question__subject'
+		).all()
+		
+		# Get all question IDs
+		question_ids = [mq.question.id for mq in mock_questions]
+		
+		# Bulk fetch all correct answers for explanation lookup
+		# We only need answers that have explanations
+		correct_answers = Answer.objects.filter(
+			question_id__in=question_ids,
+			is_correct=True
+		).select_related('question')
+		
+		# Map question_id -> correct_answer
+		correct_answer_map = {
+			str(a.question.id): a for a in correct_answers
+		}
+		
+		for mq in mock_questions:
 			q = mq.question
 			topic = q.topic.name if q.topic else "Uncategorized"
 			difficulty = q.difficulty
@@ -60,40 +79,29 @@ def analyze_exam_result(attempt: ExamAttempt, grading_result: dict):
 			qid = str(q.id)
 			question_data = breakdown.get(qid, {})
 			is_correct = question_data.get('is_correct', False)
-			# Ensure each question has an educative explanation. Use stored answer explanation first,
-			# otherwise ask the AI to generate an explanation/correction.
+			
+			# Ensure each question has an educative explanation.
+			# Priority: 
+			# 1. Existing explanation in breakdown (from grading)
+			# 2. Question guidance
+			# 3. Correct answer explanation
+			# 4. Fallback message (AI generation removed for performance)
+			
 			explanation = question_data.get('explanation')
 			if not explanation:
-				# attempt to use stored correct answer explanation
-				correct_ans_id = question_data.get('correct_answer_id')
-				if correct_ans_id:
-					ans = Answer.objects.filter(id=correct_ans_id).first()
+				# Check question guidance
+				if q.guidance:
+					explanation = q.guidance
+				else:
+					# Check correct answer explanation from map
+					ans = correct_answer_map.get(qid)
 					if ans and ans.explanation:
 						explanation = ans.explanation
-				# If still missing, call AI to explain
-				if not explanation:
-					try:
-						# Build context for AI explanation
-						options = []
-						if hasattr(q, 'answers'):
-							options = [a.content for a in q.answers.all()]
-						ai_response = ai.generate_questions(
-							topic=q.topic.name if q.topic else q.subject.name,
-							difficulty=q.difficulty or 'MEDIUM',
-							count=1,
-							q_type='EXPLAIN',
-							additional_context=f"QUESTION: {q.content}\nOPTIONS: {options}\nUSER_ANSWER_ID: {question_data.get('user_answer_id')}\nCORRECT_ANSWER_ID: {question_data.get('correct_answer_id')}"
-						)
-						# normalize AI response
-						items = ai_response.get('questions', ai_response) if isinstance(ai_response, dict) else ai_response
-						if isinstance(items, list) and len(items) > 0:
-							item = items[0]
-							explanation = item.get('explanation') or item.get('step_by_step') or item.get('correction')
-					except Exception as e:
-						logger.warning(f"AI explanation failed for question {q.id}: {e}")
-			# attach explanation back into breakdown
+			
+			# attach explanation back into breakdown if found
 			if explanation:
 				question_data['explanation'] = explanation
+				
 			breakdown[qid] = question_data
 			
 			topic_stats[topic]["total"] += 1
@@ -123,9 +131,7 @@ def analyze_exam_result(attempt: ExamAttempt, grading_result: dict):
 	
 	except Exception as e:
 		logger.error(f"Error analyzing results for attempt {attempt.id}: {str(e)}")
-		topic_stats = {}
-		topic_performance = {}
-	
+
 	# Generate recommendations
 	recommendations = generate_recommendations(topic_performance, percentage)
 	

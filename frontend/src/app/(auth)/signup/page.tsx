@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton'
+import { Check, X, CheckCircle2, AlertCircle } from 'lucide-react'
 
 const examTypes = ['JAMB', 'WAEC', 'NECO', 'GCE', 'NABTEB']
 const subjects = [
@@ -27,8 +28,18 @@ export default function SignUpPage() {
   })
   const [error, setError] = useState('')
 
+  // Password Strength State
+  const [passwordStrength, setPasswordStrength] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false
+  })
+
   // Redirect if already authenticated and verified
   useEffect(() => {
+    // Only redirect to dashboard if verified.
     if (isAuthenticated && ((user as any)?.is_email_verified || (user as any)?.is_superuser)) {
       router.push('/dashboard')
     }
@@ -41,6 +52,18 @@ export default function SignUpPage() {
     }
   }, [authError])
 
+  // Check password strength on change
+  useEffect(() => {
+    const p = formData.password
+    setPasswordStrength({
+      length: p.length >= 8,
+      uppercase: /[A-Z]/.test(p),
+      lowercase: /[a-z]/.test(p),
+      number: /[0-9]/.test(p),
+      special: /[^A-Za-z0-9]/.test(p)
+    })
+  }, [formData.password])
+
   const handleSubjectToggle = (subject: string) => {
     setFormData(prev => ({
       ...prev,
@@ -50,18 +73,23 @@ export default function SignUpPage() {
     }))
   }
 
+  const isPasswordValid = Object.values(passwordStrength).every(Boolean)
+  const doPasswordsMatch = formData.password && formData.confirmPassword && formData.password === formData.confirmPassword
+
   const handleNext = () => {
     if (step === 1) {
       if (!formData.fullName || !formData.email || !formData.password) {
         setError('Please fill in all fields')
         return
       }
-      if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match')
+
+      if (!isPasswordValid) {
+        setError('Please ensure your password meets all requirements')
         return
       }
-      if (formData.password.length < 8) {
-        setError('Password must be at least 8 characters')
+
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match')
         return
       }
     }
@@ -108,6 +136,14 @@ export default function SignUpPage() {
       setError(err.message || 'Registration failed. Please try again.')
     }
   }
+
+  // Render Helper for Password Requirement
+  const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
+    <div className={`flex items-center gap-2 text-xs ${met ? 'text-green-600' : 'text-gray-400'}`}>
+      {met ? <Check size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-gray-300" />}
+      <span>{text}</span>
+    </div>
+  )
 
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-white">
@@ -225,36 +261,77 @@ export default function SignUpPage() {
                 <label htmlFor="password" className="block text-sm font-semibold text-[var(--black)] mb-2">
                   Password
                 </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors duration-300 text-[var(--black)]"
-                  placeholder="At least 8 characters"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="password"
+                    id="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors duration-300 text-[var(--black)] ${formData.password
+                        ? isPasswordValid
+                          ? 'border-green-500 focus:border-green-500'
+                          : 'border-red-300 focus:border-red-500'
+                        : 'border-gray-200 focus:border-[var(--orange)]'
+                      }`}
+                    placeholder="Create a strong password"
+                    required
+                  />
+                  {formData.password && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      {isPasswordValid ? <CheckCircle2 className="text-green-500" size={20} /> : null}
+                    </div>
+                  )}
+                </div>
+
+                {/* Password Strength Meter */}
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <RequirementItem met={passwordStrength.length} text="8+ characters" />
+                  <RequirementItem met={passwordStrength.uppercase} text="Uppercase letter" />
+                  <RequirementItem met={passwordStrength.lowercase} text="Lowercase letter" />
+                  <RequirementItem met={passwordStrength.number} text="Number" />
+                  <RequirementItem met={passwordStrength.special} text="Special char (!@#)" />
+                </div>
               </div>
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-semibold text-[var(--black)] mb-2">
                   Confirm Password
                 </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[var(--orange)] focus:outline-none transition-colors duration-300 text-[var(--black)]"
-                  placeholder="Re-enter password"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors duration-300 text-[var(--black)] ${formData.confirmPassword
+                        ? doPasswordsMatch
+                          ? 'border-green-500 focus:border-green-500'
+                          : 'border-red-300 focus:border-red-500'
+                        : 'border-gray-200 focus:border-[var(--orange)]'
+                      }`}
+                    placeholder="Re-enter password"
+                    required
+                  />
+                  {formData.confirmPassword && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {doPasswordsMatch ? (
+                        <CheckCircle2 className="text-green-500" size={20} />
+                      ) : (
+                        <AlertCircle className="text-red-500" size={20} />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {formData.confirmPassword && !doPasswordsMatch && (
+                  <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+                )}
               </div>
 
               <button
                 type="button"
                 onClick={handleNext}
-                className="w-full bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white py-4 rounded-xl font-semibold text-lg shadow-[0_4px_20px_rgba(255,107,53,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,107,53,0.4)] transition-all duration-300"
+                disabled={!isPasswordValid || !doPasswordsMatch || !formData.fullName || !formData.email}
+                className="w-full bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white py-4 rounded-xl font-semibold text-lg shadow-[0_4px_20px_rgba(255,107,53,0.3)] hover:-translate-y-0.5 hover:shadow-[0_6px_30px_rgba(255,107,53,0.4)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 Continue
               </button>

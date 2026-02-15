@@ -34,6 +34,7 @@ export default function ExamsPage() {
     loadExams()
   }, [])
 
+
   useEffect(() => {
     const loadSubjects = async () => {
       try {
@@ -45,6 +46,20 @@ export default function ExamsPage() {
     }
     loadSubjects()
   }, [])
+
+  const [stats, setStats] = useState({ total_attempts: 0, best_score: 0 })
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await ExamService.getUserStats()
+        setStats(data)
+      } catch (err) {
+        console.error('Failed to load stats', err)
+      }
+    }
+    loadStats()
+  }, [exams]) // Reload stats when exams list changes (e.g. after create/delete), though strictly should depend on attempts. On mount is fine for now, or maybe refresh on focus.
 
   const handleStartExam = async (exam: MockExam) => {
     try {
@@ -246,7 +261,7 @@ export default function ExamsPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 uppercase">Your Attempts</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total_attempts}</p>
             </div>
             <Zap className="w-8 h-8 text-yellow-600" />
           </div>
@@ -256,7 +271,7 @@ export default function ExamsPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 uppercase">Best Score</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">-</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.best_score}%</p>
             </div>
             <Trophy className="w-8 h-8 text-green-600" />
           </div>
@@ -499,4 +514,3 @@ export default function ExamsPage() {
     </div>
   )
 }
-

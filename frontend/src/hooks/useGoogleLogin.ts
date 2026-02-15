@@ -29,8 +29,12 @@ export function useGoogleLogin() {
             // Update auth store
             setUser(data.user)
 
-            // Redirect to dashboard
-            router.push('/dashboard')
+            // Redirect based on verification status
+            if (data.user.is_email_verified || data.user.is_superuser) {
+                router.push('/dashboard')
+            } else {
+                router.push('/verify-email')
+            }
         } catch (error) {
             console.error('Google login error:', error)
             throw error
