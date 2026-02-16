@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "apps.subscriptions",
     "apps.study_tools",
     "apps.quiz",
+    "apps.notifications",
 ]
 
 # ============================================================================

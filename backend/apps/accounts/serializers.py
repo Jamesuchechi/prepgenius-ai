@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'first_name', 'last_name', 'phone_number',
             'profile_picture', 'cover_picture', 'bio', 'student_type', 'grade_level',
-            'exam_targets', 'is_email_verified', 'timezone', 'language',
+            'exam_targets', 'is_email_verified', 'timezone', 'language', 'preferences',
             'is_superuser', 'is_staff',
             'created_at', 'updated_at'
         ]

@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/', include('apps.accounts.urls', namespace='accounts')),
+    path('api/v1/accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('api/content/', include('apps.content.urls')),
     path('api/questions/', include('apps.questions.urls')),
     path('api/analytics/', include('apps.analytics.urls')),
@@ -14,10 +14,11 @@ urlpatterns = [
     path('api/chat/', include('apps.ai_tutor.urls')),
     path('api/study-tools/', include('apps.study_tools.urls')),
     path('api/quiz/', include('apps.quiz.urls')),
-    path('api/gamification/', include('apps.gamification.urls')),
+    path('api/v1/gamification/', include('apps.gamification.urls')),
+    path('api/v1/notifications/', include('apps.notifications.urls')),
     path('api/subscriptions/', include('apps.subscriptions.urls', namespace='subscriptions')),
-    path('api/institutions/', include('apps.institutions.urls', namespace='institutions')),
-    path('api/webhooks/', include('apps.subscriptions.webhooks_urls', namespace='webhooks')),
+    path('api/institutions/', include('apps.institutions.urls')),
+    path('api/webhooks/', include('apps.subscriptions.webhooks_urls')),
 ]
 
 # Serve media files in development

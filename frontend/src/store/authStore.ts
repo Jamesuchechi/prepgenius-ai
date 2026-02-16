@@ -14,6 +14,9 @@ export interface User {
   grade_level?: string
   exam_targets: string[]
   is_email_verified: boolean
+  timezone?: string
+  language?: string
+  preferences?: any
   created_at: string
   last_login_date?: string
   is_superuser?: boolean
@@ -114,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-          const response = await fetch(`${API_URL}/auth/login/`, {
+          const response = await fetch(`${API_URL}/v1/accounts/login/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -151,7 +154,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-          const response = await fetch(`${API_URL}/auth/register/`, {
+          const response = await fetch(`${API_URL}/v1/accounts/register/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -189,7 +192,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           if (tokens?.refresh) {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-            await fetch(`${API_URL}/auth/logout/`, {
+            await fetch(`${API_URL}/v1/accounts/logout/`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -221,7 +224,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-          const response = await fetch(`${API_URL}/auth/refresh/`, {
+          const response = await fetch(`${API_URL}/v1/accounts/refresh/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refresh: tokens.refresh })
@@ -264,7 +267,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-          const response = await fetch(`${API_URL}/auth/users/me/`, {
+          const response = await fetch(`${API_URL}/v1/accounts/users/me/`, {
             headers: {
               'Authorization': `Bearer ${tokens.access}`
             }
@@ -276,7 +279,7 @@ export const useAuthStore = create<AuthState>()(
             // Retry with new token
             const newTokens = get().tokens
             if (newTokens) {
-              const retryResponse = await fetch(`${API_URL}/auth/users/me/`, {
+              const retryResponse = await fetch(`${API_URL}/v1/accounts/users/me/`, {
                 headers: {
                   'Authorization': `Bearer ${newTokens.access}`
                 }

@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   },
 }
 
+import { ThemeProvider } from '@/components/theme/ThemeProvider'
+import { ThemeSync } from '@/components/theme/ThemeSync'
+
 export default function RootLayout({
   children,
 }: {
@@ -28,15 +31,23 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
+
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       </head>
-      <body className="bg-white text-black">
-        <QueryProvider>
-          <AuthContextProvider>
-            <LayoutClient>{children}</LayoutClient>
-          </AuthContextProvider>
-        </QueryProvider>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ThemeSync />
+          <QueryProvider>
+            <AuthContextProvider>
+              <LayoutClient>{children}</LayoutClient>
+            </AuthContextProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

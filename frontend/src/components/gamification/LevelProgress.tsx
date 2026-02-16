@@ -1,45 +1,77 @@
 import React from 'react';
 import { Progress } from "@/components/ui/Progress";
 import { GamificationProfile } from '@/lib/api/gamification';
-import { Star, Zap } from 'lucide-react';
+import { Star, Zap, TrendingUp } from 'lucide-react';
 
 interface LevelProgressProps {
     profile: GamificationProfile;
 }
 
 const LevelProgress: React.FC<LevelProgressProps> = ({ profile }) => {
-    const xpNeeded = profile.current_level * 100;
-    const progress = (profile.current_xp / xpNeeded) * 100;
+    // Sync with backend progressive logic: Level N requires N * 200 XP
+    const xpNeeded = profile.current_level * 200;
+    const progress = Math.min((profile.current_xp / xpNeeded) * 100, 100);
 
     return (
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center space-x-2">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                        <Star className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                        <div className="text-xs text-gray-500 uppercase font-semibold">Current Level</div>
-                        <div className="text-lg font-bold text-gray-900">Level {profile.current_level}</div>
-                    </div>
-                </div>
-                <div className="text-right">
-                    <div className="text-xs text-gray-500 uppercase font-semibold">Total Points</div>
-                    <div className="text-lg font-bold text-gray-900 flex items-center justify-end">
-                        <Zap className="w-4 h-4 text-yellow-500 mr-1" />
-                        {profile.total_points_earned.toLocaleString()}
-                    </div>
-                </div>
-            </div>
+        <div className="relative group overflow-hidden rounded-3xl border border-white bg-white/60 backdrop-blur-xl p-8 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+            {/* Background Ornaments */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/30 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-blue-200/40 transition-colors" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-100/20 rounded-full blur-xl -ml-12 -mb-12 group-hover:bg-orange-200/30 transition-colors" />
 
-            <div className="mt-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>{profile.current_xp} XP</span>
-                    <span>{xpNeeded} XP</span>
+            <div className="relative z-10">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                    <div className="flex items-center space-x-4">
+                        <div className="relative">
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl rotate-3 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                <Star className="w-8 h-8 text-white -rotate-3" />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 shadow-sm">
+                                <TrendingUp className="w-3 h-3 text-blue-600" />
+                            </div>
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.2em] mb-1 font-display">Level Mastery</div>
+                            <h2 className="text-3xl font-display font-black text-blue-900 tracking-tight">Level {profile.current_level}</h2>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-8 bg-white/40 backdrop-blur-sm px-6 py-4 rounded-2xl border border-white/60">
+                        <div className="text-left">
+                            <div className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em] mb-0.5 font-display">Lifetime XP</div>
+                            <div className="text-2xl font-display font-black text-blue-900 flex items-center">
+                                <Zap className="w-5 h-5 text-orange-500 mr-2 fill-orange-500" />
+                                {profile.total_points_earned.toLocaleString()}
+                            </div>
+                        </div>
+                        <div className="w-px h-10 bg-blue-100" />
+                        <div className="text-left">
+                            <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.2em] mb-0.5 font-display">Current Streak</div>
+                            <div className="text-2xl font-display font-black text-blue-900">
+                                {profile.current_streak} <span className="text-sm font-bold text-muted-foreground uppercase">days</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <Progress value={progress} className="h-2" />
-                <div className="text-xs text-center mt-1 text-gray-400">
-                    {Math.round(xpNeeded - profile.current_xp)} XP to next level
+
+                <div className="space-y-3">
+                    <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                            <span className="text-lg font-display font-black text-blue-900">{profile.current_xp}</span>
+                            <span className="text-blue-400 text-sm font-bold ml-1 uppercase">/ {xpNeeded} XP</span>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                {Math.max(0, xpNeeded - profile.current_xp)} XP to Level {profile.current_level + 1}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="relative h-4 w-full bg-blue-100/50 rounded-full overflow-hidden border border-white/50 p-0.5">
+                        <div
+                            className="h-full bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

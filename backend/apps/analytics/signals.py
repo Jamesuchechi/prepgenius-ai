@@ -7,6 +7,7 @@ from apps.ai_tutor.models import ChatMessage
 from apps.study_plans.models import StudyTask
 from .models import ProgressTracker, TopicMastery, StudySession
 from .services import AnalyticsService
+from apps.gamification.services.gamification_service import GamificationService
 from datetime import timedelta
 
 print("Loading analytics signals...")
@@ -20,9 +21,20 @@ def update_analytics_on_quiz_completion(sender, instance, created, **kwargs):
         return
     
     user = instance.user
-    AnalyticsService.update_streak(user)
+    GamificationService.update_streak(user)
     
+    # Award points: 5 per correct answer + 50 bonus for 100%
+    points = instance.correct_answers * 5
+    if instance.total_questions > 0 and instance.correct_answers == instance.total_questions:
+        points += 50
+    
+    if points > 0:
+        GamificationService.award_points(user, points, f"Quiz Performance: {instance.quiz.topic}")
+    
+    # Check for quiz-related badges
     progress, _ = ProgressTracker.objects.get_or_create(user=user)
+    GamificationService.check_badges(user, 'quiz', progress.total_quizzes_taken + 1)
+
     progress.total_quizzes_taken += 1
     
     if instance.completed_at and instance.started_at:
@@ -60,8 +72,12 @@ def update_analytics_on_exam_completion(sender, instance, created, **kwargs):
         return
     
     user = instance.attempt.user
-    AnalyticsService.update_streak(user)
+    GamificationService.update_streak(user)
     
+    # Award points: 10 per correct answer + 200 bonus for completion
+    points = instance.correct_answers * 10 + 200
+    GamificationService.award_points(user, points, f"Mock Exam: {instance.attempt.mock_exam.title}")
+
     progress, _ = ProgressTracker.objects.get_or_create(user=user)
     progress.total_mock_exams_taken += 1
     
@@ -98,8 +114,11 @@ def update_analytics_on_tutor_message(sender, instance, created, **kwargs):
         return
     
     user = instance.session.user
-    AnalyticsService.update_streak(user)
+    GamificationService.update_streak(user)
     
+    # Award small XP for engagement
+    GamificationService.award_points(user, 2, "AI Tutor Interaction")
+
     progress, _ = ProgressTracker.objects.get_or_create(user=user)
     progress.tutor_interactions_count += 1
     progress.save()
@@ -111,11 +130,15 @@ def update_analytics_on_task_completion(sender, instance, created, **kwargs):
     """
     if instance.status == 'completed' and instance.actual_completion_date:
         user = instance.study_plan.user
-        AnalyticsService.update_streak(user)
+        GamificationService.update_streak(user)
         
         minutes = int(instance.actual_time_spent_seconds / 60)
         if minutes > 0:
             AnalyticsService.log_study_time(user, minutes)
+            # Award 1 XP per minute of study
+            GamificationService.award_points(user, minutes, f"Task Completed: {instance.title}")
+            # Check for dedication badges
+            GamificationService.check_badges(user, 'time', minutes) # This needs cumulative logic in service or threshold check
 
 @receiver(post_save, sender=AnswerAttempt)
 def update_analytics_on_answer(sender, instance, created, **kwargs):

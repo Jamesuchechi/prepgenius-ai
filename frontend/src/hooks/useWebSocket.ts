@@ -57,13 +57,12 @@ export const useWebSocket = ({
         // Get token from localStorage
         const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
-        if (!token || !sessionId) {
-            console.error('Cannot connect: missing token or sessionId');
+        if (!token || !sessionId || sessionId === 'null') {
+            console.warn('Skipping WebSocket connection: missing token or valid sessionId');
             return;
         }
 
         if (wsRef.current?.readyState === WebSocket.OPEN) {
-            console.log('WebSocket already connected');
             return;
         }
 
@@ -71,7 +70,17 @@ export const useWebSocket = ({
 
         // Construct WebSocket URL
         const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
-        const fullWsUrl = `${wsUrl}/ws/chat/${sessionId}/?token=${token}`;
+        const baseUrl = wsUrl.endsWith('/') ? wsUrl.slice(0, -1) : wsUrl;
+
+        // Ensure we have a valid path
+        const path = `/ws/chat/${sessionId}/`;
+        if (path === '/ws/chat//' || path === '/ws/chat/null/') {
+            console.warn('Incomplete WebSocket path, skipping connection');
+            setIsConnecting(false);
+            return;
+        }
+
+        const fullWsUrl = `${baseUrl}${path}?token=${token}`;
 
         try {
             const ws = new WebSocket(fullWsUrl);

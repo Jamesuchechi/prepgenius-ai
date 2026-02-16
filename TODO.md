@@ -124,6 +124,9 @@ POST /api/users/me/subjects/  (select subjects)
 - [ ] Implement Mistral API client (fallback)
 - [ ] Implement HuggingFace API client (fallback)
 - [ ] Implement Cohere API client (fallback)
+- [x] Debug WebSocket Routing Error (`ValueError: No route found for path ''`)
+- [x] Align Frontend API paths with Backend (v1 prefixing)
+- [x] Resolve URL resolution AttributeErrors in Backend
 - [ ] Implement Question choice(true or false, multiple choice, theory, fill in the blanks, match the following, ordering, writing(or solving))
 - [ ] Create prompt templates for question generation
 - [ ] Build question generation endpoint with difficulty levels

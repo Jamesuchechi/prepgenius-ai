@@ -28,17 +28,17 @@ export interface Badge {
 
 export const gamificationApi = {
     getProfile: async () => {
-        const response = await axios.get<GamificationProfile>('/gamification/profile/');
+        const response = await axios.get<GamificationProfile>('/v1/gamification/profile/');
         return response.data;
     },
 
     getBadges: async () => {
-        const response = await axios.get<Badge[]>('/gamification/badges/');
+        const response = await axios.get<Badge[]>('/v1/gamification/badges/');
         return response.data;
     },
 
     getLeaderboard: async (period = 'weekly') => {
-        const response = await axios.get<GamificationProfile[]>('/gamification/leaderboard/', {
+        const response = await axios.get<GamificationProfile[]>('/v1/gamification/leaderboard/', {
             params: { period }
         });
         return response.data;

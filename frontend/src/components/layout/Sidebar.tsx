@@ -81,7 +81,7 @@ export default function Sidebar({
 
             {/* Sidebar */}
             <aside className={`
-                fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-40
+                fixed top-0 left-0 h-full bg-card border-r border-border z-40
                 transform transition-all duration-300 ease-in-out
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
                 lg:translate-x-0
@@ -90,7 +90,7 @@ export default function Sidebar({
             `}>
                 <div className="flex flex-col h-full overflow-hidden">
                     {/* Logo */}
-                    <div className={`p-6 border-b border-gray-200 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+                    <div className={`p-6 border-b border-border flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                         <Link href="/dashboard" className="flex items-center gap-2 group overflow-hidden">
                             <div className="min-w-[2.5rem] w-10 h-10 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-xl flex items-center justify-center text-xl -rotate-6 group-hover:rotate-0 transition-transform duration-300">
                                 🎓
@@ -107,7 +107,7 @@ export default function Sidebar({
                     {/* Toggle Button (Desktop Only) - Absolute positioned to be on the border */}
                     <button
                         onClick={toggleSidebar}
-                        className="hidden lg:flex absolute -right-3 top-24 bg-white border border-gray-200 rounded-full p-1.5 hover:bg-gray-50 text-gray-500 hover:text-[var(--blue)] shadow-sm z-50 transition-colors"
+                        className="hidden lg:flex absolute -right-3 top-24 bg-card border border-border rounded-full p-1.5 hover:bg-muted text-muted-foreground hover:text-secondary shadow-sm z-50 transition-colors"
                         title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
                         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -115,20 +115,20 @@ export default function Sidebar({
 
                     {/* User Info */}
                     <div className={`
-                         border-b border-gray-200 bg-gradient-to-br from-[var(--blue)]/5 to-[var(--orange)]/5
+                         border-b border-border bg-muted/30
                          transition-all duration-300 overflow-hidden
                          ${isCollapsed ? 'p-4' : 'p-6'}
                     `}>
                         <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
-                            <div className="min-w-[3rem] w-12 h-12 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            <div className="min-w-[3rem] w-12 h-12 bg-gradient-to-br from-secondary to-secondary/60 rounded-full flex items-center justify-center text-white font-bold text-lg">
                                 {user?.first_name?.[0]}{user?.last_name?.[0]}
                             </div>
                             {!isCollapsed && (
                                 <div className="overflow-hidden">
-                                    <h3 className="font-semibold text-[var(--black)] truncate">
+                                    <h3 className="font-semibold text-foreground truncate">
                                         {user?.first_name} {user?.last_name}
                                     </h3>
-                                    <p className="text-sm text-[var(--gray-dark)] truncate">
+                                    <p className="text-sm text-muted-foreground truncate">
                                         {user?.exam_targets?.[0]?.toUpperCase() || 'Student'} {new Date().getFullYear()}
                                     </p>
                                 </div>
@@ -150,8 +150,8 @@ export default function Sidebar({
                                             className={`
                                                 flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
                                                 ${isActive
-                                                    ? 'bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] text-white shadow-lg'
-                                                    : 'text-[var(--gray-dark)] hover:bg-gray-100 hover:text-[var(--black)]'
+                                                    ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg'
+                                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                                 }
                                                 ${isCollapsed ? 'justify-center px-2' : ''}
                                             `}
@@ -174,11 +174,11 @@ export default function Sidebar({
                     </nav>
 
                     {/* Logout */}
-                    <div className="p-4 border-t border-gray-200">
+                    <div className="p-4 border-t border-border">
                         <button
                             onClick={handleLogout}
                             className={`
-                                w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300
+                                w-full flex items-center gap-3 px-4 py-3 text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300
                                 ${isCollapsed ? 'justify-center' : ''}
                             `}
                             title={isCollapsed ? 'Logout' : undefined}

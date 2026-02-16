@@ -75,6 +75,7 @@ class User(AbstractUser):
     # Preferences
     timezone = models.CharField(max_length=50, default='UTC', blank=True)
     language = models.CharField(max_length=10, default='en', blank=True)
+    preferences = models.JSONField(default=dict, blank=True)
     
     objects = CustomUserManager()
     

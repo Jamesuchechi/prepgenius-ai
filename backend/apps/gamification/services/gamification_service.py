@@ -1,7 +1,9 @@
 from django.utils import timezone
-from django.db.models import Sum
 from apps.gamification.models import GamificationProfile, Badge, UserBadge
+from apps.analytics.models import ProgressTracker
 from datetime import timedelta
+
+from apps.notifications.services import NotificationService
 
 class GamificationService:
     @staticmethod
@@ -14,13 +16,13 @@ class GamificationService:
         profile.total_points_earned += points
         profile.current_xp += points
         
-        # Level up logic: Level N requires N * 100 XP
-        # This is a simple linear progression for MVP
-        xp_needed = profile.current_level * 100
-        if profile.current_xp >= xp_needed:
+        # Level up logic: Progressive XP needed
+        # Level N requires (N * 200) XP
+        xp_needed = profile.current_level * 200
+        while profile.current_xp >= xp_needed:
             profile.current_level += 1
             profile.current_xp -= xp_needed
-            # TODO: Create a notification for level up
+            xp_needed = profile.current_level * 200
             
         profile.save()
         return profile
@@ -38,23 +40,30 @@ class GamificationService:
         
         new_badges = []
         for badge in potential_badges:
-            UserBadge.objects.create(user=user, badge=badge)
+            UserBadge.objects.get_or_create(user=user, badge=badge)
             new_badges.append(badge)
             # Award points for the badge
             GamificationService.award_points(user, badge.points_award, f"Badge Earned: {badge.name}")
+            # Send Notification
+            NotificationService.create_notification(
+                user=user,
+                title="🏆 Achievement Unlocked!",
+                message=f"Congratulations! You've earned the '{badge.name}' badge.",
+                notification_type='achievement'
+            )
             
         return new_badges
 
     @staticmethod
     def update_streak(user):
         """
-        Updates the user's daily streak. Should be called on daily login/activity.
+        Updates the user's daily streak. Synced across Gamification and Analytics.
         """
-        profile, created = GamificationProfile.objects.get_or_create(user=user)
+        profile, _ = GamificationProfile.objects.get_or_create(user=user)
         today = timezone.now().date()
         
         if profile.last_activity_date == today:
-            return profile # Already updated today
+            return profile
             
         if profile.last_activity_date == today - timedelta(days=1):
             profile.current_streak += 1
@@ -66,6 +75,17 @@ class GamificationService:
             
         profile.last_activity_date = today
         profile.save()
+
+        # Sync with Analytics ProgressTracker
+        try:
+            progress, _ = ProgressTracker.objects.get_or_create(user=user)
+            progress.current_streak = profile.current_streak
+            if profile.current_streak > progress.longest_streak:
+                progress.longest_streak = profile.current_streak
+            progress.last_activity_date = today
+            progress.save()
+        except Exception as e:
+            print(f"Error syncing streak to analytics: {e}")
         
         # Check streak badges
         GamificationService.check_badges(user, 'streak', profile.current_streak)
@@ -77,6 +97,4 @@ class GamificationService:
         """
         Returns top users based on total points.
         """
-        # For MVP, we'll just query GamificationProfile directly.
-        # In a real app, we might use the Snapshot model or a Redis leaderboard.
         return GamificationProfile.objects.select_related('user').order_by('-total_points_earned')[:limit]

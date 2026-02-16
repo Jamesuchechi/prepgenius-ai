@@ -15,17 +15,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Handle WebSocket connection."""
         self.session_id = self.scope['url_route']['kwargs']['session_id']
-        self.user = None
+        self.user = self.scope.get('user')
         self.session = None
         
         # Authenticate user
-        try:
-            self.user = await self.get_user_from_token()
-            if not self.user:
-                await self.close(code=4001)
-                return
-        except Exception as e:
-            logger.error(f"Authentication error: {e}")
+        if not self.user or self.user.is_anonymous:
+            logger.error("User is anonymous or not authenticated")
             await self.close(code=4001)
             return
         
@@ -222,47 +217,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Update message content."""
         message.content = content
         message.save(update_fields=['content'])
-    
-    @database_sync_to_async
-    def get_user_from_token(self):
-        """Extract and validate user from JWT token."""
-        # Lazy imports to avoid AppRegistryNotReady
-        from django.contrib.auth import get_user_model
-        from rest_framework_simplejwt.tokens import AccessToken
-        from rest_framework_simplejwt.exceptions import TokenError
-        
-        User = get_model = get_user_model()
-        
-        # Get token from query string
-        query_string = self.scope.get('query_string', b'').decode()
-        token_param = None
-        
-        for param in query_string.split('&'):
-            if param.startswith('token='):
-                token_param = param.split('=')[1]
-                break
-        
-        if not token_param:
-            logger.error("No token provided in query string")
-            return None
-        
-        try:
-            # Validate token
-            access_token = AccessToken(token_param)
-            user_id = access_token['user_id']
-            
-            # Get user
-            user = User.objects.get(id=user_id)
-            return user
-        except TokenError as e:
-            logger.error(f"Invalid token: {e}")
-            return None
-        except User.DoesNotExist:
-            logger.error(f"User not found for token")
-            return None
-        except Exception as e:
-            logger.error(f"Error validating token: {e}")
-            return None
     
     @database_sync_to_async
     def get_session(self):
