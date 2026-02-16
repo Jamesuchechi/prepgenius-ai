@@ -132,7 +132,8 @@ class StudyTaskModelTest(TestCase):
         self.topic = Topic.objects.create(
             name='Algebra',
             subject=self.subject,
-            description='Algebra basics'
+            description='Algebra basics',
+            estimated_hours=2.0
         )
         
         self.study_plan = StudyPlan.objects.create(
@@ -268,6 +269,51 @@ class StudyPlanAPITest(APITestCase):
             response.status_code,
             [status.HTTP_201_CREATED, status.HTTP_500_INTERNAL_SERVER_ERROR]
         )
+    def test_favourite_study_plan(self):
+        """Test marking a study plan as favourite."""
+        # Create a plan first
+        plan = StudyPlan.objects.create(
+            user=self.user,
+            exam_type=self.exam_type,
+            name='Test Fav Plan',
+            exam_date=timezone.now().date() + timedelta(days=90)
+        )
+        
+        response = self.client.post(f'/api/study-plans/{plan.id}/favourite/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        plan.refresh_from_db()
+        self.assertTrue(plan.is_favourite)
+
+    def test_unfavourite_study_plan(self):
+        """Test un-marking a study plan as favourite."""
+        # Create a favourite plan
+        plan = StudyPlan.objects.create(
+            user=self.user,
+            exam_type=self.exam_type,
+            name='Test Unfav Plan',
+            exam_date=timezone.now().date() + timedelta(days=90),
+            is_favourite=True
+        )
+        
+        response = self.client.post(f'/api/study-plans/{plan.id}/unfavourite/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        plan.refresh_from_db()
+        self.assertFalse(plan.is_favourite)
+
+    def test_delete_study_plan(self):
+        """Test deleting a study plan."""
+        plan = StudyPlan.objects.create(
+            user=self.user,
+            exam_type=self.exam_type,
+            name='To Be Deleted',
+            exam_date=timezone.now().date() + timedelta(days=90)
+        )
+        
+        response = self.client.delete(f'/api/study-plans/{plan.id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(StudyPlan.objects.filter(id=plan.id).exists())
 
 
 class StudyTaskAPITest(APITestCase):
@@ -312,7 +358,8 @@ class StudyTaskAPITest(APITestCase):
         self.topic = Topic.objects.create(
             name='Algebra',
             subject=self.subject,
-            description='Algebra'
+            description='Algebra',
+            estimated_hours=2.0
         )
         
         self.study_plan = StudyPlan.objects.create(
@@ -413,7 +460,8 @@ class StudyPlanServiceTest(TestCase):
         self.topic = Topic.objects.create(
             name='Algebra',
             subject=self.subject,
-            description='Algebra'
+            description='Algebra',
+            estimated_hours=2.0
         )
     
     def test_study_plan_generation_service(self):
@@ -442,3 +490,103 @@ class StudyPlanServiceTest(TestCase):
             # The service may fail if AI providers are not available
             # This is expected in test environment
             self.assertIsNotNone(e)
+
+
+class StudyPlanAssessmentTest(APITestCase):
+    """Test StudyPlan Assessment logic and locking."""
+    
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(email='milestone@example.com', password='password')
+        self.client.force_authenticate(user=self.user)
+        
+        self.country = Country.objects.create(
+            code='NG', name='Nigeria', region='Africa', currency='NGN'
+        )
+        self.exam_board = ExamBoard.objects.create(
+            name='JAMB', full_name='Joint Admissions and Matriculation Board', country=self.country
+        )
+        self.exam_type = ExamType.objects.create(
+            name='JAMB', 
+            full_name='UTME', 
+            exam_board=self.exam_board,
+            level='TERTIARY',
+            duration_minutes=180,
+            description='University entry exam',
+            exam_format={}
+        )
+        
+        self.subject = Subject.objects.create(
+            name='Physics', 
+            category='STEM',
+            description='Physics study'
+        )
+        self.topic = Topic.objects.create(
+            name='Mechanics', 
+            subject=self.subject,
+            difficulty='INTERMEDIATE',
+            estimated_hours=2.0,
+            description='Physics mechanics'
+        )
+        
+        # Create a plan nearly finished
+        self.plan = StudyPlan.objects.create(
+            user=self.user,
+            exam_type=self.exam_type,
+            name='Graduation Plan',
+            exam_date=timezone.now().date() + timedelta(days=5), # Within mock period!
+            total_topics=1,
+            completed_topics=1,
+            status='active'
+        )
+        self.plan.subjects.add(self.subject)
+
+    def test_mock_period_flag(self):
+        """Verify is_mock_period is True when exam is in 5 days."""
+        self.assertTrue(self.plan.is_mock_period())
+        
+        # Test serializer inclusion
+        response = self.client.get(f'/api/study-plans/{self.plan.id}/')
+        self.assertTrue(response.data['is_mock_period'])
+
+    def test_completion_locked_without_quiz(self):
+        """Verify plan status cannot be set to 'completed' without a quiz pass."""
+        # Try to mark as completed via PATCH
+        response = self.client.patch(f'/api/study-plans/{self.plan.id}/', {'status': 'completed'})
+        
+        self.plan.refresh_from_db()
+        # It should still be 'active' because the model save() reverts it
+        self.assertEqual(self.plan.status, 'active')
+
+    def test_completion_unlocks_with_passed_quiz(self):
+        """Verify plan marks as completed after a passed exit quiz attempt."""
+        from apps.quiz.models import Quiz, QuizAttempt
+        from apps.study_plans.models import StudyPlanAssessment
+        
+        # Setup Quiz and assessment
+        quiz = Quiz.objects.create(title="Exit Quiz", created_by=self.user, subject=self.subject)
+        assessment = StudyPlanAssessment.objects.create(
+            study_plan=self.plan,
+            quiz=quiz,
+            assessment_type='exit_quiz',
+            passing_score=70.0
+        )
+        
+        # Pass the quiz
+        attempt = QuizAttempt.objects.create(
+            user=self.user,
+            quiz=quiz,
+            status='COMPLETED',
+            score=85.0,
+            total_questions=10,
+            correct_answers=8
+        )
+        # The signal should handle linking and completion
+        
+        self.plan.refresh_from_db()
+        self.assertEqual(self.plan.status, 'completed')
+        self.assertIsNotNone(self.plan.actual_completion_date)
+        
+        assessment.refresh_from_db()
+        self.assertEqual(assessment.last_attempt, attempt)
+        self.assertTrue(assessment.is_passed())

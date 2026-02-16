@@ -235,6 +235,39 @@ class GroqClient:
             logger.error(f"Error streaming response with Groq: {e}")
             raise
 
+    def generate_study_plan(self, exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days):
+        """
+        Generates a structured study plan using Groq API.
+        """
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_study_plan_prompt(
+            exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days
+        )
+        
+        try:
+            chat_completion = self.client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert curriculum and study planner for Nigerian students. Output ONLY valid JSON."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                model=self.model,
+                temperature=0.7,
+                response_format={"type": "json_object"},
+                timeout=self.timeout
+            )
+            
+            response_content = chat_completion.choices[0].message.content
+            return self._parse_response(response_content)
+        except Exception as e:
+            logger.error(f"Error generating study plan with Groq: {e}")
+            raise
+
     def transcribe_audio(self, audio_file):
         """
         Transcribes audio file using Groq's Whisper model.

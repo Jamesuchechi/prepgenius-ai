@@ -1,7 +1,12 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import StudyPlan, StudyTask, StudyReminder, AdjustmentHistory
+from .models import StudyPlan, StudyTask, StudyReminder, AdjustmentHistory, StudyPlanAssessment
+from .serializers_base import (
+    StudyPlanAssessmentSerializer
+)
 from apps.content.models import Subject, Topic, ExamType
+from apps.questions.serializers import QuestionSerializer
+from apps.ai_tutor.serializers import ChatSessionSerializer
 
 
 class StudyTaskSerializer(serializers.ModelSerializer):
@@ -13,6 +18,9 @@ class StudyTaskSerializer(serializers.ModelSerializer):
     days_until_deadline = serializers.SerializerMethodField()
     time_remaining_hours = serializers.SerializerMethodField()
     actual_time_spent_hours = serializers.SerializerMethodField()
+    
+    questions = QuestionSerializer(many=True, read_only=True)
+    chat_session = ChatSessionSerializer(read_only=True)
     
     class Meta:
         model = StudyTask
@@ -47,6 +55,8 @@ class StudyTaskSerializer(serializers.ModelSerializer):
             'notes',
             'resource_links',
             'question_ids',
+            'questions',      # New field
+            'chat_session',   # New field
             'is_overdue',
             'days_until_deadline',
             'time_remaining_hours',
@@ -58,7 +68,9 @@ class StudyTaskSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'actual_start_date',
-            'actual_completion_date'
+            'actual_completion_date',
+            'questions',
+            'chat_session'
         ]
     
     def get_is_overdue(self, obj):
@@ -148,6 +160,9 @@ class StudyPlanDetailedSerializer(serializers.ModelSerializer):
     days_until_exam = serializers.SerializerMethodField()
     completion_percentage = serializers.SerializerMethodField()
     is_on_track = serializers.SerializerMethodField()
+    is_mock_period = serializers.SerializerMethodField()
+    can_complete = serializers.SerializerMethodField()
+    assessments = StudyPlanAssessmentSerializer(many=True, read_only=True)
     
     class Meta:
         model = StudyPlan
@@ -167,6 +182,7 @@ class StudyPlanDetailedSerializer(serializers.ModelSerializer):
             'estimated_completion_date',
             'actual_completion_date',
             'status',
+            'is_favourite',
             'total_topics',
             'completed_topics',
             'total_estimated_study_hours',
@@ -181,8 +197,11 @@ class StudyPlanDetailedSerializer(serializers.ModelSerializer):
             'days_until_exam',
             'completion_percentage',
             'is_on_track',
+            'is_mock_period',
+            'can_complete',
             'tasks',
             'reminders',
+            'assessments',
             'adjustments'
         ]
         read_only_fields = [
@@ -208,6 +227,12 @@ class StudyPlanDetailedSerializer(serializers.ModelSerializer):
     
     def get_is_on_track(self, obj):
         return obj.is_on_track()
+    
+    def get_is_mock_period(self, obj):
+        return obj.is_mock_period()
+        
+    def get_can_complete(self, obj):
+        return obj.can_complete()
 
 
 class StudyPlanListSerializer(serializers.ModelSerializer):
@@ -227,6 +252,7 @@ class StudyPlanListSerializer(serializers.ModelSerializer):
             'exam_type_name',
             'user_name',
             'status',
+            'is_favourite',
             'plan_type',
             'exam_date',
             'start_date',
@@ -235,6 +261,8 @@ class StudyPlanListSerializer(serializers.ModelSerializer):
             'completion_percentage',
             'days_until_exam',
             'is_on_track',
+            'is_mock_period',
+            'can_complete',
             'created_at',
             'updated_at'
         ]

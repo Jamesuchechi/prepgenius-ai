@@ -30,6 +30,11 @@ export default function AITutorPage() {
         clearMessages,
     } = useChatStore();
 
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const initialTopic = searchParams?.get('topic');
+    const initialSubject = searchParams?.get('subject');
+    const initialPrompt = searchParams?.get('prompt');
+
     // Load all sessions on mount
     useEffect(() => {
         const loadSessions = async () => {
@@ -38,8 +43,18 @@ export default function AITutorPage() {
                 const fetchedSessions = await chatService.getSessions();
                 setSessions(fetchedSessions);
 
+                // If initial topic/subject are provided via URL, create a new session for them
+                if (initialTopic || initialSubject || initialPrompt) {
+                    const title = initialTopic ? `Study: ${initialTopic}` : `Study: ${initialSubject}`;
+                    const newSession = await chatService.createSession({
+                        title: title,
+                        subject: initialSubject || undefined,
+                    });
+                    addSession(newSession);
+                    setActiveSessionId(newSession.id);
+                }
                 // Set the most recent session as active, or create new if none exist
-                if (fetchedSessions.length > 0) {
+                else if (fetchedSessions.length > 0) {
                     setActiveSessionId(fetchedSessions[0].id);
                 } else {
                     // Create initial session
@@ -58,7 +73,7 @@ export default function AITutorPage() {
         };
 
         loadSessions();
-    }, []);
+    }, [initialTopic, initialSubject]);
 
     const handleSessionSelect = (sessionId: string) => {
         setActiveSessionId(sessionId);
@@ -214,7 +229,7 @@ export default function AITutorPage() {
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col bg-white overflow-hidden">
                 {activeSessionId ? (
-                    <ChatInterface sessionId={activeSessionId} />
+                    <ChatInterface sessionId={activeSessionId} initialValue={initialPrompt || undefined} />
                 ) : (
                     <div className="flex items-center justify-center h-full">
                         <div className="text-center">

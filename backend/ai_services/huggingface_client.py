@@ -86,6 +86,40 @@ class HuggingFaceClient:
             logger.error(f"Error generating chat response with HuggingFace: {e}")
             raise
 
+    def generate_study_plan(self, exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days):
+        """Generates a structured study plan using HuggingFace API."""
+        if not self.api_key:
+             raise ValueError("HuggingFace API key not configured")
+
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_study_plan_prompt(
+            exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days
+        )
+        # Enforce JSON for open models
+        prompt = f"{prompt}\n\nIMPORTANT: Output ONLY the JSON object. Do not add any markdown formatting or explanation."
+        
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        payload = {
+            "inputs": f"[INST] {prompt} [/INST]",
+            "parameters": {
+                "max_new_tokens": 1024,
+                "temperature": 0.7,
+                "return_full_text": False
+            }
+        }
+        
+        try:
+            response = requests.post(self.api_url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            generated_text = result[0]['generated_text']
+            
+            return self._parse_response(generated_text)
+        except Exception as e:
+            logger.error(f"Error generating study plan with HuggingFace: {e}")
+            raise
+
     def _build_prompt(self, topic, difficulty, count, q_type, context):
         from .prompts import PromptTemplates
         # Adding explicit JSON enforcement instruction for open models

@@ -167,6 +167,47 @@ class StudyPlanViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    @action(detail=True, methods=['post'])
+    def favourite(self, request, pk=None):
+        """Mark a study plan as favourite."""
+        study_plan = self.get_object()
+        study_plan.is_favourite = True
+        study_plan.save()
+        return Response({'message': 'Study plan marked as favourite', 'is_favourite': True})
+
+    @action(detail=True, methods=['post'])
+    def unfavourite(self, request, pk=None):
+        """Unfavourite a study plan."""
+        study_plan = self.get_object()
+        study_plan.is_favourite = False
+        study_plan.save()
+        return Response({'message': 'Study plan removed from favourites', 'is_favourite': False})
+
+    @action(detail=True, methods=['post'])
+    def generate_assessment(self, request, pk=None):
+        """Generate an exit quiz or mock exam for the study plan."""
+        from .services.assessment_service import PlanAssessmentService
+        study_plan = self.get_object()
+        assessment_type = request.data.get('assessment_type', 'exit_quiz')
+        
+        if assessment_type not in ['exit_quiz', 'mock_exam']:
+            return Response(
+                {"error": "Invalid assessment type. Use 'exit_quiz' or 'mock_exam'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            quiz, assessment = PlanAssessmentService.generate_assessment(study_plan, assessment_type)
+            # We return the quiz details so the frontend can start it immediately
+            from apps.quiz.serializers import QuizSerializer
+            return Response({
+                "message": f"{assessment_type.replace('_', ' ').capitalize()} generated successfully.",
+                "assessment_id": assessment.id,
+                "quiz": QuizSerializer(quiz).data
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=False, methods=['get'])
     def current(self, request):
         """Get the user's current active study plan."""

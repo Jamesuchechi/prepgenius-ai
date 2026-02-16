@@ -29,7 +29,7 @@ export default function StudyPlanPage() {
     try {
       const allPlans = await studyPlanApi.getPlans()
       setPlans(allPlans)
-      
+
       // Auto-select first active plan, or first plan overall
       const activePlan = allPlans.find(p => p.status === 'active')
       if (activePlan) {
@@ -113,11 +113,10 @@ export default function StudyPlanPage() {
         <div className="flex gap-2 border-b-2 border-gray-200 overflow-x-auto pb-4">
           <button
             onClick={() => setView('list')}
-            className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ${
-              view === 'list'
+            className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ${view === 'list'
                 ? 'border-orange-500 text-orange-600'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
+              }`}
           >
             📋 My Plans
           </button>
@@ -125,31 +124,28 @@ export default function StudyPlanPage() {
             <>
               <button
                 onClick={() => setView('current')}
-                className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ${
-                  view === 'current'
+                className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ${view === 'current'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 ✅ Tasks
               </button>
               <button
                 onClick={() => setView('calendar')}
-                className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ${
-                  view === 'calendar'
+                className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ${view === 'calendar'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 📅 Calendar
               </button>
               <button
                 onClick={() => setView('goals')}
-                className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ${
-                  view === 'goals'
+                className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ${view === 'goals'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 📊 Daily Goals
               </button>
@@ -157,11 +153,10 @@ export default function StudyPlanPage() {
           )}
           <button
             onClick={() => setView('create' as ViewType)}
-            className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ml-auto ${
-              (view as string) === 'create'
+            className={`whitespace-nowrap px-4 py-2 font-semibold border-b-4 transition ml-auto ${(view as string) === 'create'
                 ? 'border-orange-500 text-orange-600'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
+              }`}
           >
             ✨ Create New
           </button>
@@ -189,6 +184,7 @@ export default function StudyPlanPage() {
           plans={plans}
           onSelectPlan={handleSelectPlan}
           onCreateNew={() => setView('create')}
+          onRefresh={loadPlans}
         />
       )}
 
@@ -202,7 +198,7 @@ export default function StudyPlanPage() {
               <div>
                 <div className="text-xs font-semibold text-gray-600 mb-1">Progress</div>
                 <div className="text-2xl font-bold text-orange-600">
-                  {selectedPlan.total_topics && selectedPlan.total_topics > 0 
+                  {selectedPlan.total_topics && selectedPlan.total_topics > 0
                     ? Math.round(((selectedPlan.completed_topics ?? 0) / selectedPlan.total_topics) * 100)
                     : 0}%
                 </div>

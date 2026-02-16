@@ -107,6 +107,36 @@ class MistralClient:
             logger.error(f"Failed to parse Mistral response: {response_text}")
             raise ValueError("Invalid JSON response from Mistral AI")
 
+    def generate_study_plan(self, exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days):
+        """Generates a structured study plan using Mistral API."""
+        if not self.client:
+            raise ValueError("Mistral API key not configured")
+
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_study_plan_prompt(
+            exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days
+        )
+        
+        try:
+            from mistralai.models import UserMessage, SystemMessage
+            messages = [
+                SystemMessage(content="You are an expert curriculum and study planner for Nigerian students. Output ONLY valid JSON."),
+                UserMessage(content=prompt)
+            ]
+            
+            chat_response = self.client.chat.complete(
+                model=self.model,
+                messages=messages,
+                temperature=0.7,
+                response_format={"type": "json_object"}
+            )
+            
+            response_content = chat_response.choices[0].message.content
+            return self._parse_response(response_content)
+        except Exception as e:
+            logger.error(f"Error generating study plan with Mistral: {e}")
+            raise
+
     def generate_embedding(self, text):
         """Generate vector embedding for text."""
         if not self.client:

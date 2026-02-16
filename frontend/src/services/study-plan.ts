@@ -151,6 +151,59 @@ export const studyPlanApi = {
       console.error(`Failed to delete study plan ${planId}:`, error)
       throw error
     }
+  },
+
+  /**
+   * Update a study plan
+   */
+  updatePlan: async (planId: number, data: Partial<StudyPlan>): Promise<StudyPlan> => {
+    try {
+      const response = await axiosInstance.patch<StudyPlan>(`${BASE_URL}/${planId}/`, data)
+      return response.data
+    } catch (error) {
+      console.error(`Failed to update study plan ${planId}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Mark a study plan as favourite
+   */
+  favouritePlan: async (planId: number): Promise<void> => {
+    try {
+      await axiosInstance.post(`${BASE_URL}/${planId}/favourite/`)
+    } catch (error) {
+      console.error(`Failed to favourite study plan ${planId}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Unfavourite a study plan
+   */
+  unfavouritePlan: async (planId: number): Promise<void> => {
+    try {
+      await axiosInstance.post(`${BASE_URL}/${planId}/unfavourite/`)
+    } catch (error) {
+      console.error(`Failed to unfavourite study plan ${planId}:`, error)
+      throw error
+    }
+  },
+
+  generateAssessment: async (planId: number, type: 'exit_quiz' | 'mock_exam'): Promise<{
+    message: string;
+    assessment_id: number;
+    quiz: any;
+  }> => {
+    try {
+      const response = await axiosInstance.post(`${BASE_URL}/${planId}/generate_assessment/`, {
+        assessment_type: type
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to generate ${type} for plan ${planId}:`, error);
+      throw error;
+    }
   }
 }
 

@@ -53,6 +53,7 @@ class ExamType(models.Model):
     
     class Meta:
         unique_together = ['name', 'exam_board']
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -76,6 +77,9 @@ class Subject(models.Model):
     aliases = models.JSONField(default=list)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name

@@ -20,9 +20,10 @@ import { VoiceMode } from './VoiceMode';
 
 interface ChatInterfaceProps {
     sessionId: string;
+    initialValue?: string;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, initialValue }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
@@ -362,6 +363,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
                 onSend={handleSendMessage}
                 onVoiceMode={() => setIsVoiceModeOpen(true)}
                 disabled={!isConnected || isTyping}
+                initialValue={messages.length === 0 ? initialValue : undefined}
                 placeholder={
                     isConnected
                         ? 'Ask me anything...'

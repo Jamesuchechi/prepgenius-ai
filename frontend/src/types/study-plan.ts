@@ -1,3 +1,6 @@
+import { Question } from './question';
+import { ChatSession } from './ai-tutor';
+
 /**
  * Study Plan TypeScript Types
  * Types for managing user study plans, tasks, and reminders
@@ -16,6 +19,7 @@ export interface StudyPlan {
   estimated_completion_date?: string // ISO date format
   actual_completion_date?: string // ISO date format
   status: 'draft' | 'active' | 'paused' | 'completed' | 'archived'
+  is_favourite: boolean
   subjects: number[] | SubjectDetail[]
   total_topics: number
   completed_topics: number
@@ -31,6 +35,20 @@ export interface StudyPlan {
   average_daily_progress: number
   created_at: string
   updated_at: string
+  is_mock_period: boolean
+  can_complete: boolean
+  assessments: StudyPlanAssessment[]
+}
+
+export interface StudyPlanAssessment {
+  id: number
+  assessment_type: 'exit_quiz' | 'mock_exam'
+  quiz: number
+  quiz_details: any // Simplified quiz object from serializers
+  last_attempt?: number
+  passing_score: number
+  is_passed: boolean
+  created_at: string
 }
 
 // Study Task
@@ -38,7 +56,9 @@ export interface StudyTask {
   id: number
   study_plan: number
   subject: number | SubjectDetail
+  subject_name?: string
   topic: number | TopicDetail
+  topic_name?: string
   scheduled_start_date: string // ISO date
   scheduled_end_date: string // ISO date
   scheduled_start_time?: string // HH:MM format
@@ -63,6 +83,8 @@ export interface StudyTask {
   notes: string
   resource_links: string[] // URLs
   question_ids: number[] // Related question IDs
+  questions?: Question[] // Full question objects if available
+  chat_session?: ChatSession // Linked AI session if available
   created_at: string
   updated_at: string
 }

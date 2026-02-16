@@ -4,6 +4,8 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from apps.content.models import Topic, Subject, ExamType
+from apps.questions.models import Question
+from apps.ai_tutor.models import ChatSession
 
 
 class StudyPlan(models.Model):
@@ -69,6 +71,9 @@ class StudyPlan(models.Model):
     )
     include_weekends = models.BooleanField(default=True)
     
+    # Configuration
+    is_favourite = models.BooleanField(default=False)
+    
     # AI Generation Metadata
     ai_prompt_used = models.TextField(blank=True, help_text="The prompt used to generate this plan")
     ai_provider = models.CharField(max_length=50, blank=True, help_text="Which AI service generated this plan")
@@ -99,13 +104,19 @@ class StudyPlan(models.Model):
     def is_on_track(self):
         """Check if plan is on track based on current progress."""
         if self.estimated_completion_date:
-            days_remaining = (self.estimated_completion_date - timezone.now().date()).days
+            today = timezone.now().date()
+            start = self.start_date
+            # Handle potential datetime object from default=timezone.now
+            if isinstance(start, datetime):
+                start = start.date()
+                
+            days_remaining = (self.estimated_completion_date - today).days
             expected_completion = (self.total_topics / self.total_topics) * 100 if self.total_topics else 0
             actual_completion = (self.completed_topics / self.total_topics) * 100 if self.total_topics else 0
             
             if days_remaining > 0:
                 expected_daily_progress = expected_completion / days_remaining
-                actual_daily_progress = actual_completion / max(1, (timezone.now().date() - self.start_date).days)
+                actual_daily_progress = actual_completion / max(1, (today - start).days)
                 return actual_daily_progress >= expected_daily_progress * 0.8  # Allow 20% buffer
         return True
     
@@ -125,7 +136,47 @@ class StudyPlan(models.Model):
         self.total_topics = total
         self.completed_topics = completed
         self.average_daily_progress = self.get_completion_percentage()
+        
+        # If progress is 100%, we don't auto-complete. 
+        # The user must pass an exit quiz.
         self.save()
+
+    def is_mock_period(self):
+        """Check if today is within 6 days of the exam date."""
+        days_left = self.days_until_exam()
+        return 0 <= days_left <= 6
+
+    def can_complete(self):
+        """
+        Check if the plan can be marked as completed.
+        Requires 100% progress AND a passed exit quiz.
+        """
+        if self.get_completion_percentage() < 100:
+            return False
+            
+        # Check for passed exit quiz in assessments
+        return self.assessments.filter(
+            assessment_type='exit_quiz',
+            last_attempt__status='COMPLETED',
+            last_attempt__score__gte=models.F('passing_score')
+        ).exists()
+
+    def save(self, *args, **kwargs):
+        # Prevent status being set to completed if conditions aren't met
+        if self.status == 'completed' and not self.can_complete():
+            # If it was already completed, allow it (e.g. during a refresh)
+            # But if it's a transition to completed, check conditions.
+            if self.pk:
+                old_instance = StudyPlan.objects.get(pk=self.pk)
+                if old_instance.status != 'completed':
+                    self.status = old_instance.status  # Revert status
+        
+        if self.status == 'active' and not self.actual_completion_date:
+            # We don't set actual_completion_date here anymore, 
+            # it should be set when the exit quiz is passed.
+            pass
+
+        super().save(*args, **kwargs)
 
 
 class StudyTask(models.Model):
@@ -214,9 +265,26 @@ class StudyTask(models.Model):
         default=list,
         help_text="Links to study materials"
     )
+    # Deprecated: use questions M2M instead
     question_ids = models.JSONField(
         default=list,
         help_text="IDs of questions related to this task"
+    )
+    
+    # New relationships for data integrity
+    questions = models.ManyToManyField(
+        Question,
+        blank=True,
+        related_name='study_tasks',
+        help_text="Questions linked to this task"
+    )
+    chat_session = models.ForeignKey(
+        ChatSession,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='study_tasks',
+        help_text="AI Tutor session for this task"
     )
     
     # Timestamps
@@ -277,12 +345,17 @@ class StudyTask(models.Model):
     
     def add_study_session(self, duration_seconds, understanding_level=None):
         """Record a study session for this task."""
+        is_first_session = self.actual_time_spent_seconds == 0
         self.actual_time_spent_seconds += duration_seconds
+        
         if understanding_level is not None:
-            # Update understanding level (averaging)
-            self.understanding_level = int(
-                (self.understanding_level + understanding_level) / 2
-            )
+            if is_first_session or self.understanding_level == 0:
+                self.understanding_level = understanding_level
+            else:
+                # Update understanding level (averaging)
+                self.understanding_level = int(
+                    (self.understanding_level + understanding_level) / 2
+                )
         self.save()
 
 
@@ -403,3 +476,38 @@ class AdjustmentHistory(models.Model):
     
     def __str__(self):
         return f"{self.study_plan.name} - {self.get_adjustment_type_display()}"
+
+
+class StudyPlanAssessment(models.Model):
+    """
+    Tracks milestone assessments (Exit Quizzes, Mock Exams) for a study plan.
+    """
+    
+    ASSESSMENT_TYPE_CHOICES = [
+        ('exit_quiz', 'Plan Exit Quiz'),
+        ('mock_exam', 'Full Mock Exam'),
+    ]
+    
+    study_plan = models.ForeignKey(StudyPlan, on_delete=models.CASCADE, related_name='assessments')
+    quiz = models.ForeignKey('quiz.Quiz', on_delete=models.CASCADE, related_name='plan_assessments')
+    last_attempt = models.ForeignKey('quiz.QuizAttempt', on_delete=models.SET_NULL, null=True, blank=True, related_name='milestone_assessments')
+    
+    assessment_type = models.CharField(max_length=20, choices=ASSESSMENT_TYPE_CHOICES)
+    passing_score = models.FloatField(default=70.0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = [('study_plan', 'assessment_type', 'quiz')]
+
+    def is_passed(self):
+        """Check if the latest quiz attempt passed the required threshold."""
+        if not self.last_attempt:
+            return False
+        return self.last_attempt.score >= self.passing_score
+
+    def __str__(self):
+        return f"{self.get_assessment_type_display()} for {self.study_plan.name}"
+
+

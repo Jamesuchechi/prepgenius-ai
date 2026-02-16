@@ -215,3 +215,37 @@ Remember: Your goal is to support the *whole* student—their well-being is as i
 Student: {user_message}
 
 Tutor:"""
+    @staticmethod
+    def get_study_plan_prompt(exam_type, subjects, days_available, difficulty_level, daily_hours, weekly_days):
+        """Generates a detailed study plan prompt."""
+        return f"""
+        Create a highly detailed and specific study plan for a student preparing for {exam_type}.
+        Subjects: {', '.join(subjects)}
+        Total Days Available: {days_available}
+        Study Intensity: {daily_hours} hours/day, {weekly_days} days/week
+        Target Difficulty: {difficulty_level}
+        
+        CRITICAL: Do NOT generate generic topics like "General". 
+        Break down each subject into its specific actual syllabus topics (e.g., for Biology: "Cell Biology", "Genetics", "Ecology").
+        For each topic, provide specific learning objectives.
+        
+        Output schema:
+        {{
+            "topic_sequence": [
+                {{
+                    "subject": "Subject Name",
+                    "topic_name": "Specific Topic Name",
+                    "estimated_hours": 3.5,
+                    "learning_objectives": ["Objective 1", "Objective 2"],
+                    "priority": "critical|high|medium|low"
+                }}
+            ],
+            "revision_schedule": [
+                {{
+                    "topic_name": "Topic to Revise",
+                    "reason": "Why prioritize this"
+                }}
+            ],
+            "study_tips": ["Tip 1", "Tip 2"]
+        }}
+        """

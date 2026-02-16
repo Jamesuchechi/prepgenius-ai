@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { QuizService, GenerateQuizPayload } from '../../services/quizService';
 import { studyService, Document } from '../../services/studyService';
 import { Button } from '../ui/Button';
@@ -11,13 +11,15 @@ import SectionHeader from '../ui/SectionHeader';
 
 const QuizWizard: React.FC = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [step, setStep] = useState(1);
 
     // Form State
     const [mode, setMode] = useState<'TOPIC' | 'DOCUMENT'>('TOPIC');
-    const [topic, setTopic] = useState('');
+    const [topic, setTopic] = useState(searchParams.get('topic') || '');
     const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM');
     const [questionCount, setQuestionCount] = useState(5);
     const [examType, setExamType] = useState<'MCQ' | 'THEORY'>('MCQ');
@@ -182,4 +184,10 @@ const QuizWizard: React.FC = () => {
     );
 };
 
-export default QuizWizard;
+const QuizWizardWrapper = () => (
+    <Suspense fallback={<div>Loading...</div>}>
+        <QuizWizard />
+    </Suspense>
+);
+
+export default QuizWizardWrapper;

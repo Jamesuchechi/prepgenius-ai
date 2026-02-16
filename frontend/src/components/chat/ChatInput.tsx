@@ -7,6 +7,7 @@ interface ChatInputProps {
     onVoiceMode?: () => void;
     disabled?: boolean;
     placeholder?: string;
+    initialValue?: string;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -14,8 +15,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onVoiceMode,
     disabled = false,
     placeholder = 'Type your message...',
+    initialValue = '',
 }) => {
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState(initialValue);
     const [image, setImage] = useState<string | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
@@ -24,6 +26,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messageRef = useRef(message);
+
+    // Update message if initialValue changes
+    useEffect(() => {
+        if (initialValue) {
+            setMessage(initialValue);
+            // Auto-resize textarea after pre-fill
+            if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+                textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+            }
+        }
+    }, [initialValue]);
 
     // Keep messageRef in sync with message state
     useEffect(() => {
