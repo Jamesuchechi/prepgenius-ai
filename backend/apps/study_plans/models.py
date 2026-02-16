@@ -129,9 +129,14 @@ class StudyPlan(models.Model):
     def update_progress(self):
         """Update progress metrics."""
         from .models import StudyTask
+        from django.db.models import Sum
         tasks = StudyTask.objects.filter(study_plan=self)
         total = tasks.count()
         completed = tasks.filter(status='completed').count()
+        
+        # Calculate total actual study hours
+        total_seconds = tasks.aggregate(Sum('actual_time_spent_seconds'))['actual_time_spent_seconds__sum'] or 0
+        self.actual_study_hours = total_seconds / 3600
         
         self.total_topics = total
         self.completed_topics = completed
@@ -322,11 +327,15 @@ class StudyTask(models.Model):
         """Get days remaining until scheduled end date."""
         return (self.scheduled_end_date - timezone.now().date()).days
     
-    def mark_completed(self, understanding_level=0, notes=''):
+    def mark_completed(self, understanding_level=0, notes='', duration_seconds=0):
         """Mark task as completed."""
         self.status = 'completed'
         self.actual_completion_date = timezone.now().date()
         self.completion_percentage = 100.0
+        
+        if duration_seconds:
+            self.actual_time_spent_seconds += duration_seconds
+            
         if understanding_level:
             self.understanding_level = understanding_level
         if notes:

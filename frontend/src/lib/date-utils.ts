@@ -29,12 +29,15 @@ export function formatDateTime(dateString: string): string {
   }
 }
 
-export function formatHours(hours: number): string {
-  if (hours < 1) {
-    return `${Math.round(hours * 60)}m`
+export function formatHours(hours: any): string {
+  const h = Number(hours)
+  if (isNaN(h) || h <= 0) return '0h'
+
+  if (h < 1) {
+    return `${Math.round(h * 60)}m`
   }
-  const wholeHours = Math.floor(hours)
-  const minutes = Math.round((hours - wholeHours) * 60)
+  const wholeHours = Math.floor(h)
+  const minutes = Math.round((h - wholeHours) * 60)
   if (minutes === 0) {
     return `${wholeHours}h`
   }
@@ -88,9 +91,12 @@ export function getProgressPercentage(startDate: string, endDate: string): numbe
   }
 }
 
-export function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
+export function formatDuration(seconds: any): string {
+  const s = Number(seconds)
+  if (isNaN(s) || s <= 0) return '0m'
+
+  const hours = Math.floor(s / 3600)
+  const minutes = Math.floor((s % 3600) / 60)
 
   if (hours === 0) {
     return `${minutes}m`

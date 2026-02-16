@@ -180,6 +180,7 @@ export interface StudyTaskUpdateRequest {
 export interface CompleteTaskRequest {
   understanding_level: number // 0-100
   notes?: string
+  duration_seconds?: number
 }
 
 export interface LogStudySessionRequest {

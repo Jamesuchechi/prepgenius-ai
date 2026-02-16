@@ -40,6 +40,9 @@ export default function TaskList({ tasks, planId, onTaskUpdate }: TaskListProps)
     low: '⚪'
   }
 
+  const [completingTaskId, setCompletingTaskId] = useState<number | null>(null)
+  const [completionData, setCompletionData] = useState({ understanding_level: 80, minutes: 30 })
+
   const handleStartTask = async (taskId: number) => {
     setLoadingTasks(prev => new Set(prev).add(taskId))
     try {
@@ -60,11 +63,13 @@ export default function TaskList({ tasks, planId, onTaskUpdate }: TaskListProps)
     setLoadingTasks(prev => new Set(prev).add(taskId))
     try {
       await studyTaskApi.completeTask(taskId, {
-        understanding_level: 80,
-        notes: 'Completed'
+        understanding_level: completionData.understanding_level,
+        duration_seconds: completionData.minutes * 60,
+        notes: `Completed with ${completionData.understanding_level}% understanding. Time spent: ${completionData.minutes}m.`
       })
       if (onTaskUpdate) onTaskUpdate(taskId)
       setExpandedTask(null)
+      setCompletingTaskId(null)
     } catch (err: any) {
       setError(err.message || 'Failed to complete task')
     } finally {
@@ -102,6 +107,7 @@ export default function TaskList({ tasks, planId, onTaskUpdate }: TaskListProps)
     const daysUntilEnd = getDaysUntil(task.scheduled_end_date)
     const isOverdue = daysUntilEnd < 0
     const isLoading = loadingTasks.has(task.id)
+    const isCompleting = completingTaskId === task.id
 
     return (
       <div
@@ -109,7 +115,11 @@ export default function TaskList({ tasks, planId, onTaskUpdate }: TaskListProps)
           ? 'border-purple-200 shadow-sm shadow-purple-50'
           : 'border-gray-200'
           }`}
-        onClick={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
+        onClick={() => {
+          if (!isCompleting) {
+            setExpandedTask(expandedTask === task.id ? null : task.id)
+          }
+        }}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -135,11 +145,11 @@ export default function TaskList({ tasks, planId, onTaskUpdate }: TaskListProps)
 
             {/* Task title and subject */}
             <h3 className="text-lg font-semibold text-black mb-1">
-              {task.description || task.topic_name || (typeof task.topic === 'object' ? task.topic.name : `Task ${task.id}`)}
+              {task.description || (task.topic_name === 'General' ? `${task.subject_name} Fundamentals` : task.topic_name) || (typeof task.topic === 'object' ? task.topic.name : `Task ${task.id}`)}
             </h3>
             <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span title={task.subject_name}>📚 {task.topic_name || (typeof task.topic === 'object' ? task.topic.name : `Topic ${task.topic}`)}</span>
-              <span>⏱️ {formatHours(task.estimated_duration_hours)}</span>
+              <span title={task.subject_name}>📚 {(task.topic_name === 'General' ? `${task.subject_name} Fundamentals` : task.topic_name) || (typeof task.topic === 'object' ? task.topic.name : `Topic ${task.topic}`)}</span>
+              <span>⏱️ {formatHours(task.estimated_duration_hours ?? 0)}</span>
               <span>📅 {formatDate(task.scheduled_end_date)}</span>
             </div>
           </div>
@@ -207,16 +217,16 @@ export default function TaskList({ tasks, planId, onTaskUpdate }: TaskListProps)
             <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3 rounded-lg">
               <div>
                 <div className="text-xs text-gray-500 font-medium">Estimated</div>
-                <div className="font-semibold text-gray-800">{formatHours(task.estimated_duration_hours)}</div>
+                <div className="font-semibold text-gray-800">{formatHours(task.estimated_duration_hours ?? 0)}</div>
               </div>
               <div>
                 <div className="text-xs text-gray-500 font-medium">Spent</div>
-                <div className="font-semibold text-gray-800">{formatHours(task.actual_time_spent_seconds / 3600)}</div>
+                <div className="font-semibold text-gray-800">{formatHours((task.actual_time_spent_seconds ?? 0) / 3600)}</div>
               </div>
               <div>
                 <div className="text-xs text-gray-500 font-medium">Remaining</div>
                 <div className="font-semibold text-orange-600">
-                  {formatHours(Math.max(0, task.estimated_duration_hours - task.actual_time_spent_seconds / 3600))}
+                  {formatHours(Math.max(0, (task.estimated_duration_hours ?? 0) - (task.actual_time_spent_seconds ?? 0) / 3600))}
                 </div>
               </div>
             </div>
@@ -235,17 +245,71 @@ export default function TaskList({ tasks, planId, onTaskUpdate }: TaskListProps)
                   {isLoading ? '...' : '▶️ Start'}
                 </button>
               )}
-              {task.status === 'in_progress' && (
+              {task.status === 'in_progress' && !isCompleting && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleCompleteTask(task.id)
+                    setCompletingTaskId(task.id)
                   }}
                   disabled={isLoading}
                   className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-lg text-sm font-semibold transition"
                 >
                   {isLoading ? '...' : '✓ Complete'}
                 </button>
+              )}
+
+              {isCompleting && (
+                <div
+                  className="w-full bg-green-50 border-2 border-green-200 rounded-xl p-4 mt-2 mb-2 animate-in fade-in slide-in-from-top-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                    ✅ Well done! How did it go?
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-xs font-bold text-green-700 uppercase mb-1">
+                        Mastery ({completionData.understanding_level}%)
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={completionData.understanding_level}
+                        onChange={(e) => setCompletionData(prev => ({ ...prev, understanding_level: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-green-700 uppercase mb-1">
+                        Time Spent (min)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={completionData.minutes}
+                        onChange={(e) => setCompletionData(prev => ({ ...prev, minutes: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-3 py-1 bg-white border border-green-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleCompleteTask(task.id)}
+                      disabled={isLoading}
+                      className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold transition shadow-sm"
+                    >
+                      {isLoading ? 'Saving...' : 'Finish Task'}
+                    </button>
+                    <button
+                      onClick={() => setCompletingTaskId(null)}
+                      disabled={isLoading}
+                      className="px-4 py-2 bg-white border border-green-300 text-green-700 hover:bg-green-100 rounded-lg text-sm font-semibold transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               )}
               {(task.status === 'pending' || task.status === 'in_progress') && (
                 <button
@@ -281,8 +345,9 @@ export default function TaskList({ tasks, planId, onTaskUpdate }: TaskListProps)
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    const topicName = task.topic_name || (typeof task.topic === 'object' ? task.topic.name : `Topic ${task.topic}`);
+                    const baseTopicName = task.topic_name || (typeof task.topic === 'object' ? task.topic.name : `Topic ${task.topic}`);
                     const subjectName = task.subject_name || (typeof task.subject === 'object' ? task.subject.name : `Subject ${task.subject}`);
+                    const topicName = baseTopicName === 'General' ? `${subjectName} Fundamentals` : baseTopicName;
 
                     // Generate a rich prompt for the AI Tutor
                     const objectivesStr = task.learning_objectives?.length > 0

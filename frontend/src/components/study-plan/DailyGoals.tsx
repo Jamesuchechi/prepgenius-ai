@@ -34,8 +34,8 @@ export default function DailyGoals({ plan, tasks }: DailyGoalsProps) {
     while (currentDate <= examDate) {
       const dateStr = currentDate.toISOString().split('T')[0]
       const dayOfWeek = currentDate.getDay()
-      const isStudyDay = dayOfWeek !== 0 && dayOfWeek !== 6 
-        ? true 
+      const isStudyDay = dayOfWeek !== 0 && dayOfWeek !== 6
+        ? true
         : plan.include_weekends
 
       const dayTasks = tasks.filter(
@@ -44,12 +44,12 @@ export default function DailyGoals({ plan, tasks }: DailyGoalsProps) {
 
       progress[dateStr] = {
         date: dateStr,
-        plannedHours: isStudyDay ? plan.study_hours_per_day : 0,
-        studiedHours: dayTasks.reduce((sum, t) => sum + (t.actual_time_spent_seconds / 3600), 0),
+        plannedHours: isStudyDay ? (plan.study_hours_per_day ?? 0) : 0,
+        studiedHours: dayTasks.reduce((sum, t) => sum + ((t.actual_time_spent_seconds ?? 0) / 3600), 0),
         tasksPlanned: dayTasks.length,
         tasksCompleted: dayTasks.filter(t => t.status === 'completed').length,
-        completion: dayTasks.length > 0 
-          ? (dayTasks.filter(t => t.status === 'completed').length / dayTasks.length) * 100 
+        completion: dayTasks.length > 0
+          ? (dayTasks.filter(t => t.status === 'completed').length / dayTasks.length) * 100
           : 0
       }
 
@@ -111,7 +111,7 @@ export default function DailyGoals({ plan, tasks }: DailyGoalsProps) {
                 <div
                   className="bg-gradient-to-r from-orange-400 to-orange-600 h-3 rounded-full transition-all"
                   style={{
-                    width: `${Math.min(100, (todayProgress.studiedHours / todayProgress.plannedHours) * 100)}%`
+                    width: `${todayProgress.plannedHours > 0 ? Math.min(100, (todayProgress.studiedHours / todayProgress.plannedHours) * 100) : 0}%`
                   }}
                 />
               </div>
@@ -220,13 +220,12 @@ export default function DailyGoals({ plan, tasks }: DailyGoalsProps) {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full transition-all ${
-                      day.completion >= 100
+                    className={`h-2 rounded-full transition-all ${day.completion >= 100
                         ? 'bg-green-500'
                         : day.completion >= 75
                           ? 'bg-blue-500'
                           : 'bg-yellow-500'
-                    }`}
+                      }`}
                     style={{ width: `${Math.min(100, day.completion)}%` }}
                   />
                 </div>

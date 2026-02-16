@@ -386,6 +386,12 @@ class StudyTaskCompleteSerializer(serializers.Serializer):
         required=False,
         help_text="User's understanding of the topic (0-100)"
     )
+    duration_seconds = serializers.IntegerField(
+        min_value=0,
+        required=False,
+        default=0,
+        help_text="Time spent in seconds during this session"
+    )
     notes = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -395,7 +401,8 @@ class StudyTaskCompleteSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         instance.mark_completed(
             understanding_level=validated_data.get('understanding_level', 0),
-            notes=validated_data.get('notes', '')
+            notes=validated_data.get('notes', ''),
+            duration_seconds=validated_data.get('duration_seconds', 0)
         )
         return instance
 
