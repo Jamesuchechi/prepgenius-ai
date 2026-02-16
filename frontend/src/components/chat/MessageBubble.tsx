@@ -6,6 +6,11 @@
 
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { format } from 'date-fns';
 import { Bot, User, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Volume2, VolumeX } from 'lucide-react';
 import { copyToClipboard } from '@/utils/exportUtils';
@@ -149,24 +154,59 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                     ) : (
                         <div className="prose prose-sm dark:prose-invert max-w-none">
                             <ReactMarkdown
+                                remarkPlugins={[remarkMath, remarkGfm]}
+                                rehypePlugins={[rehypeKatex]}
                                 components={{
-                                    p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
-                                    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                    p: ({ children }) => <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>,
+                                    ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-2">{children}</ul>,
+                                    ol: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-2">{children}</ol>,
                                     li: ({ children }) => <li className="mb-1">{children}</li>,
-                                    code: ({ inline, children, ...props }: any) =>
-                                        inline ? (
-                                            <code className="bg-gray-100 px-1 py-0.5 rounded text-sm text-pink-600 font-mono" {...props}>
-                                                {children}
-                                            </code>
+                                    h1: ({ children }) => <h1 className="text-xl font-bold mb-4 mt-6 text-gray-900 border-b pb-1">{children}</h1>,
+                                    h2: ({ children }) => <h2 className="text-lg font-bold mb-3 mt-5 text-gray-800">{children}</h2>,
+                                    h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-4 text-blue-700 flex items-center gap-2">
+                                        <span className="w-1 h-5 bg-blue-500 rounded-full inline-block"></span>
+                                        {children}
+                                    </h3>,
+                                    code({ node, inline, className, children, ...props }: any) {
+                                        const match = /language-(\w+)/.exec(className || '');
+                                        const codeContent = String(children).replace(/\n$/, '');
+
+                                        return !inline && match ? (
+                                            <div className="relative group/code my-4 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                                <div className="flex items-center justify-between px-4 py-2 bg-gray-800 text-gray-300 text-xs font-mono">
+                                                    <span>{match[1]}</span>
+                                                    <button
+                                                        onClick={() => copyToClipboard(codeContent)}
+                                                        className="flex items-center gap-1 hover:text-white transition-colors"
+                                                    >
+                                                        <Copy size={12} />
+                                                        Copy
+                                                    </button>
+                                                </div>
+                                                <SyntaxHighlighter
+                                                    style={vscDarkPlus}
+                                                    language={match[1]}
+                                                    PreTag="div"
+                                                    customStyle={{
+                                                        margin: 0,
+                                                        padding: '1.25rem',
+                                                        fontSize: '0.875rem',
+                                                        lineHeight: '1.5',
+                                                        backgroundColor: '#1E1E1E',
+                                                    }}
+                                                    {...props}
+                                                >
+                                                    {codeContent}
+                                                </SyntaxHighlighter>
+                                            </div>
                                         ) : (
-                                            <code className="block bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm overflow-x-auto text-gray-800 font-mono my-2" {...props}>
+                                            <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm text-blue-600 font-mono font-medium" {...props}>
                                                 {children}
                                             </code>
-                                        ),
+                                        );
+                                    },
                                 }}
                             >
-
                                 {displayContent}
                             </ReactMarkdown>
                         </div>

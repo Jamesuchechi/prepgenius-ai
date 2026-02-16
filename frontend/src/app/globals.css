@@ -91,6 +91,21 @@ html {
   scroll-behavior: smooth;
 }
 
+/* KaTeX Custom Styles for Notebook Patterns */
+.katex-display {
+  margin: 1.5rem 0 !important;
+  padding: 1rem;
+  background-color: #f8fafc; /* Very light blue/gray background */
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.katex {
+  font-size: 1.1em !important;
+}
+
 /* Selection color */
 ::selection {
   background: var(--orange);
