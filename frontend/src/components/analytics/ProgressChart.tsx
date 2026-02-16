@@ -6,8 +6,7 @@ import {
     Pie,
     Cell,
     ResponsiveContainer,
-    Tooltip,
-    Legend
+    Tooltip
 } from 'recharts';
 import { ProgressTracker } from '@/lib/api/analytics';
 
@@ -21,43 +20,63 @@ export default function ProgressChart({ data }: ProgressChartProps) {
         { name: 'Incorrect', value: data.total_questions_attempted - data.total_correct_answers }
     ];
 
-    const COLORS = ['#10b981', '#ef4444'];
+    const COLORS = ['#FF6B35', '#F1F5F9']; // Orange for correct, light gray for incorrect
 
     return (
-        <div className="rounded-xl border bg-card text-card-foreground shadow h-full">
-            <div className="p-6 flex flex-col space-y-1.5 border-b">
-                <h3 className="font-semibold leading-none tracking-tight">Overall Accuracy</h3>
-                <p className="text-sm text-muted-foreground">Distribution of your task performance.</p>
-            </div>
-            <div className="p-6 pt-0">
-                <div className="h-[250px] w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={chartData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend verticalAlign="bottom" height={36} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-                <div className="text-center mt-2">
-                    <span className="text-3xl font-bold">
-                        {data.total_questions_attempted > 0
-                            ? Math.round((data.total_correct_answers / data.total_questions_attempted) * 100)
-                            : 0}%
-                    </span>
-                    <p className="text-sm text-muted-foreground">Total Accuracy</p>
+        <div className="h-[280px] w-full relative flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={85}
+                        outerRadius={110}
+                        startAngle={180}
+                        endAngle={0}
+                        paddingAngle={0}
+                        dataKey="value"
+                        stroke="none"
+                    >
+                        {chartData.map((entry, index) => (
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                                className="transition-all duration-300 hover:opacity-80 outline-none"
+                            />
+                        ))}
+                    </Pie>
+                    <Tooltip
+                        content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                                return (
+                                    <div className="bg-white p-2 shadow-lg border rounded-lg text-xs font-bold text-blue-900">
+                                        {payload[0].name}: {payload[0].value}
+                                    </div>
+                                );
+                            }
+                            return null;
+                        }}
+                    />
+                </PieChart>
+            </ResponsiveContainer>
+
+            <div className="absolute inset-0 flex flex-col items-center justify-center pt-8">
+                <span className="text-5xl font-display font-black text-blue-900 tracking-tighter">
+                    {data.accuracy_percentage}%
+                </span>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                    Mastery Score
+                </p>
+                <div className="flex items-center gap-4 mt-4">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        <span className="text-[10px] font-medium text-muted-foreground">Correct</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-slate-200" />
+                        <span className="text-[10px] font-medium text-muted-foreground">Remaining</span>
+                    </div>
                 </div>
             </div>
         </div>

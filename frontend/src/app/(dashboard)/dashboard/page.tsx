@@ -9,6 +9,8 @@ import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard'
 import LevelProgress from '@/components/gamification/LevelProgress'
 import BadgeGrid from '@/components/gamification/BadgeGrid'
 import Leaderboard from '@/components/gamification/Leaderboard'
+import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
+import { Trophy, Award } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 
 export default function DashboardPage() {
@@ -116,7 +118,14 @@ export default function DashboardPage() {
 
           {/* Leaderboard placed in main column for better visibility on mobile/tablet */}
           <div className="animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
-            <Leaderboard />
+            <CollapsibleCard
+              title="Global Leaderboard"
+              description="See how you rank against other top students."
+              icon={<Trophy className="w-5 h-5" />}
+              defaultOpen={false}
+            >
+              <Leaderboard />
+            </CollapsibleCard>
           </div>
 
         </div>
@@ -147,7 +156,14 @@ export default function DashboardPage() {
 
           {/* Badges Widget */}
           <div className="animate-[fadeInUp_0.6s_ease-out_0.9s_backwards]">
-            <BadgeGrid />
+            <CollapsibleCard
+              title="Your Achievements"
+              description="Unlock more badges by studying consistently."
+              icon={<Award className="w-5 h-5" />}
+              defaultOpen={false}
+            >
+              <BadgeGrid />
+            </CollapsibleCard>
           </div>
 
         </div>

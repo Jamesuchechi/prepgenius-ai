@@ -28,12 +28,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
-          integrity="sha384-n9t9qHdtG6vnr/+vS6Llnf464D9TdfBeuaCHmLDv6pEgZuOeaB8B5IuvOatX34O2"
-          crossOrigin="anonymous"
-        />
+        
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       </head>
       <body className="bg-white text-black">

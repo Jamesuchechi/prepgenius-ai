@@ -25,11 +25,13 @@ interface ChatInterfaceProps {
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, initialValue }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
+    const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
 
     const {
         messages,
@@ -186,10 +188,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, initial
         }
     }, [messages.length]);
 
-    // Auto-scroll to bottom
+    // Auto-scroll to bottom only if user is viewing the bottom
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isTyping]);
+        if (!messagesContainerRef.current) return;
+
+        // If user hasn't scrolled up, scroll to bottom
+        if (!isUserScrolledUp) {
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 0);
+        }
+    }, [messages, isTyping, isUserScrolledUp]);
+
+    // Detect user scroll
+    const handleScroll = () => {
+        if (!messagesContainerRef.current) return;
+
+        const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100; // 100px threshold
+
+        setIsUserScrolledUp(!isNearBottom);
+    };
 
     // Update connection status
     useEffect(() => {
@@ -324,7 +343,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, initial
             )}
 
             {/* Messages area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30">
+            <div 
+                ref={messagesContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30"
+            >
                 {messages.length === 0 && !loadingSuggestions && (
                     <div className="text-center text-gray-500 mt-8">
                         <p className="text-lg mb-2 font-medium">👋 Hi! I'm your AI tutor.</p>

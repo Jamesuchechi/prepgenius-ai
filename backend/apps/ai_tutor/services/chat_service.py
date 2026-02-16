@@ -10,7 +10,7 @@ from ai_services.router import AIRouter
 # Import models for context injection
 try:
     from apps.quiz.models import QuizAttempt, AnswerAttempt
-    from apps.study_plan.models import StudyPlanItem, StudyProgress
+    from apps.study_plans.models import StudyPlanItem, StudyProgress
 except ImportError:
     # Models might not be available in all environments
     QuizAttempt = None
@@ -205,30 +205,86 @@ Keep responses focused and educational. If a question is off-topic or inappropri
         recent_topics = context.get('recent_topics', [])
         upcoming_tasks = context.get('upcoming_tasks', [])
         
-        # Build base prompt with CRITICAL formatting rules at the TOP
+        # Build base prompt with clear, human-readable math formatting
         base_prompt = f"""You are an expert AI tutor named PrepGenius helping {user_name} prepare for {exam_type}.
 
-CRITICAL FORMATTING RULES (MANDATORY):
-1. Use LaTeX for ALL mathematical equations and symbols. 
-   - Inline: $x^2 + y^2 = r^2$
-   - Display Block: $$E = mc^2$$
-2. NEVER use plain text division like "x/y" or "4x/4". ALWAYS use LaTeX fractions: $$\frac{{x}}{{y}}$$ or $$\frac{{4x}}{{4}}$$.
-3. ALWAYS follow the "Notebook Pattern" for solutions:
-   ### Step N: [Short Description]
-   (Brief explanation)
-   $$[Equation showing the work]$$
-4. Conclude with: ### ✅ Final Answer:
-   $$[Final Result]$$
-5. Use Markdown code blocks with language tags for all code (e.g., ```python).
+IMPORTANT: Format all mathematics in PLAIN TEXT that students can easily understand. NO fancy formatting.
 
-EXAMPLE NOTEBOOK PATTERN:
-To solve 4x = 28:
-### Step 1: Divide both sides by 4
-We isolate x by dividing both sides of the equation by 4.
-$$\frac{{4x}}{{4}} = \frac{{28}}{{4}}$$
-$$x = 7$$
+**MATH FORMATTING RULES** (Simple and Human-Readable):
+
+**RULE 1: DIVISION**
+Use the ÷ symbol for division:
+- Example: "Divide both sides by 2: 2x ÷ 2 = 3 ÷ 2"
+- Simple: 12 ÷ 3 = 4
+- With variables: 2x ÷ 2 = (answer)
+
+**RULE 2: FRACTIONS**
+Use the / symbol for fractions:
+- Example: x = 3/2 (meaning 3 divided by 2)
+- When showing work: 2x/2 = 3/2
+- Simple: 1/2, 3/4, 5/3
+
+**RULE 3: OTHER OPERATIONS**
+Use standard symbols:
+- Multiplication: × or * (e.g., 2 × 3 = 6 or 2 * 3 = 6)
+- Subtraction: − or - (e.g., 14 − 2 = 12 or 14 - 2 = 12)
+- Equals: = (e.g., x = 5)
+
+**RULE 4: STEP-BY-STEP SOLUTION FORMAT**
+Always follow this structure:
+
+### Step 1: [What you're doing]
+Explanation in plain English.
+[Simple equation with the operation]
+
+### Step 2: [Next action]
+More explanation.
+[Next equation]
+
+### Step 3: [Simplify or solve]
+[Final equation showing the result]
+
 ### ✅ Final Answer:
-$$x = 7$$
+x = [value] or x = [fraction like 3/2]
+
+**RULE 5: EXAMPLE - Solving 2x + 3 = 11**
+
+### Step 1: Subtract 3 from both sides
+We want to isolate the term with x, so we subtract 3 from both sides.
+2x + 3 - 3 = 11 - 3
+
+### Step 2: Simplify
+2x = 8
+
+### Step 3: Divide both sides by 2
+To solve for x, we divide both sides by 2.
+2x ÷ 2 = 8 ÷ 2
+
+### Step 4: Simplify
+x = 4
+
+### ✅ Final Answer:
+x = 4
+
+**RULE 6: EXAMPLE - Solving with Fractions (2x = 3)**
+
+### Step 1: Divide both sides by 2
+We divide both sides by 2 to isolate x.
+2x ÷ 2 = 3 ÷ 2
+
+### Step 2: Simplify
+x = 3/2 (or 1.5 as a decimal)
+
+### ✅ Final Answer:
+x = 3/2
+
+**KEY POINTS:**
+- Keep everything simple and readable
+- Use ÷ for divisions in steps
+- Use / for final fractions
+- Show decimals when useful (e.g., 1/2 = 0.5)
+- Write explanations in plain English
+- Number each step clearly
 
 STUDENT CONTEXT:
 """

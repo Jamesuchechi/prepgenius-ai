@@ -11,11 +11,22 @@ class ProgressTracker(models.Model):
     last_activity_date = models.DateField(null=True, blank=True)
     total_study_minutes = models.IntegerField(default=0)
     total_quizzes_taken = models.IntegerField(default=0)
+    total_mock_exams_taken = models.IntegerField(default=0)
+    total_questions_attempted = models.IntegerField(default=0, help_text="Total number of questions answered across all quizzes")
+    total_correct_answers = models.IntegerField(default=0, help_text="Total number of questions answered correctly")
+    tutor_interactions_count = models.IntegerField(default=0, help_text="Total number of messages sent to AI tutor")
     
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.username} - Streak: {self.current_streak}"
+    
+    @property
+    def accuracy_percentage(self):
+        """Calculate accuracy percentage."""
+        if self.total_questions_attempted == 0:
+            return 0
+        return round((self.total_correct_answers / self.total_questions_attempted) * 100, 2)
 
 class TopicMastery(models.Model):
     """
@@ -43,6 +54,7 @@ class StudySession(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     duration_minutes = models.IntegerField(default=0)
+    subject = models.CharField(max_length=255, blank=True, null=True)
     questions_answered = models.IntegerField(default=0)
     correct_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

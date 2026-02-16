@@ -2,55 +2,89 @@
 
 import React from 'react';
 import {
-    LineChart,
-    Line,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    Legend
+    Area,
+    AreaChart
 } from 'recharts';
 import { StudySession } from '@/lib/api/analytics';
+import { TrendingUp, LineChart } from 'lucide-react';
+import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 
 interface PerformanceHistoryProps {
     data: StudySession[];
 }
 
 export default function PerformanceHistory({ data }: PerformanceHistoryProps) {
-    // Transform data for chart
-    const chartData = data.map(session => ({
-        date: new Date(session.start_time).toLocaleDateString(),
+    const chartData = data.slice(0, 7).map(session => ({
+        date: new Date(session.start_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
         accuracy: session.questions_attempted > 0
             ? Math.round((session.correct_questions / session.questions_attempted) * 100)
-            : 0,
-        questions: session.questions_attempted,
-    })).reverse(); // Show oldest to newest
+            : (session.questions_answered > 0 ? Math.round((session.correct_count / session.questions_answered) * 100) : 0),
+    })).reverse();
 
     return (
-        <div className="rounded-xl border bg-card text-card-foreground shadow col-span-4">
-            <div className="p-6 flex flex-col space-y-1.5 border-b">
-                <h3 className="font-semibold leading-none tracking-tight">Performance History</h3>
-                <p className="text-sm text-muted-foreground">Your study sessions and accuracy over time.</p>
+        <CollapsibleCard
+            title="Performance Over Time"
+            description="Your daily accuracy percentage across recent sessions."
+            icon={<TrendingUp className="w-5 h-5" />}
+            defaultOpen={false}
+        >
+            <div className="h-[280px] w-full mt-6">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorAccuracy" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <XAxis
+                            dataKey="date"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748B', fontWeight: 600 }}
+                        />
+                        <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: '#64748B' }}
+                            domain={[0, 100]}
+                        />
+                        <Tooltip
+                            content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                    return (
+                                        <div className="bg-white p-3 shadow-xl border border-blue-100 rounded-xl">
+                                            <p className="font-bold text-blue-900 text-xs mb-1">{payload[0].payload.date}</p>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                                <p className="text-sm font-bold text-blue-600">
+                                                    {payload[0].value}% Accuracy
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
+                        />
+                        <Area
+                            type="monotone"
+                            dataKey="accuracy"
+                            stroke="#3B82F6"
+                            strokeWidth={3}
+                            fillOpacity={1}
+                            fill="url(#colorAccuracy)"
+                            animationDuration={1500}
+                        />
+                    </AreaChart>
+                </ResponsiveContainer>
             </div>
-            <div className="p-6 pt-0">
-                <div className="h-[300px] w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis yAxisId="left" domain={[0, 100]} name="Accuracy %" />
-                            <YAxis yAxisId="right" orientation="right" name="Questions" />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
-                            />
-                            <Legend />
-                            <Line yAxisId="left" type="monotone" dataKey="accuracy" name="Accuracy %" stroke="#8884d8" activeDot={{ r: 8 }} />
-                            <Line yAxisId="right" type="monotone" dataKey="questions" name="Questions Attempted" stroke="#82ca9d" />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-        </div>
+        </CollapsibleCard>
     );
 }

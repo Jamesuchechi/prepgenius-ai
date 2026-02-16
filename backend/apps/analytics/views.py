@@ -1,9 +1,10 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import Avg, Sum, Count, Q
 from .models import ProgressTracker, TopicMastery, StudySession, SpacedRepetitionItem
 from .serializers import ProgressTrackerSerializer, TopicMasterySerializer, StudySessionSerializer, SpacedRepetitionItemSerializer
-from apps.quiz.models import QuizAttempt
+from apps.quiz.models import QuizAttempt, AnswerAttempt
 from apps.quiz.serializers import QuizAttemptSerializer
 from .services.analytics_engine import AnalyticsEngine
 
@@ -13,7 +14,7 @@ class AnalyticsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def progress(self, request):
         """
-        Get overall user progress.
+        Get overall user progress with complete statistics.
         """
         progress, _ = ProgressTracker.objects.get_or_create(user=request.user)
         serializer = ProgressTrackerSerializer(progress)
@@ -31,31 +32,48 @@ class AnalyticsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """
-        Get a summary for the dashboard (streak + top weak/strong topics).
+        Get an enhanced summary for the dashboard.
         """
         progress, _ = ProgressTracker.objects.get_or_create(user=request.user)
         
-        # Weakest topics (bottom 3 less than 70%)
+        # Weakest topics
         weak_qs = TopicMastery.objects.filter(user=request.user, mastery_score__lt=70).order_by('mastery_score')[:3]
         
-        # Strongest topics (top 3 above 70%)
-        strong_qs = TopicMastery.objects.filter(user=request.user, mastery_score__gte=70).order_by('-mastery_score')[:3]
+        # Predicted Score
+        prediction = AnalyticsEngine.calculate_predicted_score(request.user)
+        
+        # Study Patterns
+        patterns = AnalyticsEngine.detect_optimal_study_time(request.user)
         
         return Response({
             "streak": progress.current_streak,
-            "total_questions": progress.total_quizzes_taken,
+            "total_questions": progress.total_questions_attempted,
+            "total_exams": progress.total_mock_exams_taken,
+            "tutor_interactions": progress.tutor_interactions_count,
+            "predicted_score": prediction,
+            "study_patterns": {
+                "optimal_study_time": patterns
+            },
             "weak_topics": TopicMasterySerializer(weak_qs, many=True).data,
-            "strong_topics": TopicMasterySerializer(strong_qs, many=True).data,
+            "accuracy_percentage": progress.accuracy_percentage,
         })
+
+    @action(detail=False, methods=['get'])
+    def sessions(self, request):
+        """
+        Get individual study sessions for charts.
+        """
+        sessions = StudySession.objects.filter(user=request.user).order_by('-start_time')[:10]
+        serializer = StudySessionSerializer(sessions, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def history(self, request):
         """
-        Get recent quiz attempts history.
+        Get unified recent activities (quizzes and exams).
         """
-        attempts = QuizAttempt.objects.filter(user=request.user).order_by('-completed_at')[:10]
-        serializer = QuizAttemptSerializer(attempts, many=True)
-        return Response(serializer.data)
+        activities = AnalyticsEngine.get_recent_activities(request.user)
+        return Response(activities)
 
     @action(detail=False, methods=['get'])
     def predicted_score(self, request):

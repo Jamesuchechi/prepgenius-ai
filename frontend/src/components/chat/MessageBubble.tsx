@@ -4,10 +4,9 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -25,6 +24,22 @@ interface MessageBubbleProps {
     isStreaming?: boolean;
     image?: string;
 }
+
+/**
+ * Component to trigger MathJax rendering for equations
+ */
+const MathJaxRenderer: React.FC = () => {
+    useEffect(() => {
+        // Trigger MathJax to re-render equations
+        if (typeof window !== 'undefined' && (window as any).MathJax) {
+            (window as any).MathJax.contentDocument?.querySelectorAll('script[type="math/tex"]').forEach(() => {
+                (window as any).MathJax.typesetPromise?.().catch((err: any) => console.log(err));
+            });
+            (window as any).MathJax.typesetPromise?.().catch((err: any) => console.log(err));
+        }
+    }, []);
+    return null;
+};
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
     id,
@@ -155,7 +170,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                         <div className="prose prose-sm dark:prose-invert max-w-none">
                             <ReactMarkdown
                                 remarkPlugins={[remarkMath, remarkGfm]}
-                                rehypePlugins={[rehypeKatex]}
                                 components={{
                                     p: ({ children }) => <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>,
                                     ul: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-2">{children}</ul>,
@@ -209,6 +223,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                             >
                                 {displayContent}
                             </ReactMarkdown>
+                            <MathJaxRenderer key={displayContent} />
                         </div>
                     )}
                 </div>

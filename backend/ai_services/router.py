@@ -1,5 +1,6 @@
 
 import logging
+import re
 from .groq_client import GroqClient
 from .mistral_client import MistralClient
 from .cohere_client import CohereClient
@@ -193,7 +194,9 @@ Return a JSON response with:
                         image_data=image_data
                     )
                     if response:
-                        return response
+                        # Validate and fix math formatting before returning
+                        validated_response = self._validate_and_fix_math_formatting(response)
+                        return validated_response
                 
             except Exception as e:
                 logger.warning(f"{name} failed to generate chat response: {e}")
@@ -203,6 +206,18 @@ Return a JSON response with:
         error_msg = f"All AI providers failed to generate chat response. Errors: {'; '.join(errors)}"
         logger.error(error_msg)
         raise Exception(error_msg)
+
+    def _validate_and_fix_math_formatting(self, response_text):
+        """
+        Validates math formatting in responses.
+        Since we're using plain text (÷ and /) format, minimal validation is needed.
+        """
+        if not response_text:
+            return response_text
+        
+        # Plain text format is simple and doesn't need heavy validation
+        # Just return as-is since the AI is instructed to use ÷ and / symbols
+        return response_text
 
     def stream_chat_response(self, message, conversation_history=None, system_prompt=None, context=None):
         """
@@ -328,9 +343,6 @@ Return a JSON response with:
             # Generate query embedding
             query_embedding = self.generate_embedding(query)
             
-            # Retrieve all chunks for the document
-            # Note: For production with millions of rows, use pgvector. 
-            # For <10k chunks per user, in-memory numpy is fast enough.
             chunks = list(doc.chunks.all().values('id', 'content', 'embedding', 'chunk_index'))
             
             if not chunks:

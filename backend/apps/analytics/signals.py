@@ -1,28 +1,135 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from apps.questions.models import QuestionAttempt
-from .models import ProgressTracker, TopicMastery
+from django.utils import timezone
+from apps.quiz.models import QuizAttempt, AnswerAttempt
+from apps.exams.models import ExamResult
+from apps.ai_tutor.models import ChatMessage
+from apps.study_plans.models import StudyTask
+from .models import ProgressTracker, TopicMastery, StudySession
+from .services import AnalyticsService
+from datetime import timedelta
 
 print("Loading analytics signals...")
 
-@receiver(post_save, sender=QuestionAttempt)
-def update_analytics(sender, instance, created, **kwargs):
-    if created:
-        print(f"Updating analytics for user {instance.user}")
-        user = instance.user
-        question = instance.question
-        is_correct = instance.is_correct
+@receiver(post_save, sender=QuizAttempt)
+def update_analytics_on_quiz_completion(sender, instance, created, **kwargs):
+    """
+    Updates progress tracker and topic mastery when a quiz is completed.
+    """
+    if not instance.status == 'COMPLETED' or not instance.completed_at:
+        return
+    
+    user = instance.user
+    AnalyticsService.update_streak(user)
+    
+    progress, _ = ProgressTracker.objects.get_or_create(user=user)
+    progress.total_quizzes_taken += 1
+    
+    if instance.completed_at and instance.started_at:
+        delta = instance.completed_at - instance.started_at
+        progress.total_study_minutes += int(delta.total_seconds() / 60)
+    
+    progress.save()
+    
+    # Create StudySession
+    if instance.completed_at:
+        StudySession.objects.get_or_create(
+            user=user,
+            start_time=instance.started_at or instance.completed_at - timedelta(minutes=15),
+            end_time=instance.completed_at,
+            defaults={
+                'subject': instance.quiz.topic,
+                'questions_answered': instance.total_questions,
+                'correct_count': instance.correct_answers
+            }
+        )
+    
+    if instance.quiz.topic:
+        if instance.total_questions > 0:
+            score_percentage = (instance.correct_answers / instance.total_questions) * 100
+        else:
+            score_percentage = 0
+        AnalyticsService.update_quiz_stats(user, instance.quiz.topic, score_percentage)
+
+@receiver(post_save, sender=ExamResult)
+def update_analytics_on_exam_completion(sender, instance, created, **kwargs):
+    """
+    Updates progress tracker and topic mastery when a mock exam is completed.
+    """
+    if not created:
+        return
+    
+    user = instance.attempt.user
+    AnalyticsService.update_streak(user)
+    
+    progress, _ = ProgressTracker.objects.get_or_create(user=user)
+    progress.total_mock_exams_taken += 1
+    
+    attempt = instance.attempt
+    if attempt.completed_at and attempt.started_at:
+        delta = attempt.completed_at - attempt.started_at
+        progress.total_study_minutes += int(delta.total_seconds() / 60)
+    
+    progress.save()
+    
+    # Create StudySession
+    if attempt.completed_at:
+        StudySession.objects.get_or_create(
+            user=user,
+            start_time=attempt.started_at or attempt.completed_at - timedelta(minutes=60),
+            end_time=attempt.completed_at,
+            defaults={
+                'subject': attempt.mock_exam.subject.name,
+                'questions_answered': attempt.attempted_questions,
+                'correct_count': instance.correct_answers
+            }
+        )
+    
+    # Update mastery for the exam subject
+    subject_name = attempt.mock_exam.subject.name
+    AnalyticsService.update_quiz_stats(user, subject_name, instance.percentage)
+
+@receiver(post_save, sender=ChatMessage)
+def update_analytics_on_tutor_message(sender, instance, created, **kwargs):
+    """
+    Increments tutor interaction count and updates streak on chat activity.
+    """
+    if not created or instance.role != 'user':
+        return
+    
+    user = instance.session.user
+    AnalyticsService.update_streak(user)
+    
+    progress, _ = ProgressTracker.objects.get_or_create(user=user)
+    progress.tutor_interactions_count += 1
+    progress.save()
+
+@receiver(post_save, sender=StudyTask)
+def update_analytics_on_task_completion(sender, instance, created, **kwargs):
+    """
+    Updates study minutes when a task is completed.
+    """
+    if instance.status == 'completed' and instance.actual_completion_date:
+        user = instance.study_plan.user
+        AnalyticsService.update_streak(user)
         
-        # Update ProgressTracker
-        tracker, _ = ProgressTracker.objects.get_or_create(user=user)
-        tracker.total_questions_attempted += 1
-        if is_correct:
-            tracker.total_correct_answers += 1
-        
-        tracker.update_streak() # This saves the tracker
-        tracker.save() # Save again just in case update_streak logic changes
-        
-        # Update TopicMastery
-        if question.topic:
-            mastery, _ = TopicMastery.objects.get_or_create(user=user, topic=question.topic)
-            mastery.update_mastery(is_correct, time_taken=instance.time_taken_seconds)
+        minutes = int(instance.actual_time_spent_seconds / 60)
+        if minutes > 0:
+            AnalyticsService.log_study_time(user, minutes)
+
+@receiver(post_save, sender=AnswerAttempt)
+def update_analytics_on_answer(sender, instance, created, **kwargs):
+    """
+    Updates question counts in real-time.
+    """
+    if not created:
+        return
+    
+    user = instance.quiz_attempt.user
+    progress, _ = ProgressTracker.objects.get_or_create(user=user)
+    
+    progress.total_questions_attempted += 1
+    if instance.is_correct:
+        progress.total_correct_answers += 1
+    
+    progress.save()

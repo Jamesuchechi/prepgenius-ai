@@ -7,17 +7,20 @@ export interface ProgressTracker {
     last_activity_date: string;
     total_study_minutes: number;
     total_quizzes_taken: number;
-    total_questions_attempted?: number; // Optional as backend might not send it yet
-    total_correct_answers?: number;
-    total_study_time_seconds?: number;
+    total_questions_attempted: number;
+    total_correct_answers: number;
+    accuracy_percentage: number;
 }
 
 export interface TopicMastery {
+    id: number;
     topic: string;
     subject: string;
     mastery_score: number;
-    mastery_percentage?: number; // Backend sends score, frontend might use percentage alias
+    mastery_percentage: number;
     quizzes_taken: number;
+    correct_attempts: number;
+    total_attempts: number;
     last_updated: string;
     topic_details?: { name: string };
 }
@@ -25,16 +28,45 @@ export interface TopicMastery {
 export interface AnalyticsSummary {
     streak: number;
     total_questions: number;
+    total_exams: number;
+    tutor_interactions: number;
     weak_topics: TopicMastery[];
-    strong_topics: TopicMastery[];
+    predicted_score: PredictedScore;
+    study_patterns: StudyPatterns;
+    accuracy_percentage: number;
+}
+
+export interface Activity {
+    type: 'quiz' | 'exam';
+    title: string;
+    score: number;
+    date: string;
+    id: string;
 }
 
 export interface StudySession {
+    id: number;
     start_time: string;
     end_time: string;
     duration_minutes: number;
+    duration_seconds: number;
     questions_answered: number;
+    questions_attempted: number;
     correct_count: number;
+    correct_questions: number;
+    subject: string;
+    subject_details: { name: string };
+}
+
+export interface QuizHistory {
+    id: number;
+    quiz_title: string;
+    topic: string;
+    score: number;
+    total_questions: number;
+    correct_answers: number;
+    completed_at: string;
+    started_at: string;
 }
 
 export interface SpacedRepetitionItem {
@@ -65,7 +97,7 @@ export const analyticsApi = {
     },
 
     getTopicMastery: async () => {
-        const response = await axios.get<TopicMastery[]>('/analytics/mastery/'); // Note: endpoint might be plural
+        const response = await axios.get<TopicMastery[]>('/analytics/mastery/');
         return response.data;
     },
 
@@ -75,19 +107,12 @@ export const analyticsApi = {
     },
 
     getOverview: async () => {
-        // Re-using getProgress for overview compatible call
         const response = await axios.get<ProgressTracker>('/analytics/progress/');
-        // Add calculated fields if missing
-        return {
-            ...response.data,
-            total_questions_attempted: response.data.total_quizzes_taken * 10, // Estimate
-            total_correct_answers: response.data.total_quizzes_taken * 7, // Estimate 70%
-            total_study_time_seconds: response.data.total_study_minutes * 60
-        };
+        return response.data;
     },
 
     getWeakAreas: async () => {
-        const response = await axios.get<any>('/analytics/summary/');
+        const response = await axios.get<AnalyticsSummary>('/analytics/summary/');
         return response.data.weak_topics;
     },
 
@@ -108,6 +133,11 @@ export const analyticsApi = {
 
     getSpacedRepetitionQueue: async () => {
         const response = await axios.get<SpacedRepetitionItem[]>('/analytics/spaced_repetition/');
+        return response.data;
+    },
+
+    getSessions: async () => {
+        const response = await axios.get<StudySession[]>('/analytics/sessions/');
         return response.data;
     }
 };
