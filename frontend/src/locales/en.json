@@ -1,0 +1,60 @@
+{
+    "common": {
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "save": "Save Changes",
+        "saving": "Saving...",
+        "language": "Language",
+        "appearance": "Appearance",
+        "notifications": "Notifications"
+    },
+    "sidebar": {
+        "dashboard": "Dashboard",
+        "ai_practice": "AI Practice",
+        "mock_exams": "Mock Exams",
+        "quizzes": "Quizzes",
+        "study_plan": "Study Plan",
+        "ai_tutor": "AI Tutor",
+        "analytics": "Analytics",
+        "achievements": "Achievements",
+        "profile": "Profile",
+        "pricing": "Pricing",
+        "institution": "Institution",
+        "logout": "Logout",
+        "expand": "Expand sidebar",
+        "collapse": "Collapse sidebar",
+        "student": "Student"
+    },
+    "settings": {
+        "preferences_saved": "Preferences saved!",
+        "preferences_failed": "Failed to save preferences",
+        "light_mode": "Light Mode",
+        "dark_mode": "Dark Mode",
+        "system_language": "System Language",
+        "notification_toggles": "Notification Toggles",
+        "email_notif": "Email Notifications",
+        "email_notif_desc": "Receive weekly progress reports and study reminders.",
+        "push_notif": "Push Notifications",
+        "push_notif_desc": "Get real-time alerts for quizzes and exam updates.",
+        "achievement_alerts": "Achievement Alerts",
+        "achievement_alerts_desc": "Notify me when I earn a new badge or level up.",
+        "save_preferences": "Save Preferences"
+    },
+    "dashboard": {
+        "welcome": "Welcome back",
+        "progress_message": "You're making great progress. Keep up the momentum!",
+        "ready_to_practice": "Ready to practice?",
+        "practice_desc": "Use our configured AI to generate questions for any subject and topic.",
+        "start_practice": "Start Practice Session",
+        "ask_ai_tutor": "Ask AI Tutor",
+        "ask_ai_desc": "Get instant help with any topic or question",
+        "take_quiz": "Take a Quiz",
+        "take_quiz_desc": "Test your knowledge with AI generated quizzes",
+        "leaderboard_title": "Global Leaderboard",
+        "leaderboard_desc": "See how you rank against other top students.",
+        "achievements_title": "Your Achievements",
+        "achievements_desc": "Unlock more badges by studying consistently.",
+        "days_until_exam": "days until exam",
+        "prep_level": "Preparation Level"
+    }
+}

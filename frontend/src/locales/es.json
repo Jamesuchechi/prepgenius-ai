@@ -1,0 +1,60 @@
+{
+    "common": {
+        "dashboard": "Panel de control",
+        "settings": "Configuración",
+        "save": "Guardar cambios",
+        "saving": "Guardando...",
+        "language": "Idioma",
+        "appearance": "Apariencia",
+        "notifications": "Notificaciones"
+    },
+    "sidebar": {
+        "dashboard": "Panel de control",
+        "ai_practice": "Práctica de IA",
+        "mock_exams": "Exámenes de simulacro",
+        "quizzes": "Cuestionarios",
+        "study_plan": "Plan de estudio",
+        "ai_tutor": "Tutor de IA",
+        "analytics": "Análisis",
+        "achievements": "Logros",
+        "profile": "Perfil",
+        "pricing": "Precios",
+        "institution": "Institución",
+        "logout": "Cerrar sesión",
+        "expand": "Expandir barra lateral",
+        "collapse": "Contraer barra lateral",
+        "student": "Estudiante"
+    },
+    "settings": {
+        "preferences_saved": "¡Preferencias guardadas!",
+        "preferences_failed": "Error al guardar las preferencias",
+        "light_mode": "Modo Claro",
+        "dark_mode": "Modo Oscuro",
+        "system_language": "Idioma del sistema",
+        "notification_toggles": "Alternar notificaciones",
+        "email_notif": "Notificaciones por correo",
+        "email_notif_desc": "Reciba informes de progreso semanales y recordatorios de estudio.",
+        "push_notif": "Notificaciones Push",
+        "push_notif_desc": "Obtenga alertas en tiempo real para cuestionarios y actualizaciones de exámenes.",
+        "achievement_alerts": "Alertas de logros",
+        "achievement_alerts_desc": "Notificarme cuando gane una nueva insignia o suba de nivel.",
+        "save_preferences": "Guardar preferencias"
+    },
+    "dashboard": {
+        "welcome": "Bienvenido de nuevo",
+        "progress_message": "Estás haciendo un gran progreso. ¡Sigue así!",
+        "ready_to_practice": "¿Listo para practicar?",
+        "practice_desc": "Usa nuestra IA configurada para generar preguntas sobre cualquier tema y asignatura.",
+        "start_practice": "Iniciar sesión de práctica",
+        "ask_ai_tutor": "Preguntar al Tutor IA",
+        "ask_ai_desc": "Obtén ayuda instantánea con cualquier tema o pregunta",
+        "take_quiz": "Hacer un cuestionario",
+        "take_quiz_desc": "Pon a prueba tus conocimientos con cuestionarios generados por IA",
+        "leaderboard_title": "Clasificación global",
+        "leaderboard_desc": "Mira cómo te comparas con otros estudiantes brillantes.",
+        "achievements_title": "Tus logros",
+        "achievements_desc": "Desbloquea más insignias estudiando con constancia.",
+        "days_until_exam": "días para el examen",
+        "prep_level": "Nivel de preparación"
+    }
+}

@@ -26,7 +26,7 @@ export default function NotificationDropdown() {
     useEffect(() => {
         if (lastJsonMessage && (lastJsonMessage as any).type === 'notification') {
             const newNotification = (lastJsonMessage as any).data as Notification
-            setNotifications(prev => [newNotification, ...prev])
+            setNotifications(prev => Array.isArray(prev) ? [newNotification, ...prev] : [newNotification])
             setUnreadCount(prev => prev + 1)
             // Optional: Play a sound or show a toast
         }
@@ -39,7 +39,7 @@ export default function NotificationDropdown() {
                     notificationsApi.getNotifications(),
                     notificationsApi.getUnreadCount()
                 ])
-                setNotifications(data)
+                setNotifications(Array.isArray(data) ? data : (data as any).results || [])
                 setUnreadCount(countData.count)
             } catch (error) {
                 console.error('Failed to fetch notifications:', error)
@@ -62,7 +62,7 @@ export default function NotificationDropdown() {
     const handleMarkAsRead = async (id: number) => {
         try {
             await notificationsApi.markAsRead(id)
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+            setNotifications(prev => Array.isArray(prev) ? prev.map(n => n.id === id ? { ...n, is_read: true } : n) : [])
             setUnreadCount(prev => Math.max(0, prev - 1))
         } catch (error) {
             console.error('Failed to mark as read:', error)
@@ -72,7 +72,7 @@ export default function NotificationDropdown() {
     const handleMarkAllAsRead = async () => {
         try {
             await notificationsApi.markAllAsRead()
-            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+            setNotifications(prev => Array.isArray(prev) ? prev.map(n => ({ ...n, is_read: true })) : [])
             setUnreadCount(0)
         } catch (error) {
             console.error('Failed to mark all as read:', error)

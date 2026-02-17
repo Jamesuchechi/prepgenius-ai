@@ -3,8 +3,8 @@ import Link from 'next/link'
 
 const footerLinks = {
     product: [
-        { name: 'Features', href: '#features' },
-        { name: 'Pricing', href: '#pricing' },
+        { name: 'Features', href: '/#features' },
+        { name: 'Pricing', href: '/#pricing' },
         { name: 'Mock Exams', href: '/exams' },
         { name: 'AI Tutor', href: '/tutor' }
     ],
@@ -18,15 +18,16 @@ const footerLinks = {
         { name: 'About Us', href: '/about' },
         { name: 'Careers', href: '/careers' },
         { name: 'Contact', href: '/contact' },
-        { name: 'Privacy', href: '/privacy' }
+        { name: 'Privacy', href: '/privacy' },
+        { name: 'Terms', href: '/terms' }
     ]
 }
 
 const socialLinks = [
-    { icon: '📘', href: '#', label: 'Facebook' },
-    { icon: '🐦', href: '#', label: 'Twitter' },
-    { icon: '📷', href: '#', label: 'Instagram' },
-    { icon: '💼', href: '#', label: 'LinkedIn' }
+    { icon: '📘', href: 'https://facebook.com', label: 'Facebook' },
+    { icon: '🐦', href: 'https://twitter.com', label: 'Twitter' },
+    { icon: '📷', href: 'https://instagram.com', label: 'Instagram' },
+    { icon: '💼', href: 'https://linkedin.com', label: 'LinkedIn' }
 ]
 
 export default function Footer() {

@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react'
 import { Moon, Sun, Languages, Bell, Save } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/store/authStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import { settingsApi } from '@/lib/api/settings'
 import { toast } from 'sonner'
 
 export default function PreferenceSettings() {
     const { user, setUser } = useAuthStore()
     const { theme, setTheme } = useTheme()
+    const { t } = useTranslation()
 
     const [preferences, setPreferences] = useState({
         language: user?.preferences?.language || 'en',
@@ -19,21 +21,46 @@ export default function PreferenceSettings() {
     })
     const [isSaving, setIsSaving] = useState(false)
 
+    // Sync local state when user preferences change (loaded from backend)
+    useEffect(() => {
+        if (user?.preferences) {
+            setPreferences({
+                language: user.preferences.language || 'en',
+                emailNotifications: user.preferences.emailNotifications ?? true,
+                pushNotifications: user.preferences.pushNotifications ?? true,
+                achievementAlerts: user.preferences.achievementAlerts ?? true
+            })
+        }
+    }, [user?.preferences])
+
     const handleSave = async () => {
         setIsSaving(true)
         try {
-            // Ensure we save the actual current theme alongside other preferences
             const settingsToSave = {
                 ...preferences,
                 theme: theme
             }
             const updatedUser = await settingsApi.updateProfile({ preferences: settingsToSave } as any)
             setUser(updatedUser)
-            toast.success('Preferences saved!')
+            toast.success(t('settings.preferences_saved'))
         } catch (error) {
-            toast.error('Failed to save preferences')
+            toast.error(t('settings.preferences_failed'))
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleLanguageChange = (lang: string) => {
+        setPreferences(prev => ({ ...prev, language: lang }))
+        // Update store immediately for UI feedback
+        if (user) {
+            setUser({
+                ...user,
+                preferences: {
+                    ...(user.preferences || {}),
+                    language: lang
+                }
+            })
         }
     }
 
@@ -47,7 +74,7 @@ export default function PreferenceSettings() {
             <div className="space-y-4">
                 <div className="flex items-center gap-2 text-[#001D4D]">
                     <Sun className="w-5 h-5" />
-                    <h3 className="font-bold">Appearance</h3>
+                    <h3 className="font-bold">{t('common.appearance')}</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <button
@@ -57,7 +84,7 @@ export default function PreferenceSettings() {
                         `}
                     >
                         <Sun className={`w-6 h-6 ${theme === 'light' ? 'text-[var(--orange)]' : 'text-gray-400'}`} />
-                        <span className="text-sm font-bold">Light Mode</span>
+                        <span className="text-sm font-bold">{t('settings.light_mode')}</span>
                     </button>
                     <button
                         onClick={() => setTheme('dark')}
@@ -66,7 +93,7 @@ export default function PreferenceSettings() {
                          `}
                     >
                         <Moon className={`w-6 h-6 ${theme === 'dark' ? 'text-[var(--orange)]' : 'text-gray-400'}`} />
-                        <span className="text-sm font-bold">Dark Mode</span>
+                        <span className="text-sm font-bold">{t('settings.dark_mode')}</span>
                     </button>
                 </div>
             </div>
@@ -75,11 +102,11 @@ export default function PreferenceSettings() {
             <div className="space-y-4">
                 <div className="flex items-center gap-2 text-[#001D4D]">
                     <Languages className="w-5 h-5" />
-                    <h3 className="font-bold">System Language</h3>
+                    <h3 className="font-bold">{t('settings.system_language')}</h3>
                 </div>
                 <select
                     value={preferences.language}
-                    onChange={(e) => setPreferences(prev => ({ ...prev, language: e.target.value }))}
+                    onChange={(e) => handleLanguageChange(e.target.value)}
                     className="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 focus:border-[var(--orange)] focus:outline-none transition-colors appearance-none bg-white"
                 >
                     <option value="en">English (US)</option>
@@ -92,13 +119,13 @@ export default function PreferenceSettings() {
             <div className="space-y-4">
                 <div className="flex items-center gap-2 text-[#001D4D]">
                     <Bell className="w-5 h-5" />
-                    <h3 className="font-bold">Notification Toggles</h3>
+                    <h3 className="font-bold">{t('settings.notification_toggles')}</h3>
                 </div>
                 <div className="space-y-3">
                     {[
-                        { id: 'emailNotifications', label: 'Email Notifications', desc: 'Receive weekly progress reports and study reminders.' },
-                        { id: 'pushNotifications', label: 'Push Notifications', desc: 'Get real-time alerts for quizzes and exam updates.' },
-                        { id: 'achievementAlerts', label: 'Achievement Alerts', desc: 'Notify me when I earn a new badge or level up.' }
+                        { id: 'emailNotifications', label: t('settings.email_notif'), desc: t('settings.email_notif_desc') },
+                        { id: 'pushNotifications', label: t('settings.push_notif'), desc: t('settings.push_notif_desc') },
+                        { id: 'achievementAlerts', label: t('settings.achievement_alerts'), desc: t('settings.achievement_alerts_desc') }
                     ].map((item) => (
                         <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
                             <div>
@@ -122,7 +149,7 @@ export default function PreferenceSettings() {
                     disabled={isSaving}
                     className="flex items-center gap-2 px-8 py-3 bg-[#001D4D] text-white rounded-2xl font-bold hover:bg-[#002D7A] transition-all shadow-lg shadow-[#001D4D]/20 disabled:opacity-50"
                 >
-                    {isSaving ? 'Saving...' : <><Save className="w-5 h-5" /> Save Preferences</>}
+                    {isSaving ? t('common.saving') : <><Save className="w-5 h-5" /> {t('settings.save_preferences')}</>}
                 </button>
             </div>
         </div>

@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import {
     LayoutDashboard,
     BookOpen,
@@ -38,6 +39,7 @@ export default function Sidebar({
     const pathname = usePathname()
     const router = useRouter()
     const { logout, user } = useAuthStore()
+    const { t } = useTranslation()
 
     const handleLogout = async () => {
         try {
@@ -50,23 +52,21 @@ export default function Sidebar({
     }
 
     const navigation = [
-        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'AI Practice', href: '/practice', icon: BrainCircuit },
-        { name: 'Mock Exams', href: '/dashboard/exams', icon: BookOpen },
-        { name: 'Quizzes', href: '/dashboard/quiz', icon: BookOpen },
-        { name: 'Study Plan', href: '/dashboard/study-plan', icon: GraduationCap },
-        { name: 'AI Tutor', href: '/dashboard/ai-tutor', icon: BrainCircuit },
-        { name: 'Analytics', href: '/dashboard/analytics', icon: LineChart },
-        { name: 'Achievements', href: '/dashboard/achievements', icon: Trophy },
-        { name: 'Profile', href: '/dashboard/profile', icon: User },
-        { name: 'Pricing', href: '/dashboard/pricing', icon: DollarSign },
+        { name: t('sidebar.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+        { name: t('sidebar.ai_practice'), href: '/practice', icon: BrainCircuit },
+        { name: t('sidebar.mock_exams'), href: '/dashboard/exams', icon: BookOpen },
+        { name: t('sidebar.quizzes'), href: '/dashboard/quiz', icon: BookOpen },
+        { name: t('sidebar.study_plan'), href: '/dashboard/study-plan', icon: GraduationCap },
+        { name: t('sidebar.ai_tutor'), href: '/dashboard/ai-tutor', icon: BrainCircuit },
+        { name: t('sidebar.analytics'), href: '/dashboard/analytics', icon: LineChart },
+        { name: t('sidebar.achievements'), href: '/dashboard/achievements', icon: Trophy },
+        { name: t('sidebar.profile'), href: '/dashboard/profile', icon: User },
+        { name: t('sidebar.pricing'), href: '/dashboard/pricing', icon: DollarSign },
     ]
 
     // Add Institution Portal if user is institutional student OR admin OR superuser
-    // Note: We'll assume for now that if student_type is 'institutional', they can see it.
-    // Ideally we also check if they are an institution admin.
     if (user?.student_type === 'institutional' || user?.is_superuser || user?.is_staff) {
-        navigation.splice(7, 0, { name: 'Institution', href: '/dashboard/institution', icon: Building2 })
+        navigation.splice(7, 0, { name: t('sidebar.institution'), href: '/dashboard/institution', icon: Building2 })
     }
 
     return (
@@ -108,7 +108,7 @@ export default function Sidebar({
                     <button
                         onClick={toggleSidebar}
                         className="hidden lg:flex absolute -right-3 top-24 bg-card border border-border rounded-full p-1.5 hover:bg-muted text-muted-foreground hover:text-secondary shadow-sm z-50 transition-colors"
-                        title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                        title={isCollapsed ? t('sidebar.expand') : t('sidebar.collapse')}
                     >
                         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
                     </button>
@@ -129,7 +129,7 @@ export default function Sidebar({
                                         {user?.first_name} {user?.last_name}
                                     </h3>
                                     <p className="text-sm text-muted-foreground truncate">
-                                        {user?.exam_targets?.[0]?.toUpperCase() || 'Student'} {new Date().getFullYear()}
+                                        {user?.exam_targets?.[0]?.toUpperCase() || t('sidebar.student')} {new Date().getFullYear()}
                                     </p>
                                 </div>
                             )}
@@ -181,10 +181,10 @@ export default function Sidebar({
                                 w-full flex items-center gap-3 px-4 py-3 text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300
                                 ${isCollapsed ? 'justify-center' : ''}
                             `}
-                            title={isCollapsed ? 'Logout' : undefined}
+                            title={isCollapsed ? t('sidebar.logout') : undefined}
                         >
                             <span className="text-xl"><LogOut className="w-6 h-6" /></span>
-                            {!isCollapsed && <span className="font-semibold">Logout</span>}
+                            {!isCollapsed && <span className="font-semibold">{t('sidebar.logout')}</span>}
                         </button>
                     </div>
                 </div>

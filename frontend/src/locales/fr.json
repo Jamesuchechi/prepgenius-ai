@@ -1,0 +1,60 @@
+{
+    "common": {
+        "dashboard": "Tableau de bord",
+        "settings": "Paramètres",
+        "save": "Enregistrer les modifications",
+        "saving": "Enregistrement...",
+        "language": "Langue",
+        "appearance": "Apparence",
+        "notifications": "Notifications"
+    },
+    "sidebar": {
+        "dashboard": "Tableau de bord",
+        "ai_practice": "Pratique IA",
+        "mock_exams": "Examens blancs",
+        "quizzes": "Quiz",
+        "study_plan": "Plan d'étude",
+        "ai_tutor": "Tuteur IA",
+        "analytics": "Analytique",
+        "achievements": "Réalisations",
+        "profile": "Profil",
+        "pricing": "Tarification",
+        "institution": "Institution",
+        "logout": "Déconnexion",
+        "expand": "Développer la barre latérale",
+        "collapse": "Réduire la barre latérale",
+        "student": "Étudiant"
+    },
+    "settings": {
+        "preferences_saved": "Préférences enregistrées !",
+        "preferences_failed": "Échec de l'enregistrement des préférences",
+        "light_mode": "Mode Clair",
+        "dark_mode": "Mode Sombre",
+        "system_language": "Langue du système",
+        "notification_toggles": "Bascule de notification",
+        "email_notif": "Notifications par e-mail",
+        "email_notif_desc": "Recevez des rapports de progression hebdomadaires et des rappels d'étude.",
+        "push_notif": "Notifications Push",
+        "push_notif_desc": "Recevez des alertes en temps réel pour les quiz et les mises à jour des examens.",
+        "achievement_alerts": "Alertes de réussite",
+        "achievement_alerts_desc": "M'avertir quand je gagne un nouveau badge ou que je monte de niveau.",
+        "save_preferences": "Enregistrer les préférences"
+    },
+    "dashboard": {
+        "welcome": "Bon retour",
+        "progress_message": "Vous faites de grands progrès. Gardez le rythme !",
+        "ready_to_practice": "Prêt à pratiquer ?",
+        "practice_desc": "Utilisez notre IA configurée pour générer des questions pour n'importe quel sujet et thème.",
+        "start_practice": "Commencer une session de pratique",
+        "ask_ai_tutor": "Demander au tuteur IA",
+        "ask_ai_desc": "Obtenez une aide instantanée pour n'importe quel sujet ou question",
+        "take_quiz": "Faire un quiz",
+        "take_quiz_desc": "Testez vos connaissances avec des quiz générés par l'IA",
+        "leaderboard_title": "Classement mondial",
+        "leaderboard_desc": "Voyez comment vous vous situez par rapport aux autres meilleurs étudiants.",
+        "achievements_title": "Vos réussites",
+        "achievements_desc": "Débloquez plus de badges en étudiant régulièrement.",
+        "days_until_exam": "jours avant l'examen",
+        "prep_level": "Niveau de préparation"
+    }
+}

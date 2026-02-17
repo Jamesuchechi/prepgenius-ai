@@ -11,8 +11,11 @@ export interface Notification {
 
 export const notificationsApi = {
     getNotifications: async () => {
-        const response = await axios.get<Notification[]>('/v1/notifications/');
-        return response.data;
+        const response = await axios.get<Notification[] | { results: Notification[] }>('/v1/notifications/');
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+        return response.data.results || [];
     },
     markAsRead: async (id: number) => {
         const response = await axios.patch(`/v1/notifications/${id}/read/`);
