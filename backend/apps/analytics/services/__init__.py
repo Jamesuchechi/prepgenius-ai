@@ -1,3 +1,4 @@
+from django.utils import timezone
 from apps.analytics.models import ProgressTracker, TopicMastery
 from .performance_analyzer import PerformanceAnalyzer
 from datetime import timedelta
