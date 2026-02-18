@@ -38,6 +38,9 @@ class PromptTemplates:
         Where applicable (especially for calculations), include alternative methods or shortcuts to arrive at the answer.
         The explanation should be educational and help the student learn.
         
+        CRITICAL: For Reading/Comprehension and Listening subjects, you MUST include the "passage" or "transcript" in the "metadata" field.
+        IMPORTANT: This stimulus (passage/transcript) MUST be identical and duplicated for EVERY question in the "questions" list, as each question is stored independently.
+        
         Strictly follow the JSON schema below for the output.
         """
         
@@ -51,15 +54,15 @@ class PromptTemplates:
                     {
                         "content": "Question text here",
                         "options": ["Option A", "Option B", "Option C", "Option D"],
-                        "correct_answer_index": 0,  # Integer 0-3 representing the index of the correct option
-                        "correct_answer": "Option A",  # Optional: text representation for verification
-                        "explanation": "Brief explanation of why the answer is correct",
-                        "difficulty": "EASY|MEDIUM|HARD",
-                        "type": "MCQ"
+                        "correct_answer_index": 0,
+                        "explanation": "Detailed explanation",
+                        "metadata": {
+                            "passage": "Full comprehension passage (ONLY for Reading/Comprehension)",
+                            "transcript": "Full transcript for TTS (ONLY for Listening)"
+                        }
                     }
                 ]
             }
-            Ensure keys are exactly as shown. 'options' must be a list of 4 strings. 'correct_answer_index' must be an integer 0-3.
             """
         elif q_type == "THEORY":
             type_specific_instructions = """
@@ -67,14 +70,23 @@ class PromptTemplates:
             {
                 "questions": [
                     {
-                        "content": "Question text here",
-                        "answer": "Expected key points or full answer",
-                        "explanation": " detailed explanation",
-                        "difficulty": "EASY|MEDIUM|HARD",
-                        "type": "THEORY"
+                        "content": "Essay prompt or Speaking cue text",
+                        "type": "THEORY",
+                        "answer": "Model essay or key points for grading",
+                        "explanation": "Grading rubrics",
+                        "metadata": {
+                            "type": "WRITING|SPEAKING",
+                            "writing_task_type": "Task 1|Task 2",
+                            "speaking_part": "Part 1|Part 2|Part 3",
+                            "passage": "Full comprehension passage if applicable",
+                            "transcript": "Full transcript for TTS if applicable",
+                            "data_table": "Markdown table or detailed text description representing the data from the graph/chart (MANDATORY for Writing Task 1)"
+                        }
                     }
                 ]
             }
+            
+            IMPORTANT: For Writing Task 1, if you mention 'The graph/chart below', you MUST provide the data for that graph/chart in 'metadata.data_table' so the student can actually see the numbers they are describing.
             """
         elif q_type == "TRUE_FALSE":
             type_specific_instructions = """
@@ -85,8 +97,10 @@ class PromptTemplates:
                         "content": "Statement text here",
                         "correct_answer": "True", # or "False"
                         "explanation": "Reasoning",
-                        "difficulty": "EASY|MEDIUM|HARD",
-                        "type": "TRUE_FALSE"
+                        "metadata": {
+                            "passage": "Full comprehension passage if applicable",
+                            "transcript": "Full transcript for TTS if applicable"
+                        }
                     }
                 ]
             }
@@ -100,8 +114,10 @@ class PromptTemplates:
                         "content": "The capital of Nigeria is _______.",
                         "correct_answer": "Abuja",
                         "explanation": "Context about Abuja",
-                        "difficulty": "EASY|MEDIUM|HARD",
-                        "type": "FILL_BLANK"
+                        "metadata": {
+                            "passage": "Full comprehension passage if applicable",
+                            "transcript": "Full transcript for TTS if applicable"
+                        }
                     }
                 ]
             }
@@ -117,11 +133,11 @@ class PromptTemplates:
                             "pairs": [
                                 {"item": "Item 1", "match": "Match 1"},
                                 {"item": "Item 2", "match": "Match 2"}
-                            ]
+                            ],
+                            "passage": "Full comprehension passage if applicable",
+                            "transcript": "Full transcript for TTS if applicable"
                         },
-                        "explanation": "Why these match",
-                        "difficulty": "EASY|MEDIUM|HARD",
-                        "type": "MATCHING"
+                        "explanation": "Why these match"
                     }
                 ]
             }
@@ -134,11 +150,11 @@ class PromptTemplates:
                     {
                         "content": "Order the following events chronologically",
                         "metadata": {
-                            "sequence": ["First Event", "Second Event", "Third Event"]
+                            "sequence": ["First Event", "Second Event", "Third Event"],
+                            "passage": "Full comprehension passage if applicable",
+                            "transcript": "Full transcript for TTS if applicable"
                         },
-                        "explanation": "Timeline explanation",
-                        "difficulty": "EASY|MEDIUM|HARD",
-                        "type": "ORDERING"
+                        "explanation": "Timeline explanation"
                     }
                 ]
             }
@@ -153,15 +169,14 @@ class PromptTemplates:
                         "options": ["Option A", "Option B", "Option C", "Option D"],
                         "correct_answer": "Option A",
                         "user_answer": "Option C",
-                        "explanation": "A clear, educative explanation why the correct answer is correct",
-                        "correction": "If user was wrong, show the corrected answer and steps",
-                        "step_by_step": "Optional step-by-step reasoning or alternative methods",
-                        "difficulty": "EASY|MEDIUM|HARD",
-                        "type": "EXPLAIN"
+                        "explanation": "A clear, educative explanation",
+                        "metadata": {
+                            "passage": "Full comprehension passage if applicable",
+                            "transcript": "Full transcript for TTS if applicable"
+                        }
                     }
                 ]
             }
-            Please return a single-item 'questions' list in valid JSON.
             """
             
         return f"{base_instruction}\n{type_specific_instructions}\nContext: {context}"

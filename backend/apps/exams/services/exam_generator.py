@@ -616,14 +616,30 @@ def generate_mock_exam_by_subject_name(
 			
 			async def fetch_batch_async(batch_idx):
 				try:
-					batch_context = f"Exam type: {exam_format or 'General'}. Batch {batch_idx+1}."
-					current_ai = AIRouter() # New instance for safety, though stateless usually
+					# Specialized context detection
+					sub_name_upper = subject.name.upper()
+					q_type_to_use = 'MCQ'
+					module_context = ""
+					
+					if "LISTENING" in sub_name_upper:
+						module_context = "This is a LISTENING module. Generate a natural audio transcript and questions based on it."
+					elif "READING" in sub_name_upper:
+						module_context = "This is a READING module. Generate a comprehension passage and questions based on it."
+					elif "WRITING" in sub_name_upper:
+						q_type_to_use = 'THEORY'
+						module_context = "This is a WRITING module. Generate an essay prompt/task."
+					elif "SPEAKING" in sub_name_upper:
+						q_type_to_use = 'THEORY'
+						module_context = "This is a SPEAKING module. Generate a proficiency cue for a interview/monologue."
+
+					batch_context = f"Exam type: {exam_format or 'General'}. {module_context} Batch {batch_idx+1}."
+					current_ai = AIRouter()
 					
 					generated = await current_ai.generate_questions_async(
 						topic=subject.name,
 						difficulty=difficulty,
 						count=batch_size,
-						q_type='MCQ',
+						q_type=q_type_to_use,
 						additional_context=batch_context
 					)
 					

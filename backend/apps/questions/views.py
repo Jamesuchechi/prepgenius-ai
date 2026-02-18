@@ -147,16 +147,64 @@ class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
             except Exception:
                  return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 6. THEORY (AI Grading Placeholder)
+        # 6. THEORY (AI Grading)
         elif question.question_type == 'THEORY':
-            # For now, just mark complete/correct or leave for manual/AI grading later
-            # We'll return the 'model answer' for self-grading
-            correct_answer_obj = question.answers.first()
-            is_correct = True # Auto-pass for now or need AI grading
-            explanation = correct_answer_obj.explanation if correct_answer_obj else "Self-evaluate against the model answer."
+            if not text_answer:
+                 return Response({'error': 'text_answer required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                from ai_services.router import AIRouter
+                from asgiref.sync import async_to_sync
+                
+                ai = AIRouter()
+                # Use model answer from Answer object if available
+                model_answer = ""
+                ans_obj = question.answers.first()
+                if ans_obj:
+                    model_answer = ans_obj.content
+                
+                ai_response = async_to_sync(ai.grade_theory_question_async)(
+                    question_text=question.content,
+                    user_answer=text_answer,
+                    model_answer=model_answer or question.guidance,
+                    subject=question.subject.name,
+                    exam_type=question.exam_type.name if question.exam_type else "General"
+                )
+                
+                score_val = ai_response.get('score', 0)
+                is_correct = score_val >= 5
+                explanation = ai_response.get('feedback', {}).get('critique', '')
+                
+                # Save Attempt with AI results
+                attempt = QuestionAttempt.objects.create(
+                    user=request.user,
+                    question=question,
+                    response_data={
+                        'text': text_answer, 
+                        'id': selected_answer_id,
+                        'ai_feedback': ai_response
+                    },
+                    is_correct=is_correct,
+                    score=float(score_val) / 10.0
+                )
+                
+                response_data = {
+                    'correct': is_correct,
+                    'explanation': explanation,
+                    'score': score_val,
+                    'critique': explanation,
+                    'improvement_tips': ai_response.get('improvement_tips', []),
+                    'correct_answer_data': model_answer or question.guidance
+                }
+                return Response(response_data)
+                
+            except Exception as e:
+                logger.error(f"AI grading failed for individual attempt: {e}")
+                # Fallback: mark as submitted but pending grading or just pass
+                is_correct = True
+                explanation = "Your answer has been submitted. Detailed AI feedback failed to load."
         
-        # Save Attempt
-        AttemptQuestionSerializer
+        # Save Attempt (for non-Theory or Fallback)
         attempt = QuestionAttempt.objects.create(
             user=request.user,
             question=question,

@@ -299,13 +299,17 @@ export interface Question {
   topic: number
   exam_type: number
   answers: Answer[]
+  metadata?: any
 }
 
 export interface QuestionAttemptResult {
   correct: boolean
   explanation: string
   correct_answer_id?: number
-  correct_answer_data?: any // Can be string, number, or object
+  correct_answer_data?: any
+  score?: number
+  critique?: string
+  improvement_tips?: string[]
 }
 
 // ... (existing Authentication and User APIs) ...
@@ -367,11 +371,15 @@ export async function generateQuestions(data: {
 
 export async function attemptQuestion(
   questionId: number,
-  selectedAnswerId: number
+  answer: number | string
 ): Promise<QuestionAttemptResult> {
+  const body = typeof answer === 'number'
+    ? { selected_answer_id: answer }
+    : { text_answer: answer }
+
   return apiCall<QuestionAttemptResult>(`/questions/${questionId}/attempt/`, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ selected_answer_id: selectedAnswerId })
+    body: JSON.stringify(body)
   })
 }

@@ -30,8 +30,40 @@ export function ExamInterface({
   const [showNavigator, setShowNavigator] = useState(true)
   const [flaggedQuestions, setFlaggedQuestions] = useState(new Set<number>())
   const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [hasHeardAudio, setHasHeardAudio] = useState(false)
+  const [autoPlayAttempted, setAutoPlayAttempted] = useState<number | null>(null)
 
   const currentQuestion = questions[currentQuestionIndex]
+  const stimulus = currentQuestion.metadata || {}
+
+  const handleSpeak = useCallback(() => {
+    if (!stimulus.transcript) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(stimulus.transcript)
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => {
+      setIsSpeaking(false)
+      setHasHeardAudio(true)
+    }
+    utterance.onerror = () => {
+      setIsSpeaking(false)
+      setHasHeardAudio(true) // Don't block user if TTS fails
+    }
+    window.speechSynthesis.speak(utterance)
+  }, [stimulus.transcript])
+
+  // Auto-play and Reset synthesis when question changes
+  useEffect(() => {
+    setHasHeardAudio(!stimulus.transcript) // If no transcript, answering is enabled
+
+    if (stimulus.transcript && autoPlayAttempted !== currentQuestionIndex) {
+      handleSpeak()
+      setAutoPlayAttempted(currentQuestionIndex)
+    }
+
+    return () => window.speechSynthesis.cancel()
+  }, [currentQuestionIndex, stimulus.transcript, handleSpeak, autoPlayAttempted])
 
   // Track time
   useEffect(() => {
@@ -93,7 +125,7 @@ export function ExamInterface({
   const isAnswered = answeredQuestions.has(currentQuestionIndex)
 
   return (
-    <div className="h-screen bg-gray-50 overflow-hidden">
+    <div className="h-screen bg-gray-50 overflow-hidden font-sans">
       {/* Header */}
       <ExamTimer durationMinutes={durationMinutes} onTimeUp={handleTimeUp} />
 
@@ -108,236 +140,253 @@ export function ExamInterface({
               onSelectQuestion={handleSelectQuestion}
               reviewMode={false}
             />
-          </div>
-        )}
-
-        {/* Sidebar - Mobile Drawer */}
-        {showNavigator && (
-          <div className="md:hidden fixed inset-0 z-50 flex">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/50"
-              onClick={() => setShowNavigator(false)}
-            />
-            {/* Drawer */}
-            <div className="relative w-4/5 max-w-sm bg-white h-full shadow-xl overflow-y-auto p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-lg">Question Navigator</h3>
-                <button onClick={() => setShowNavigator(false)} className="text-gray-500 hover:text-gray-700">
-                  ✕
-                </button>
+            {/* Legend/Summary */}
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
+                  <div className="w-4 h-4 rounded bg-green-500"></div>
+                  <span>Answered: {answeredQuestions.size}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm font-medium text-gray-600">
+                  <div className="w-4 h-4 rounded bg-yellow-400"></div>
+                  <span>Flagged: {flaggedQuestions.size}</span>
+                </div>
               </div>
-              <QuestionNavigator
-                totalQuestions={questions.length}
-                currentQuestion={currentQuestionIndex}
-                answeredQuestions={answeredQuestions}
-                onSelectQuestion={(index) => {
-                  handleSelectQuestion(index)
-                  setShowNavigator(false)
-                }}
-                reviewMode={false}
-              />
             </div>
           </div>
         )}
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto p-4 md:p-8">
-            {/* Exam Title */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{examTitle}</h1>
-              <p className="text-gray-600">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </p>
+        <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
+          <div className="max-w-[75rem] mx-auto p-4 md:p-10">
+            {/* Exam Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+              <div>
+                <h1 className="text-4xl font-black text-[#1e293b] mb-3 tracking-tight">{examTitle}</h1>
+                <div className="flex items-center gap-3">
+                  <span className="bg-white px-4 py-1.5 rounded-full border border-slate-200 text-sm font-bold text-slate-500 shadow-sm">
+                    QUESTION {currentQuestionIndex + 1} OF {questions.length}
+                  </span>
+                  <span className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-black shadow-lg shadow-blue-200">
+                    {currentQuestion.difficulty}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleToggleFlag}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all ${isFlagged
+                  ? 'bg-yellow-400 text-white shadow-xl shadow-yellow-100 scale-105'
+                  : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
+                  }`}
+              >
+                <Flag className={`w-5 h-5 ${isFlagged ? 'fill-current' : ''}`} />
+                {isFlagged ? 'FLAGGED FOR REVIEW' : 'FLAG QUESTION'}
+              </button>
             </div>
 
-            {/* Question Card */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-8 mb-6 md:mb-8">
-              {/* Question Header */}
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10 items-start">
+              {/* Stimulus Section */}
+              {(stimulus.passage || stimulus.transcript) && (
+                <div className="bg-white rounded-3xl p-8 md:p-12 border border-slate-100 shadow-2xl shadow-slate-200/50 xl:sticky xl:top-10 max-h-[75vh] flex flex-col">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-2xl shadow-inner">
+                      {stimulus.passage ? '📖' : stimulus.transcript ? '🎧' : '📊'}
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-slate-800 uppercase tracking-widest text-xs">Test Material</h3>
+                      <p className="font-black text-slate-400 text-sm">
+                        {stimulus.passage ? 'Comprehension Passage' : stimulus.transcript ? 'Audio Examination Material' : 'Data Context (Graph/Chart)'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {stimulus.passage && (
+                    <div className="overflow-y-auto pr-6 text-slate-600 leading-[2] text-lg font-medium italic font-serif">
+                      {stimulus.passage}
+                    </div>
+                  )}
+
+                  {stimulus.data_table && (
+                    <div className="overflow-y-auto pr-6">
+                      <div className="bg-slate-50 rounded-2xl p-6 border-2 border-slate-100 font-mono text-sm uppercase text-slate-600 whitespace-pre-wrap">
+                        {stimulus.data_table}
+                      </div>
+                    </div>
+                  )}
+
+                  {stimulus.transcript && (
+                    <div className="flex flex-col items-center justify-center py-16 bg-slate-50 rounded-[2.5rem] border-4 border-dashed border-slate-100">
+                      <button
+                        onClick={handleSpeak}
+                        disabled={isSpeaking}
+                        className={`w-24 h-24 rounded-full flex items-center justify-center transition-all ${isSpeaking
+                          ? 'bg-orange-500 text-white scale-110 animate-pulse shadow-2xl shadow-orange-200'
+                          : 'bg-blue-600 text-white hover:scale-110 shadow-2xl shadow-blue-100'
+                          }`}
+                      >
+                        {isSpeaking ? (
+                          <div className="flex gap-1.5">
+                            <div className="w-1.5 h-6 bg-white animate-[bounce_0.6s_infinite] [animation-delay:-0.3s]"></div>
+                            <div className="w-1.5 h-10 bg-white animate-[bounce_0.6s_infinite] [animation-delay:-0.15s]"></div>
+                            <div className="w-1.5 h-6 bg-white animate-[bounce_0.6s_infinite]"></div>
+                          </div>
+                        ) : (
+                          <div className="w-0 h-0 border-t-[12px] border-t-transparent border-l-[20px] border-l-white border-b-[12px] border-b-transparent ml-2"></div>
+                        )}
+                      </button>
+                      <p className={`mt-8 font-black tracking-widest text-xs ${isSpeaking ? 'text-orange-500' : 'text-slate-400'}`}>
+                        {isSpeaking ? 'BROADCASTING...' : 'INITIALIZE AUDIO PLAYBACK'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Question Card */}
+              <div className={`bg-white rounded-3xl p-8 md:p-12 border border-slate-100 shadow-2xl shadow-slate-200/50 ${!(stimulus.passage || stimulus.transcript) ? 'xl:col-span-2 max-w-4xl mx-auto w-full' : ''}`}>
+                <div className="mb-10">
+                  <h2 className="text-2xl font-black text-slate-800 leading-snug">
                     {currentQuestion.content}
                   </h2>
-                  <div className="flex gap-4 text-sm">
-                    <span
-                      className={`px-3 py-1 rounded-full font-medium ${currentQuestion.difficulty === 'EASY'
-                        ? 'bg-green-100 text-green-700'
-                        : currentQuestion.difficulty === 'MEDIUM'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
-                        }`}
-                    >
-                      {currentQuestion.difficulty}
-                    </span>
-                    {currentQuestion.topic_name && (
-                      <span className="px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
-                        {currentQuestion.topic_name}
-                      </span>
-                    )}
-                  </div>
                 </div>
-                <button
-                  onClick={handleToggleFlag}
-                  className={`p-2 rounded-lg transition-colors ${isFlagged
-                    ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  title="Flag this question for review"
-                >
-                  <Flag className="w-5 h-5" />
-                </button>
-              </div>
 
-              {/* Options */}
-              {/* Options or Theory Input */}
-              <div className="space-y-3 mb-6">
-                {(currentQuestion.question_type === 'THEORY' || currentQuestion.question_type === 'ESSAY') ? (
-                  <textarea
-                    className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[200px]"
-                    placeholder="Type your answer here..."
-                    value={(responses[currentQuestion.id] as string) || ''}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setResponses((prev) => ({
-                        ...prev,
-                        [currentQuestion.id]: val,
-                      }))
-                      if (val.trim().length > 0) {
-                        setAnsweredQuestions((prev) => new Set(prev).add(currentQuestionIndex))
-                      } else {
-                        setAnsweredQuestions((prev) => {
-                          const newSet = new Set(prev)
-                          newSet.delete(currentQuestionIndex)
-                          return newSet
-                        })
-                      }
-                    }}
-                  />
-                ) : (
-                  currentQuestion.answers.map((answer) => (
-                    <label
-                      key={answer.id}
-                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${responses[currentQuestion.id] === answer.id
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                    >
-                      <input
-                        type="radio"
-                        name={`question-${currentQuestion.id}`}
-                        value={answer.id}
-                        checked={responses[currentQuestion.id] === answer.id}
-                        onChange={() => handleSelectAnswer(answer.id)}
-                        className="w-4 h-4 cursor-pointer"
+                {/* Options or Theory Input */}
+                <div className="space-y-4 mb-12">
+                  {(currentQuestion.question_type === 'THEORY' || currentQuestion.question_type === 'ESSAY') ? (
+                    <div className="space-y-4">
+                      <textarea
+                        className={`w-full p-8 bg-slate-50 border-2 border-slate-100 rounded-[2rem] focus:ring-4 focus:ring-blue-100 focus:border-blue-600 focus:outline-none min-h-[400px] text-lg leading-relaxed font-medium transition-all ${!hasHeardAudio ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        placeholder={!hasHeardAudio ? "Listening to audio first..." : "Craft your response here..."}
+                        readOnly={!hasHeardAudio}
+                        value={(responses[currentQuestion.id] as string) || ''}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setResponses((prev) => ({
+                            ...prev,
+                            [currentQuestion.id]: val,
+                          }))
+                          if (val.trim().length > 0) {
+                            setAnsweredQuestions((prev) => new Set(prev).add(currentQuestionIndex))
+                          } else {
+                            setAnsweredQuestions((prev) => {
+                              const newSet = new Set(prev)
+                              newSet.delete(currentQuestionIndex)
+                              return newSet
+                            })
+                          }
+                        }}
                       />
-                      <span className="text-gray-900 font-medium">{answer.content}</span>
-                    </label>
-                  ))
-                )}
-              </div>
-
-              {/* Guidance - HIDDEN during exam as per requirement */}
-              {/* {currentQuestion.guidance && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
-                  <p className="text-sm text-blue-900">
-                    <span className="font-semibold">Hint:</span> {currentQuestion.guidance}
-                  </p>
+                      <div className="flex justify-end pr-4 font-black text-[10px] tracking-widest text-slate-400 uppercase">
+                        Word Count: {(responses[currentQuestion.id] as string || '').trim() ? (responses[currentQuestion.id] as string || '').trim().split(/\s+/).length : 0}
+                      </div>
+                    </div>
+                  ) : (
+                    currentQuestion.answers.map((answer, idx) => (
+                      <button
+                        key={answer.id}
+                        onClick={() => handleSelectAnswer(answer.id)}
+                        className={`w-full flex items-center gap-6 p-6 rounded-[1.5rem] border-2 transition-all duration-300 group text-left ${responses[currentQuestion.id] === answer.id
+                          ? 'border-blue-600 bg-blue-50/50 scale-[1.02] shadow-xl shadow-blue-100/50'
+                          : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                      >
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black transition-all ${responses[currentQuestion.id] === answer.id
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                          }`}>
+                          {String.fromCharCode(65 + idx)}
+                        </div>
+                        <span className={`text-lg font-bold ${responses[currentQuestion.id] === answer.id ? 'text-blue-900' : 'text-slate-600'
+                          }`}>
+                          {answer.content}
+                        </span>
+                        {!hasHeardAudio && isSpeaking && (
+                          <div className="absolute inset-0 bg-white/10 cursor-not-allowed z-10 rounded-[1.5rem]" />
+                        )}
+                      </button>
+                    ))
+                  )}
+                  {!hasHeardAudio && isSpeaking && (
+                    <div className="bg-orange-50 border border-orange-100 p-4 rounded-2xl flex items-center gap-3 animate-pulse">
+                      <span className="text-xl">📻</span>
+                      <p className="text-sm font-bold text-orange-700 uppercase tracking-wider">
+                        Listening in progress... Options will enable once audio finishes.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )} */}
-            </div>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between gap-4 mb-8">
-              <button
-                onClick={handlePrevQuestion}
-                disabled={currentQuestionIndex === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 text-gray-900 font-semibold rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Previous
-              </button>
+                {/* Footer Controls */}
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <button
+                    onClick={handlePrevQuestion}
+                    disabled={currentQuestionIndex === 0}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                  </button>
 
-              <div className="flex items-center gap-2">
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${isAnswered
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-600'
-                    }`}
-                >
-                  {isAnswered ? '✓ Answered' : 'Not answered'}
-                </span>
+                  <div className="flex-1"></div>
+
+                  {currentQuestionIndex < questions.length - 1 ? (
+                    <button
+                      onClick={handleNextQuestion}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-10 py-5 bg-blue-600 text-white font-black rounded-[1.5rem] hover:scale-105 transition-all shadow-2xl shadow-blue-200 uppercase tracking-widest text-xs"
+                    >
+                      Next Module
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSubmitExam}
+                      disabled={isSubmitting || answeredQuestions.size === 0}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-12 py-5 bg-green-600 text-white font-black rounded-[1.5rem] hover:scale-105 transition-all shadow-2xl shadow-green-200 uppercase tracking-widest text-xs"
+                    >
+                      <Send className="w-5 h-5 mr-1" />
+                      {isSubmitting ? 'Finalizing...' : 'Complete Examination'}
+                    </button>
+                  )}
+                </div>
               </div>
-
-              <button
-                onClick={handleNextQuestion}
-                disabled={currentQuestionIndex === questions.length - 1}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 text-gray-900 font-semibold rounded-lg transition-colors"
-              >
-                Next
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Submit Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6 mb-8">
-              <p className="text-sm text-gray-600 mb-4">
-                You have answered <span className="font-bold">{answeredQuestions.size}</span> out
-                of <span className="font-bold">{questions.length}</span> questions.
-              </p>
-              <button
-                onClick={handleSubmitExam}
-                disabled={isSubmitting || answeredQuestions.size === 0}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
-              >
-                <Send className="w-5 h-5" />
-                {isSubmitting ? 'Submitting...' : 'Submit Exam'}
-              </button>
-              <button
-                onClick={() => setShowExitConfirm(true)}
-                className="w-full mt-2 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg transition-colors"
-              >
-                Exit Exam
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Toggle Navigator Button */}
+        {/* Global Nav Toggle */}
         <button
           onClick={() => setShowNavigator(!showNavigator)}
-          className="fixed bottom-6 right-6 md:bottom-8 md:right-8 p-3 md:p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors z-40"
-          title={showNavigator ? 'Hide navigator' : 'Show navigator'}
+          className="fixed bottom-10 right-10 w-16 h-16 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all z-40 flex items-center justify-center"
         >
-          {showNavigator ? '✕' : '☰'}
+          {showNavigator ? <span className="text-xl font-black">×</span> : <span className="text-xl font-black">☰</span>}
         </button>
       </div>
 
-      {/* Exit Confirmation Modal */}
+      {/* Exit Modal */}
       {showExitConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md mx-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Exit Exam?</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to exit? Your progress will be saved, but the exam won't be
-              graded.
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[3rem] p-10 md:p-14 max-w-xl mx-auto shadow-2xl animate-[fadeInUp_0.3s_ease-out]">
+            <div className="text-6xl mb-8">⚠️</div>
+            <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Abandon Examination?</h3>
+            <p className="text-slate-500 font-medium leading-[1.8] mb-10 text-lg">
+              Terminating the session now will forfeit your current assessment data. Are you absolutely certain you wish to withdraw?
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold rounded-lg"
+                className="flex-1 px-8 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[1.5rem] transition-all uppercase tracking-widest text-xs"
               >
-                Continue Exam
+                No, Continue Test
               </button>
               <button
                 onClick={() => {
                   setShowExitConfirm(false)
                   onExit?.()
                 }}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg"
+                className="flex-1 px-8 py-5 bg-red-600 text-white font-black rounded-[1.5rem] hover:scale-105 transition-all shadow-2xl shadow-red-200 uppercase tracking-widest text-xs"
               >
-                Exit
+                Yes, Abandon
               </button>
             </div>
           </div>

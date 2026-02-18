@@ -1,36 +1,41 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
-
-const footerLinks = {
-    product: [
-        { name: 'Features', href: '/#features' },
-        { name: 'Pricing', href: '/#pricing' },
-        { name: 'Mock Exams', href: '/exams' },
-        { name: 'AI Tutor', href: '/tutor' }
-    ],
-    resources: [
-        { name: 'Blog', href: '/blog' },
-        { name: 'Study Guides', href: '/guides' },
-        { name: 'Help Center', href: '/help' },
-        { name: 'API Docs', href: '/docs' }
-    ],
-    company: [
-        { name: 'About Us', href: '/about' },
-        { name: 'Careers', href: '/careers' },
-        { name: 'Contact', href: '/contact' },
-        { name: 'Privacy', href: '/privacy' },
-        { name: 'Terms', href: '/terms' }
-    ]
-}
-
-const socialLinks = [
-    { icon: '📘', href: 'https://facebook.com', label: 'Facebook' },
-    { icon: '🐦', href: 'https://twitter.com', label: 'Twitter' },
-    { icon: '📷', href: 'https://instagram.com', label: 'Instagram' },
-    { icon: '💼', href: 'https://linkedin.com', label: 'LinkedIn' }
-]
+import { useAuthStore } from '@/store/authStore'
 
 export default function Footer() {
+    const { isAuthenticated } = useAuthStore()
+
+    const footerLinks = {
+        product: [
+            { name: 'Features', href: '/#features' },
+            { name: 'Pricing', href: isAuthenticated ? '/dashboard/pricing' : '/#pricing' },
+            { name: 'Mock Exams', href: isAuthenticated ? '/dashboard/exams' : '/exams' },
+            { name: 'AI Tutor', href: isAuthenticated ? '/dashboard/ai-tutor' : '/tutor' }
+        ],
+        resources: [
+            { name: 'Blog', href: '/blog' },
+            { name: 'Study Guides', href: '/guides' },
+            { name: 'Help Center', href: '/help' },
+            { name: 'API Docs', href: '/docs' }
+        ],
+        company: [
+            { name: 'About Us', href: '/about' },
+            { name: 'Careers', href: '/careers' },
+            { name: 'Contact', href: '/contact' },
+            { name: 'Privacy', href: '/privacy' },
+            { name: 'Terms', href: '/terms' }
+        ]
+    }
+
+    const socialLinks = [
+        { icon: '📘', href: 'https://facebook.com', label: 'Facebook' },
+        { icon: '🐦', href: 'https://twitter.com', label: 'Twitter' },
+        { icon: '📷', href: 'https://instagram.com', label: 'Instagram' },
+        { icon: '💼', href: 'https://linkedin.com', label: 'LinkedIn' }
+    ]
+
     return (
         <footer className="bg-card text-foreground py-[60px] px-8 border-t border-border">
             <div className="max-w-[1400px] mx-auto">
@@ -49,6 +54,8 @@ export default function Footer() {
                                 <a
                                     key={index}
                                     href={social.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     aria-label={social.label}
                                     className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-foreground no-underline transition-all duration-300 hover:bg-primary hover:text-white hover:-translate-y-1"
                                 >

@@ -141,7 +141,7 @@ def update_analytics_on_task_completion(sender, instance, created, **kwargs):
         if minutes > 0:
             AnalyticsService.log_study_time(user, minutes)
             # Award 1 XP per minute of study
-            GamificationService.award_points(user, minutes, f"Task Completed: {instance.title}")
+            GamificationService.award_points(user, minutes, f"Task Completed: {instance.topic.name}")
             # Check for dedication badges
             GamificationService.check_badges(user, 'time', minutes) # This needs cumulative logic in service or threshold check
 

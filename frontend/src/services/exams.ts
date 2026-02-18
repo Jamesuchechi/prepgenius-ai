@@ -8,6 +8,7 @@ export interface Question {
   answers: Answer[]
   topic_name: string
   guidance?: string
+  metadata?: any
 }
 
 export interface Answer {

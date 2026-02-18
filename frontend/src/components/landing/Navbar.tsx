@@ -3,9 +3,12 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
+import { useAuthStore } from '@/store/authStore'
+import { LayoutDashboard } from 'lucide-react'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { isAuthenticated } = useAuthStore()
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -46,12 +49,22 @@ export default function Navbar() {
           >
             Pricing
           </Link>
-          <Button variant="secondary" href="/signin">
-            Sign In
-          </Button>
-          <Button variant="primary" href="/signup">
-            Get Started Free
-          </Button>
+
+          {isAuthenticated ? (
+            <Button variant="primary" href="/dashboard" className="gap-2">
+              <LayoutDashboard size={18} />
+              Go to Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button variant="secondary" href="/signin">
+                Sign In
+              </Button>
+              <Button variant="primary" href="/signup">
+                Get Started Free
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -118,20 +131,36 @@ export default function Navbar() {
 
               {/* Action Buttons */}
               <div className="space-y-3 pt-2">
-                <Button
-                  variant="secondary"
-                  href="/signin"
-                  className="w-full text-center"
-                >
-                  Sign In
-                </Button>
-                <Button
-                  variant="primary"
-                  href="/signup"
-                  className="w-full text-center"
-                >
-                  Get Started Free
-                </Button>
+                {isAuthenticated ? (
+                  <Button
+                    variant="primary"
+                    href="/dashboard"
+                    className="w-full text-center flex justify-center gap-2"
+                    onClick={closeMenu}
+                  >
+                    <LayoutDashboard size={18} />
+                    Go to Dashboard
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="secondary"
+                      href="/signin"
+                      className="w-full text-center"
+                      onClick={closeMenu}
+                    >
+                      Sign In
+                    </Button>
+                    <Button
+                      variant="primary"
+                      href="/signup"
+                      className="w-full text-center"
+                      onClick={closeMenu}
+                    >
+                      Get Started Free
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
