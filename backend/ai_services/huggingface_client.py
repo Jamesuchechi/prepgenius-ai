@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class HuggingFaceClient:
     def __init__(self):
         self.api_key = settings.HUGGINGFACE_API_KEY
-        self.model = settings.HUGGINGFACE_MODEL or "meta-llama/Meta-Llama-3-8B-Instruct"
+        self.model = settings.HUGGINGFACE_MODEL or "microsoft/Phi-3-mini-4k-instruct"
         self.api_url = f"https://api-inference.huggingface.co/models/{self.model}"
         
         if not self.api_key:
@@ -118,6 +118,43 @@ class HuggingFaceClient:
             return self._parse_response(generated_text)
         except Exception as e:
             logger.error(f"Error generating study plan with HuggingFace: {e}")
+            raise
+
+    async def grade_theory_question_async(self, question_text, user_answer, model_answer, subject, exam_type):
+        """Grades a theory question response asynchronously using HuggingFace API."""
+        # Wrapping sync call for now as HF inference API is HTTP based
+        return self.grade_theory_question(question_text, user_answer, model_answer, subject, exam_type)
+
+    def grade_theory_question(self, question_text, user_answer, model_answer, subject, exam_type):
+        """Grades a theory question response using HuggingFace API."""
+        if not self.api_key:
+            raise ValueError("HuggingFace API key not configured")
+
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_theory_grading_prompt(question_text, user_answer, model_answer, subject, exam_type)
+        # Enforce JSON for open models
+        prompt = f"{prompt}\n\nIMPORTANT: Output ONLY the JSON object. Do not add any markdown formatting or explanation."
+        
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        payload = {
+            "inputs": f"[INST] {prompt} [/INST]",
+            "parameters": {
+                "max_new_tokens": 1024,
+                "temperature": 0.3,
+                "return_full_text": False
+            }
+        }
+        
+        try:
+            response = requests.post(self.api_url, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            generated_text = result[0]['generated_text']
+            
+            return self._parse_response(generated_text)
+        except Exception as e:
+            logger.error(f"Error grading theory with HuggingFace: {e}")
             raise
 
     def _build_prompt(self, topic, difficulty, count, q_type, context):

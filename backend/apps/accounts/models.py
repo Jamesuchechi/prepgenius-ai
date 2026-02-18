@@ -26,6 +26,10 @@ class User(AbstractUser):
         ('neco', 'NECO'),
         ('utme', 'UTME'),
         ('post_utme', 'Post-UTME'),
+        ('sat', 'SAT'),
+        ('ielts', 'IELTS'),
+        ('toefl', 'TOEFL'),
+        ('gre', 'GRE'),
     ]
     
     # Override default email to be required and unique

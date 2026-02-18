@@ -15,8 +15,10 @@ class CohereClient:
         if not self.api_key:
             logger.warning("COHERE_API_KEY is not set.")
             self.client = None
+            self.async_client = None
         else:
             self.client = cohere.Client(self.api_key)
+            self.async_client = cohere.AsyncClient(self.api_key)
 
     def generate_questions(self, topic, difficulty, count=5, q_type="MCQ", additional_context=""):
         if not self.client:
@@ -123,6 +125,46 @@ class CohereClient:
             return self._parse_response(response.text)
         except Exception as e:
             logger.error(f"Error generating study plan with Cohere: {e}")
+            raise
+
+    async def grade_theory_question_async(self, question_text, user_answer, model_answer, subject, exam_type):
+        """Grades a theory question response asynchronously using Cohere API."""
+        if not self.async_client:
+            raise ValueError("Cohere API key not configured")
+
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_theory_grading_prompt(question_text, user_answer, model_answer, subject, exam_type)
+        
+        try:
+            response = await self.async_client.chat(
+                message=prompt,
+                model=self.model,
+                preamble="You are an expert examiner. You must output ONLY valid JSON.",
+                temperature=0.3,
+            )
+            return self._parse_response(response.text)
+        except Exception as e:
+            logger.error(f"Error grading theory async with Cohere: {e}")
+            raise
+
+    def grade_theory_question(self, question_text, user_answer, model_answer, subject, exam_type):
+        """Grades a theory question response using Cohere API."""
+        if not self.client:
+            raise ValueError("Cohere API key not configured")
+
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_theory_grading_prompt(question_text, user_answer, model_answer, subject, exam_type)
+        
+        try:
+            response = self.client.chat(
+                message=prompt,
+                model=self.model,
+                preamble="You are an expert examiner. You must output ONLY valid JSON.",
+                temperature=0.3,
+            )
+            return self._parse_response(response.text)
+        except Exception as e:
+            logger.error(f"Error grading theory with Cohere: {e}")
             raise
 
     def generate_embedding(self, text):

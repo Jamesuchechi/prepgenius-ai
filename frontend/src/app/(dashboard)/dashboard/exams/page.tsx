@@ -112,6 +112,9 @@ export default function ExamsPage() {
     { key: 'NABTEB', label: 'NABTEB (50q • 120m)', questions: 50, duration: 120, difficulty: { E: 30, M: 50, H: 20 } },
     { key: 'IGCSE', label: 'IGCSE (40q • 90m)', questions: 40, duration: 90, difficulty: { E: 30, M: 50, H: 20 } },
     { key: 'SAT', label: 'SAT (70q • 180m)', questions: 70, duration: 180, difficulty: { E: 20, M: 60, H: 20 } },
+    { key: 'IELTS', label: 'IELTS (40q • 165m)', questions: 40, duration: 165, difficulty: { E: 20, M: 60, H: 20 } },
+    { key: 'TOEFL', label: 'TOEFL (50q • 180m)', questions: 50, duration: 180, difficulty: { E: 20, M: 60, H: 20 } },
+    { key: 'GRE', label: 'GRE (80q • 225m)', questions: 80, duration: 225, difficulty: { E: 20, M: 60, H: 20 } },
     { key: 'OTHER', label: 'Other (custom)', questions: 60, duration: 60, difficulty: { E: 20, M: 60, H: 20 } },
   ]
 
@@ -365,6 +368,9 @@ export default function ExamsPage() {
                       <option value="NECO">NECO (Nigeria)</option>
                       <option value="IGCSE">IGCSE</option>
                       <option value="SAT">SAT</option>
+                      <option value="IELTS">IELTS</option>
+                      <option value="TOEFL">TOEFL</option>
+                      <option value="GRE">GRE</option>
                       <option value="OTHER">Other</option>
                     </select>
                     <p className="text-xs text-gray-400 mt-1">Select the exam board. Data availability depends on our ALOC database.</p>
@@ -404,6 +410,9 @@ export default function ExamsPage() {
                       <option value="NABTEB">NABTEB (Nigeria)</option>
                       <option value="IGCSE">IGCSE</option>
                       <option value="SAT">SAT</option>
+                      <option value="IELTS">IELTS</option>
+                      <option value="TOEFL">TOEFL</option>
+                      <option value="GRE">GRE</option>
                       <option value="OTHER">Other</option>
                     </select>
                   </div>

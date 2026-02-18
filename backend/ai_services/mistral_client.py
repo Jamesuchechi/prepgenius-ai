@@ -137,6 +137,65 @@ class MistralClient:
             logger.error(f"Error generating study plan with Mistral: {e}")
             raise
 
+    async def grade_theory_question_async(self, question_text, user_answer, model_answer, subject, exam_type):
+        """Grades a theory question response asynchronously using Mistral API."""
+        if not self.client:
+            raise ValueError("Mistral API key not configured")
+
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_theory_grading_prompt(question_text, user_answer, model_answer, subject, exam_type)
+        
+        try:
+            from mistralai.models import UserMessage, SystemMessage
+            messages = [
+                SystemMessage(content="You are an expert examiner. Output ONLY valid JSON."),
+                UserMessage(content=prompt)
+            ]
+            
+            # Note: Mistral's latest SDK uses 'chat.complete' for both
+            # If there's an async client, we'd use it here. 
+            # For now, we'll use the synchronous client (or check for AsyncMistral)
+            chat_response = self.client.chat.complete(
+                model=self.model,
+                messages=messages,
+                temperature=0.3,
+                response_format={"type": "json_object"}
+            )
+            
+            response_content = chat_response.choices[0].message.content
+            return self._parse_response(response_content)
+        except Exception as e:
+            logger.error(f"Error grading theory async with Mistral: {e}")
+            raise
+
+    def grade_theory_question(self, question_text, user_answer, model_answer, subject, exam_type):
+        """Grades a theory question response using Mistral API."""
+        if not self.client:
+            raise ValueError("Mistral API key not configured")
+
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_theory_grading_prompt(question_text, user_answer, model_answer, subject, exam_type)
+        
+        try:
+            from mistralai.models import UserMessage, SystemMessage
+            messages = [
+                SystemMessage(content="You are an expert examiner. Output ONLY valid JSON."),
+                UserMessage(content=prompt)
+            ]
+            
+            chat_response = self.client.chat.complete(
+                model=self.model,
+                messages=messages,
+                temperature=0.3,
+                response_format={"type": "json_object"}
+            )
+            
+            response_content = chat_response.choices[0].message.content
+            return self._parse_response(response_content)
+        except Exception as e:
+            logger.error(f"Error grading theory with Mistral: {e}")
+            raise
+
     def generate_embedding(self, text):
         """Generate vector embedding for text."""
         if not self.client:

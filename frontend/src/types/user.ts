@@ -2,7 +2,7 @@ export type StudentType = 'individual' | 'institutional'
 
 export type GradeLevel = 'ss1' | 'ss2' | 'ss3' | 'post_secondary'
 
-export type ExamTarget = 'jamb' | 'waec' | 'neco' | 'utme' | 'post_utme'
+export type ExamTarget = 'jamb' | 'waec' | 'neco' | 'utme' | 'post_utme' | 'sat' | 'ielts' | 'toefl' | 'gre'
 
 export interface User {
   id: number

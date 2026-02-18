@@ -268,6 +268,68 @@ class GroqClient:
             logger.error(f"Error generating study plan with Groq: {e}")
             raise
 
+    async def grade_theory_question_async(self, question_text, user_answer, model_answer, subject, exam_type):
+        """
+        Grades a theory question response asynchronously using Groq API.
+        """
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_theory_grading_prompt(question_text, user_answer, model_answer, subject, exam_type)
+        
+        try:
+            chat_completion = await self.async_client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert examiner. Output ONLY valid JSON."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                model=self.model,
+                temperature=0.3, # Lower temperature for grading consistency
+                response_format={"type": "json_object"},
+                timeout=self.timeout
+            )
+            
+            response_content = chat_completion.choices[0].message.content
+            return self._parse_response(response_content)
+        except Exception as e:
+            logger.error(f"Error grading theory async with Groq: {e}")
+            raise
+
+    def grade_theory_question(self, question_text, user_answer, model_answer, subject, exam_type):
+        """
+        Grades a theory question response using Groq API.
+        """
+        from .prompts import PromptTemplates
+        prompt = PromptTemplates.get_theory_grading_prompt(question_text, user_answer, model_answer, subject, exam_type)
+        
+        try:
+            chat_completion = self.client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert examiner. Output ONLY valid JSON."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                model=self.model,
+                temperature=0.3,
+                response_format={"type": "json_object"},
+                timeout=self.timeout
+            )
+            
+            response_content = chat_completion.choices[0].message.content
+            return self._parse_response(response_content)
+        except Exception as e:
+            logger.error(f"Error grading theory with Groq: {e}")
+            raise
+
     def transcribe_audio(self, audio_file):
         """
         Transcribes audio file using Groq's Whisper model.

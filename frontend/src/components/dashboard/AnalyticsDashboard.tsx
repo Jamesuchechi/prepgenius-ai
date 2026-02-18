@@ -1,29 +1,40 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-    Flame, Award, BookOpen, Clock, MessageSquare, Target
+    Flame, Award, BookOpen, Clock, MessageSquare, Target, Brain
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { analyticsApi, AnalyticsSummary, Activity } from '@/lib/api/analytics';
-import PredictedScoreCard from '../analytics/PredictedScoreCard';
+import { analyticsApi, AnalyticsSummary, Activity, SubjectMasteryChart } from '@/lib/api/analytics';
+import { flashcardApi, FlashcardSummary } from '@/lib/api/flashcards';
+import ReadinessCard from '../analytics/ReadinessCard';
+import MasteryRadarChart from '../analytics/MasteryRadarChart';
 import ProgressChart from '../analytics/ProgressChart';
 import StudyTimeTracker from '../analytics/StudyTimeTracker';
 import PerformanceTimeline from '../analytics/PerformanceTimeline';
 import { CollapsibleCard } from '../ui/CollapsibleCard';
+import { Button } from '../ui/Button';
+import { useRouter } from 'next/navigation';
 
 export const AnalyticsDashboard: React.FC = () => {
+    const router = useRouter();
     const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
     const [history, setHistory] = useState<Activity[]>([]);
+    const [subjectMastery, setSubjectMastery] = useState<SubjectMasteryChart[]>([]);
+    const [flashcardSummary, setFlashcardSummary] = useState<FlashcardSummary | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         Promise.all([
             analyticsApi.getSummary(),
-            analyticsApi.getPerformanceHistory()
+            analyticsApi.getPerformanceHistory(),
+            analyticsApi.getSubjectMastery(),
+            flashcardApi.getSummary()
         ])
-            .then(([summaryData, historyData]) => {
+            .then(([summaryData, historyData, subjectData, flashData]) => {
                 setSummary(summaryData);
                 setHistory(historyData);
+                setSubjectMastery(subjectData);
+                setFlashcardSummary(flashData);
                 setLoading(false);
             })
             .catch(err => {
@@ -96,6 +107,11 @@ export const AnalyticsDashboard: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Main Charts */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <ReadinessCard data={summary.readiness} />
+                        <MasteryRadarChart data={subjectMastery} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <ProgressChart data={{
                             total_correct_answers: Math.round((summary.accuracy_percentage / 100) * summary.total_questions),
                             total_questions_attempted: summary.total_questions,
@@ -107,17 +123,8 @@ export const AnalyticsDashboard: React.FC = () => {
                             accuracy_percentage: summary.accuracy_percentage
                         } as any} />
 
-                        <PredictedScoreCard data={summary.predicted_score} />
+                        <StudyTimeTracker data={[] /* Backend StudySession needed */} />
                     </div>
-
-                    <CollapsibleCard
-                        title="Study Activity"
-                        description="Time spent across different subjects."
-                        icon={<Clock className="h-5 w-5" />}
-                        defaultOpen={false}
-                    >
-                        <StudyTimeTracker data={[] /* Backend StudySession needed, using empty for now or mock */} />
-                    </CollapsibleCard>
 
                     <PerformanceTimeline data={history.map(h => ({
                         id: h.id,
@@ -130,6 +137,40 @@ export const AnalyticsDashboard: React.FC = () => {
                 </div>
 
                 <div className="space-y-6">
+                    {/* Flashcard SRS Card */}
+                    {flashcardSummary && (
+                        <Card className="bg-gradient-to-br from-indigo-900 to-slate-900 border-none text-white overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <Brain className="h-24 w-24" />
+                            </div>
+                            <CardHeader>
+                                <CardTitle className="text-white flex items-center gap-2">
+                                    <Brain className="h-5 w-5 text-indigo-400" />
+                                    Daily Review
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4 relative z-10">
+                                <div className="flex justify-between items-end">
+                                    <div>
+                                        <div className="text-3xl font-extrabold">{flashcardSummary.due_count}</div>
+                                        <p className="text-xs text-indigo-200 uppercase tracking-widest font-bold">Cards Due Today</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xl font-bold text-indigo-300">{flashcardSummary.mastered_count}</div>
+                                        <p className="text-[10px] text-indigo-200 uppercase tracking-tighter">Mastered</p>
+                                    </div>
+                                </div>
+                                <Button
+                                    className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-bold py-6 rounded-xl"
+                                    onClick={() => router.push('/study/flashcards')}
+                                    disabled={flashcardSummary.due_count === 0}
+                                >
+                                    {flashcardSummary.due_count > 0 ? 'Start Review Session' : 'Inbox Zero!'}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Insights & Next Steps */}
                     <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100">
                         <CardHeader>

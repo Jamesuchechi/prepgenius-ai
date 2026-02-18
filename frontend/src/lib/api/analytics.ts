@@ -25,6 +25,22 @@ export interface TopicMastery {
     topic_details?: { name: string };
 }
 
+export interface ReadinessScore {
+    score: number;
+    breakdown: {
+        mastery: number;
+        exam_performance: number;
+        consistency: number;
+        accuracy: number;
+    };
+    interpretation: string;
+}
+
+export interface SubjectMasteryChart {
+    subject: string;
+    score: number;
+}
+
 export interface AnalyticsSummary {
     streak: number;
     total_questions: number;
@@ -32,6 +48,7 @@ export interface AnalyticsSummary {
     tutor_interactions: number;
     weak_topics: TopicMastery[];
     predicted_score: PredictedScore;
+    readiness: ReadinessScore;
     study_patterns: StudyPatterns;
     accuracy_percentage: number;
 }
@@ -123,6 +140,16 @@ export const analyticsApi = {
 
     getPredictedScore: async () => {
         const response = await axios.get<PredictedScore>('/analytics/predicted_score/');
+        return response.data;
+    },
+
+    getReadinessScore: async () => {
+        const response = await axios.get<ReadinessScore>('/analytics/readiness/');
+        return response.data;
+    },
+
+    getSubjectMastery: async () => {
+        const response = await axios.get<SubjectMasteryChart[]>('/analytics/subject_mastery/');
         return response.data;
     },
 

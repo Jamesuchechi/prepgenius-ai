@@ -1,5 +1,5 @@
-from django.utils import timezone
 from apps.analytics.models import ProgressTracker, TopicMastery
+from .performance_analyzer import PerformanceAnalyzer
 from datetime import timedelta
 
 
@@ -40,27 +40,28 @@ class AnalyticsService:
         progress.save()
 
     @staticmethod
-    def update_quiz_stats(user, topic, score_percentage):
+    def update_quiz_stats(user, topic, score_percentage, subject=None):
         """
-        Updates topic mastery based on quiz results.
-        Simple moving average or weighted update could be used. 
-        For now: Average score.
+        Updates topic mastery based on quiz results using EMA.
         """
         mastery, created = TopicMastery.objects.get_or_create(
             user=user, 
             topic=topic,
-            defaults={'mastery_score': score_percentage, 'quizzes_taken': 1}
+            defaults={'mastery_score': score_percentage, 'quizzes_taken': 1, 'subject': subject}
         )
 
         if not created:
-            # Update weighted average? Or just simple moving average?
-            # New Average = ((Old * Count) + New) / (Count + 1)
-            total_score = (mastery.mastery_score * mastery.quizzes_taken) + score_percentage
+            # Use EMA for mastery updates
+            mastery.mastery_score = PerformanceAnalyzer.calculate_ema_mastery(
+                mastery.mastery_score, 
+                score_percentage
+            )
             mastery.quizzes_taken += 1
-            mastery.mastery_score = total_score / mastery.quizzes_taken
+            if subject and not mastery.subject:
+                mastery.subject = subject
             mastery.save()
         
-        # Also update streak
+        # Also update streak via Gamification if applicable, or keep internal
         AnalyticsService.update_streak(user)
         
         # Update progress quiz count

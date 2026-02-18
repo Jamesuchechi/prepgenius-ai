@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/authStore'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton'
 import { Check, X, CheckCircle2, AlertCircle } from 'lucide-react'
 
-const examTypes = ['JAMB', 'WAEC', 'NECO', 'GCE', 'NABTEB']
+const examTypes = ['JAMB', 'WAEC', 'NECO', 'GCE', 'NABTEB', 'SAT', 'IELTS', 'TOEFL', 'GRE']
 const subjects = [
   'Mathematics', 'English', 'Physics', 'Chemistry', 'Biology',
   'Economics', 'Government', 'Literature', 'Commerce', 'Accounting'
@@ -268,10 +268,10 @@ export default function SignUpPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors duration-300 text-[var(--black)] ${formData.password
-                        ? isPasswordValid
-                          ? 'border-green-500 focus:border-green-500'
-                          : 'border-red-300 focus:border-red-500'
-                        : 'border-gray-200 focus:border-[var(--orange)]'
+                      ? isPasswordValid
+                        ? 'border-green-500 focus:border-green-500'
+                        : 'border-red-300 focus:border-red-500'
+                      : 'border-gray-200 focus:border-[var(--orange)]'
                       }`}
                     placeholder="Create a strong password"
                     required
@@ -304,10 +304,10 @@ export default function SignUpPage() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors duration-300 text-[var(--black)] ${formData.confirmPassword
-                        ? doPasswordsMatch
-                          ? 'border-green-500 focus:border-green-500'
-                          : 'border-red-300 focus:border-red-500'
-                        : 'border-gray-200 focus:border-[var(--orange)]'
+                      ? doPasswordsMatch
+                        ? 'border-green-500 focus:border-green-500'
+                        : 'border-red-300 focus:border-red-500'
+                      : 'border-gray-200 focus:border-[var(--orange)]'
                       }`}
                     placeholder="Re-enter password"
                     required

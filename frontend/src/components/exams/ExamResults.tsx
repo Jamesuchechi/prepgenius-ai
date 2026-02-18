@@ -207,22 +207,71 @@ export function ExamResults({
                             )}
                           </p>
                           <p className="text-sm text-gray-700 mb-2">{qData.question_text}</p>
-                          {qData.is_correct ? (
-                            <p className="text-sm text-green-700">
-                              <span className="font-semibold">Correct Answer:</span>{' '}
-                              {qData.correct_answer_text}
-                            </p>
-                          ) : (
-                            <>
-                              {qData.user_answer_id && (
-                                <p className="text-sm text-red-700 mb-1">
-                                  <span className="font-semibold">Your Answer:</span> Wrong
-                                </p>
-                              )}
-                              <p className="text-sm text-green-700">
-                                <span className="font-semibold">Correct Answer:</span>{' '}
-                                {qData.correct_answer_text}
+                          {/* AI Theory Grading Display */}
+                          {qData.user_answer_text && qData.critique && (
+                            <div className="mt-3 bg-white border border-blue-100 rounded-lg p-3 shadow-sm">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Sparkles className="w-4 h-4 text-blue-600" />
+                                <span className="text-sm font-bold text-blue-900">AI Detailed Critique</span>
+                                <span className="ml-auto bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                  Score: {qData.score}/10
+                                </span>
+                              </div>
+                              <p className="text-sm text-blue-800 mb-3 italic">"{qData.user_answer_text}"</p>
+
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                                <div className="bg-blue-50 p-2 rounded">
+                                  <p className="text-[10px] font-bold text-blue-600 uppercase">Accuracy</p>
+                                  <p className="text-sm text-blue-900">{qData.accuracy}</p>
+                                </div>
+                                <div className="bg-blue-50 p-2 rounded">
+                                  <p className="text-[10px] font-bold text-blue-600 uppercase">Completeness</p>
+                                  <p className="text-sm text-blue-900">{qData.completeness}</p>
+                                </div>
+                                <div className="bg-blue-50 p-2 rounded">
+                                  <p className="text-[10px] font-bold text-blue-600 uppercase">Clarity</p>
+                                  <p className="text-sm text-blue-900">{qData.clarity}</p>
+                                </div>
+                              </div>
+
+                              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                                <span className="font-bold text-blue-900">Critique:</span> {qData.critique}
                               </p>
+
+                              {qData.improvement_tips && qData.improvement_tips.length > 0 && (
+                                <div className="border-t border-blue-50 pt-2">
+                                  <p className="text-xs font-bold text-blue-600 mb-1">Improvement Tips:</p>
+                                  <ul className="text-xs text-gray-600 list-disc list-inside">
+                                    {qData.improvement_tips.map((tip: string, tIdx: number) => (
+                                      <li key={tIdx}>{tip}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Original MCQ Display (only if not a critique-style theory) */}
+                          {!qData.critique && (
+                            <>
+                              {qData.is_correct ? (
+                                <p className="text-sm text-green-700">
+                                  <span className="font-semibold">Correct Answer:</span>{' '}
+                                  {qData.correct_answer_text}
+                                </p>
+                              ) : (
+                                <>
+                                  {qData.user_answer_id && (
+                                    <p className="text-sm text-red-700 mb-1">
+                                      <span className="font-semibold">Your Answer:</span> Wrong
+                                    </p>
+                                  )}
+                                  <p className="text-sm text-green-700">
+                                    <span className="font-semibold">Correct Answer:</span>{' '}
+                                    {qData.correct_answer_text}
+                                  </p>
+                                </>
+                              )}
                             </>
                           )}
 

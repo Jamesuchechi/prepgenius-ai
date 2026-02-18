@@ -7,7 +7,9 @@ from apps.ai_tutor.models import ChatMessage
 from apps.study_plans.models import StudyTask
 from .models import ProgressTracker, TopicMastery, StudySession
 from .services import AnalyticsService
+from apps.study_tools.services.srs_service import SRSService
 from apps.gamification.services.gamification_service import GamificationService
+from apps.questions.models import QuestionAttempt
 from datetime import timedelta
 
 print("Loading analytics signals...")
@@ -56,12 +58,15 @@ def update_analytics_on_quiz_completion(sender, instance, created, **kwargs):
             }
         )
     
-    if instance.quiz.topic:
         if instance.total_questions > 0:
             score_percentage = (instance.correct_answers / instance.total_questions) * 100
         else:
             score_percentage = 0
-        AnalyticsService.update_quiz_stats(user, instance.quiz.topic, score_percentage)
+        
+        # Determine subject if possible from topic/quiz
+        subject_name = getattr(instance.quiz.subject, 'name', None) if hasattr(instance.quiz, 'subject') else None
+        
+        AnalyticsService.update_quiz_stats(user, instance.quiz.topic, score_percentage, subject=subject_name)
 
 @receiver(post_save, sender=ExamResult)
 def update_analytics_on_exam_completion(sender, instance, created, **kwargs):
@@ -103,7 +108,7 @@ def update_analytics_on_exam_completion(sender, instance, created, **kwargs):
     
     # Update mastery for the exam subject
     subject_name = attempt.mock_exam.subject.name
-    AnalyticsService.update_quiz_stats(user, subject_name, instance.percentage)
+    AnalyticsService.update_quiz_stats(user, subject_name, instance.percentage, subject=subject_name)
 
 @receiver(post_save, sender=ChatMessage)
 def update_analytics_on_tutor_message(sender, instance, created, **kwargs):
@@ -143,7 +148,7 @@ def update_analytics_on_task_completion(sender, instance, created, **kwargs):
 @receiver(post_save, sender=AnswerAttempt)
 def update_analytics_on_answer(sender, instance, created, **kwargs):
     """
-    Updates question counts in real-time.
+    Updates question counts in real-time and generates flashcards for mistakes.
     """
     if not created:
         return
@@ -154,5 +159,21 @@ def update_analytics_on_answer(sender, instance, created, **kwargs):
     progress.total_questions_attempted += 1
     if instance.is_correct:
         progress.total_correct_answers += 1
+    else:
+        # Auto-generate flashcard for mistake
+        # We need a QuestionAttempt-like object or just pass a mock
+        # SRSService.auto_generate_from_mistake expects a QuestionAttempt
+        # Let's make it more flexible or wrap it
+        SRSService.auto_generate_from_mistake(user, instance)
     
     progress.save()
+
+@receiver(post_save, sender=QuestionAttempt)
+def update_analytics_on_question_practice(sender, instance, created, **kwargs):
+    """
+    Generates flashcards for mistakes in isolated practice.
+    """
+    if not created or instance.is_correct:
+        return
+    
+    SRSService.auto_generate_from_mistake(instance.user, instance)

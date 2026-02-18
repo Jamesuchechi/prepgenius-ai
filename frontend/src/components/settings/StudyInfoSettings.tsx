@@ -39,6 +39,10 @@ export default function StudyInfoSettings() {
         { id: 'waec', name: 'WAEC', color: 'bg-green-500' },
         { id: 'neco', name: 'NECO', color: 'bg-purple-500' },
         { id: 'post_utme', name: 'Post-UTME', color: 'bg-orange-500' },
+        { id: 'sat', name: 'SAT', color: 'bg-red-500' },
+        { id: 'ielts', name: 'IELTS', color: 'bg-indigo-500' },
+        { id: 'toefl', name: 'TOEFL', color: 'bg-cyan-500' },
+        { id: 'gre', name: 'GRE', color: 'bg-teal-500' },
     ]
 
     return (

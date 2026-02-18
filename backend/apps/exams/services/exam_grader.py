@@ -3,6 +3,11 @@ from apps.exams.models import ExamAttempt, MockExam, ExamResult
 from apps.questions.models import Question, Answer
 from django.utils import timezone
 import logging
+import asyncio
+from asgiref.sync import async_to_sync
+from ai_services.router import AIRouter
+from ai_services.prompts import PromptTemplates
+from apps.study_tools.services.srs_service import SRSService
 
 logger = logging.getLogger(__name__)
 
@@ -91,19 +96,76 @@ def auto_grade_exam(attempt: ExamAttempt):
 			user_answer_id = responses.get(qid)
 			
 			# Handle Theory/Essay questions
-			if question.question_type in ['THEORY', 'ESSAY']:
-				if user_answer_id:
-					attempted_questions += 1
+			if question.question_type in ['THEORY', 'ESSAY', 'THEORY', 'essay']:
+				if not user_answer_id:
+					unanswered_count += 1
+					breakdown[qid] = {
+						'question_id': qid,
+						'question_text': question.content[:100],
+						'topic': question.topic.name if question.topic else None,
+						'difficulty': question.difficulty,
+						'user_answer_text': None,
+						'is_correct': False,
+						'explanation': question.guidance or "No model answer available."
+					}
+					continue
+
+				attempted_questions += 1
 				
-				breakdown[qid] = {
-					'question_id': question.id,
-					'question_text': question.content[:100],
-					'topic': question.topic.name if question.topic else None,
-					'difficulty': question.difficulty,
-					'user_answer_text': user_answer_id,
-					'is_correct': None, # Pending grading
-					'explanation': question.guidance or "Model answer provided in detailed review."
-				}
+				# We'll collect these for AI grading after the loop or grade here
+				# For efficiency, let's just use the router here (using async_to_sync)
+				try:
+					ai = AIRouter()
+					
+					# Call dedicated theory grading method
+					ai_response = async_to_sync(ai.grade_theory_question_async)(
+						question_text=question.content,
+						user_answer=user_answer_id,
+						model_answer=question.guidance or "Model answer provided in detailed review.",
+						subject=attempt.mock_exam.subject.name,
+						exam_type=attempt.mock_exam.exam_type.name
+					)
+					
+					ai_score = ai_response.get('score', 0)
+					ai_feedback = ai_response.get('feedback', {})
+					
+					# Normalize score to 1.0 max (if 0-10)
+					normalized_score = float(ai_score) / 10.0
+					total_score += normalized_score
+					
+					is_graded_correct = normalized_score >= 0.5
+					if is_graded_correct:
+						correct_count += 1
+					else:
+						incorrect_count += 1
+
+					breakdown[qid] = {
+						'question_id': question.id,
+						'question_text': question.content[:100],
+						'topic': question.topic.name if question.topic else None,
+						'difficulty': question.difficulty,
+						'user_answer_text': user_answer_id,
+						'is_correct': is_graded_correct,
+						'score': ai_score,
+						'critique': ai_feedback.get('critique'),
+						'accuracy': ai_feedback.get('accuracy'),
+						'completeness': ai_feedback.get('completeness'),
+						'clarity': ai_feedback.get('clarity'),
+						'improvement_tips': ai_response.get('improvement_tips', []),
+						'explanation': question.guidance or "Model answer provided in detailed review."
+					}
+				except Exception as ai_err:
+					logger.error(f"AI grading failed for question {qid}: {ai_err}")
+					# Fallback to manual/pending
+					breakdown[qid] = {
+						'question_id': question.id,
+						'question_text': question.content[:100],
+						'topic': question.topic.name if question.topic else None,
+						'difficulty': question.difficulty,
+						'user_answer_text': user_answer_id,
+						'is_correct': None, # Pending
+						'explanation': question.guidance or "Model answer provided in detailed review."
+					}
 				continue
 
 			# Get correct answer from map
@@ -122,6 +184,7 @@ def auto_grade_exam(attempt: ExamAttempt):
 					total_score += 1
 				else:
 					incorrect_count += 1
+					SRSService.auto_generate_from_mistake(attempt.user, type('obj', (object,), {'is_correct': False, 'question': question}))
 			else:
 				unanswered_count += 1
 			

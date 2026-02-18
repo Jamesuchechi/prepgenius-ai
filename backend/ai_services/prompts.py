@@ -3,13 +3,13 @@ import json
 class PromptTemplates:
     @staticmethod
     def get_system_prompt():
-        return "You are an expert exam question generator for Nigerian students (JAMB, WAEC, NECO). You must output ONLY valid JSON."
+        return "You are an expert exam question generator for standardized exams (JAMB, WAEC, NECO, SAT, IELTS, TOEFL, GRE). You must output ONLY valid JSON."
 
     @staticmethod
     def get_topic_generator_prompt(subject):
         return f"""
-        Generate a list of 15-30 or more key study topics for the subject '{subject}', tailored for Nigerian students preparing for JAMB, WAEC, and NECO exams.
-        The topics should cover the standard curriculum.
+        Generate a list of 30-60 or more key study topics for the subject '{subject}', tailored for students preparing for standardized exams (JAMB, WAEC, NECO, SAT, IELTS, TOEFL, GRE).
+        The topics should cover the relevant standard curriculum.
         
         Output schema:
         {{
@@ -28,7 +28,7 @@ class PromptTemplates:
     def get_question_prompt(topic, difficulty, count, q_type, context=""):
         base_instruction = f"""
         Generate {count} {difficulty} questions on the topic '{topic}' for {q_type} format.
-        Ensure the questions are at a {difficulty} level suitable for JAMB/WAEC students.
+        Ensure the questions are at a {difficulty} level suitable for the relevant exam standards (e.g., JAMB, WAEC, SAT, IELTS, TOEFL, or GRE).
         
         CRITICAL: Provide a DETAILED explanation for the correct answer. 
         Where applicable (especially for calculations), include alternative methods or shortcuts to arrive at the answer.
@@ -168,8 +168,8 @@ class PromptTemplates:
         subject_text = f" in {subject}" if subject else ""
         exam_text = f" for {exam_type} exams" if exam_type else ""
         
-        return f"""You are an expert AI tutor helping Nigerian students prepare{exam_text}.
-You are knowledgeable{subject_text} and other subjects commonly tested in Nigerian standardized exams (JAMB, WAEC, NECO, GCE).
+        return f"""You are an expert AI tutor helping students prepare{exam_text}.
+You are knowledgeable{subject_text} and other subjects commonly tested in standardized exams (JAMB, WAEC, NECO, GCE, SAT, IELTS, TOEFL, GRE).
 
 Your role is to:
 - Address the student by their name occasionally to make it personal.
@@ -247,5 +247,40 @@ Tutor:"""
                 }}
             ],
             "study_tips": ["Tip 1", "Tip 2"]
+        }}
+        """
+    @staticmethod
+    def get_theory_grading_prompt(question_text, user_answer, model_answer, subject, exam_type):
+        """Generates a prompt for AI-based theory/essay grading."""
+        return f"""
+        You are an expert examiner for {exam_type} in the subject {subject}.
+        Your task is to grade a student's theory/essay response based on a model answer.
+        
+        Question: {question_text}
+        Model Answer/Guidance: {model_answer}
+        Act as an experienced examiner for the {exam_type} {subject} exam.
+        Your goal is to provide a FAIR and STRICT evaluation of the student's answer based on the model answer provided.
+        
+        Question: {question_text}
+        Student's Answer: {user_answer}
+        Model Answer/Guidance: {model_answer}
+        
+        Grading Criteria:
+        1. Accuracy (0-4 points): Is the information correct?
+        2. Completeness (0-4 points): Are all key points addressed?
+        3. Clarity & Structure (0-2 points): Is it well-written?
+        
+        CRITICAL: If the answer is IRRELEVANT to the question or addresses a completely different topic, the total score MUST be 0.
+        
+        Output only a JSON object with this structure:
+        {{
+            "score": total_score_out_of_10,
+            "feedback": {{
+                "critique": "Overall evaluation",
+                "accuracy": "Evaluation of accuracy",
+                "completeness": "Evaluation of completeness",
+                "clarity": "Evaluation of clarity"
+            }},
+            "improvement_tips": ["Tip 1", "Tip 2", "Tip 3"]
         }}
         """

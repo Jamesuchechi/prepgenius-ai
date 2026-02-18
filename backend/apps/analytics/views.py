@@ -7,6 +7,7 @@ from .serializers import ProgressTrackerSerializer, TopicMasterySerializer, Stud
 from apps.quiz.models import QuizAttempt, AnswerAttempt
 from apps.quiz.serializers import QuizAttemptSerializer
 from .services.analytics_engine import AnalyticsEngine
+from .services.performance_analyzer import PerformanceAnalyzer
 
 class AnalyticsViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -39,8 +40,11 @@ class AnalyticsViewSet(viewsets.ViewSet):
         # Weakest topics
         weak_qs = TopicMastery.objects.filter(user=request.user, mastery_score__lt=70).order_by('mastery_score')[:3]
         
-        # Predicted Score
+        # Predicted Score (Legacy logic)
         prediction = AnalyticsEngine.calculate_predicted_score(request.user)
+        
+        # New Readiness Score
+        readiness = PerformanceAnalyzer.calculate_readiness_score(request.user)
         
         # Study Patterns
         patterns = AnalyticsEngine.detect_optimal_study_time(request.user)
@@ -50,6 +54,7 @@ class AnalyticsViewSet(viewsets.ViewSet):
             "total_questions": progress.total_questions_attempted,
             "total_exams": progress.total_mock_exams_taken,
             "tutor_interactions": progress.tutor_interactions_count,
+            "readiness": readiness,
             "predicted_score": prediction,
             "study_patterns": {
                 "optimal_study_time": patterns
@@ -57,6 +62,22 @@ class AnalyticsViewSet(viewsets.ViewSet):
             "weak_topics": TopicMasterySerializer(weak_qs, many=True).data,
             "accuracy_percentage": progress.accuracy_percentage,
         })
+
+    @action(detail=False, methods=['get'])
+    def readiness(self, request):
+        """
+        Get comprehensive readiness score and breakdown.
+        """
+        data = PerformanceAnalyzer.calculate_readiness_score(request.user)
+        return Response(data)
+
+    @action(detail=False, methods=['get'])
+    def subject_mastery(self, request):
+        """
+        Get aggregated mastery scores for subjects (radar chart data).
+        """
+        data = PerformanceAnalyzer.get_subject_mastery(request.user)
+        return Response(data)
 
     @action(detail=False, methods=['get'])
     def sessions(self, request):

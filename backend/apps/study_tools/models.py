@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from apps.content.models import Subject, Topic
 import uuid
 import os
 
@@ -66,3 +68,59 @@ class DocumentChunk(models.Model):
 
     def __str__(self):
         return f"{self.document.title} - Chunk {self.chunk_index}"
+
+class Flashcard(models.Model):
+    """
+    Stores flashcards for Spaced Repetition System (SRS).
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='flashcards')
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True)
+    topic = models.ForeignKey(Topic, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    front = models.TextField(help_text="The question or prompt")
+    back = models.TextField(help_text="The answer or explanation")
+    
+    # SRS Metadata (SM-2 Algorithm)
+    ease_factor = models.FloatField(default=2.5)
+    interval = models.IntegerField(default=0, help_text="Interval in days")
+    repetitions = models.IntegerField(default=0)
+    next_review = models.DateField(default=timezone.now)
+    
+    # Source tracking
+    source_type = models.CharField(max_length=50, choices=[
+        ('manual', 'Manual'),
+        ('ai_generated', 'AI Generated'),
+        ('exam_mistake', 'Exam Mistake')
+    ], default='manual')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['next_review', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'next_review']),
+            models.Index(fields=['subject', 'topic']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.front[:50]}"
+
+class FlashcardReviewLog(models.Model):
+    """
+    Tracks review history for a flashcard.
+    """
+    flashcard = models.ForeignKey(Flashcard, on_delete=models.CASCADE, related_name='review_logs')
+    rating = models.IntegerField(help_text="0: Again, 1: Hard, 2: Good, 3: Easy")
+    reviewed_at = models.DateTimeField(auto_now_add=True)
+    
+    # Snapshot of SRS state before this review
+    old_interval = models.IntegerField()
+    old_ease_factor = models.FloatField()
+    
+    # Snapshot after review
+    new_interval = models.IntegerField()
+    new_ease_factor = models.FloatField()
+
+    def __str__(self):
+        return f"Review for {self.flashcard.id} at {self.reviewed_at}"

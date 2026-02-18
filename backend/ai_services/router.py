@@ -146,7 +146,40 @@ Return a JSON response with:
         
         logger.warning(f"AI-based study plan generation failed. Using template-based approach. Errors: {'; '.join(errors)}")
         return None  # Return None to trigger template-based generation
-    
+
+    def grade_theory_question(self, question_text, user_answer, model_answer, subject, exam_type):
+        """Grades a theory/essay question response."""
+        errors = []
+        for name, client in self.clients:
+            try:
+                if hasattr(client, 'client') and client.client is None:
+                    continue
+                
+                if hasattr(client, 'grade_theory_question'):
+                    logger.info(f"Attempting theory grading with {name}...")
+                    return client.grade_theory_question(question_text, user_answer, model_answer, subject, exam_type)
+            except Exception as e:
+                logger.warning(f"{name} failed to grade theory: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
+        raise Exception(f"All AI providers failed theory grading. Errors: {'; '.join(errors)}")
+
+    async def grade_theory_question_async(self, question_text, user_answer, model_answer, subject, exam_type):
+        """Grades a theory/essay question response asynchronously."""
+        errors = []
+        for name, client in self.clients:
+            try:
+                # Assuming AsyncGroq, etc. handle this
+                if hasattr(client, 'grade_theory_question_async'):
+                    logger.info(f"Attempting async theory grading with {name}...")
+                    return await client.grade_theory_question_async(question_text, user_answer, model_answer, subject, exam_type)
+            except Exception as e:
+                logger.warning(f"{name} failed async theory grade: {e}")
+                errors.append(f"{name}: {str(e)}")
+                continue
+        
+        # Fallback to sync if async failed or not implemented
+        return self.grade_theory_question(question_text, user_answer, model_answer, subject, exam_type)
     def generate_chat_response(self, message, conversation_history=None, system_prompt=None, context=None):
         """Generate a chat response using AI providers with conversation context."""
         errors = []

@@ -91,6 +91,9 @@ def generate_mock_exam_by_subject_name(
 				'NECO': {'code': 'NG', 'country': 'Nigeria', 'board': 'NECO', 'region': 'Africa', 'currency': 'NGN'},
 				'IGCSE': {'code': 'GB', 'country': 'United Kingdom', 'board': 'Cambridge', 'region': 'Europe', 'currency': 'GBP'},
 				'SAT': {'code': 'US', 'country': 'United States', 'board': 'College Board', 'region': 'Americas', 'currency': 'USD'},
+				'IELTS': {'code': 'GB', 'country': 'United Kingdom', 'board': 'British Council', 'region': 'Europe', 'currency': 'GBP'},
+				'TOEFL': {'code': 'US', 'country': 'United States', 'board': 'ETS', 'region': 'Americas', 'currency': 'USD'},
+				'GRE': {'code': 'US', 'country': 'United States', 'board': 'ETS', 'region': 'Americas', 'currency': 'USD'},
 				'OTHER': {'code': 'XX', 'country': 'International', 'board': exam_format.upper(), 'region': 'Global', 'currency': 'USD'},
 			}
 			key = exam_format.upper()
@@ -167,14 +170,7 @@ def generate_mock_exam_by_subject_name(
 						params['type'] = aloc_type
 					if year:
 						params['year'] = str(year)
-					
-					# Parallel Fetching Strategy
-					# We need to fetch 'remaining' questions.
-					# Since /q returns 1 question per call, we need multiple calls.
-					# Use ThreadPoolExecutor to make concurrent requests.
 
-					# Determine number of workers and total calls needed
-					# We'll fetch slightly more than needed to account for duplicates
 					target_fetch = remaining + 5 
 					max_workers = 10 # Reasonable concurrency limit
 					
@@ -489,19 +485,9 @@ def generate_mock_exam_by_subject_name(
 			except Exception as ai_err:
 				logger.warning(f"Failed to generate theory questions: {ai_err}")
 
-		# Shuffle and trim (ensure we keep theory questions if possible)
-		# We shuffle but prioritize keeping the theory questions at the end or mixed?
-		# Standard is usually Section A (Obj) and Section B (Theory).
-		# For now, simple shuffle.
+		# Shuffle questions to avoid predictable patterns
 		random.shuffle(selected_questions)
-		# NOTE: We might exceed num_questions if we added theory on top. 
-		# If user requested 60, and we got 60 obj + 4 theory, we probably want 64 total? 
-		# Or should we respect num_questions exactly? 
-		# For "Past Questions" mode, users usually want "Available Obj" + "Standard Theory".
-		# So we won't trim STRICTLY if it means losing the theory questions we just generated.
-		# But 'selected_questions' list is what gets added to exam.
 
-		
 		# Create MockExam for past questions
 		with transaction.atomic():
 			exam_title = f"{exam_format} Past Exam - {subject.name} ({year})"
@@ -542,6 +528,9 @@ def generate_mock_exam_by_subject_name(
 				'NECO': {'code': 'NG', 'country': 'Nigeria', 'board': 'NECO', 'region': 'Africa', 'currency': 'NGN'},
 				'IGCSE': {'code': 'GB', 'country': 'United Kingdom', 'board': 'Cambridge', 'region': 'Europe', 'currency': 'GBP'},
 				'SAT': {'code': 'US', 'country': 'United States', 'board': 'College Board', 'region': 'Americas', 'currency': 'USD'},
+				'IELTS': {'code': 'GB', 'country': 'United Kingdom', 'board': 'British Council', 'region': 'Europe', 'currency': 'GBP'},
+				'TOEFL': {'code': 'US', 'country': 'United States', 'board': 'ETS', 'region': 'Americas', 'currency': 'USD'},
+				'GRE': {'code': 'US', 'country': 'United States', 'board': 'ETS', 'region': 'Americas', 'currency': 'USD'},
 				'OTHER': {'code': 'XX', 'country': 'International', 'board': exam_format.upper(), 'region': 'Global', 'currency': 'USD'},
 			}
 			key = format_key or 'OTHER'
@@ -564,6 +553,9 @@ def generate_mock_exam_by_subject_name(
 				'NECO': {'duration': 120, 'pass_percent': 0.5},
 				'IGCSE': {'duration': 90, 'pass_percent': 0.5},
 				'SAT': {'duration': 180, 'pass_percent': 0.5},
+				'IELTS': {'duration': 165, 'pass_percent': 0.6},
+				'TOEFL': {'duration': 180, 'pass_percent': 0.6},
+				'GRE': {'duration': 225, 'pass_percent': 0.6},
 				'OTHER': {'duration': 60, 'pass_percent': 0.5}
 			}
 
