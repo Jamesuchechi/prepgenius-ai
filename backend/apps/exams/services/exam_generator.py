@@ -341,12 +341,23 @@ def generate_mock_exam_by_subject_name(
 
 							options = q_data.get('options', [])
 							correct = q_data.get('correct_answer')
-							for opt in options:
+							correct_idx = q_data.get('correct_answer_index')
+							
+							for idx, opt in enumerate(options):
 								is_correct = False
-								if isinstance(correct, int) and 0 <= correct < len(options):
-									is_correct = (options.index(opt) == correct)
-								elif isinstance(correct, str):
-									is_correct = (opt.strip() == correct.strip())
+								# 1. Primary check: correct_answer_index
+								if correct_idx is not None:
+									try:
+										is_correct = (idx == int(correct_idx))
+									except (ValueError, TypeError):
+										pass
+								
+								# 2. Secondary check: correct_answer (string or int matching index)
+								if not is_correct and correct is not None:
+									if isinstance(correct, int) and 0 <= correct < len(options):
+										is_correct = (idx == correct)
+									elif isinstance(correct, str):
+										is_correct = (opt.strip().lower() == correct.strip().lower())
 								
 								Answer.objects.create(
 									question=q,
@@ -682,15 +693,24 @@ def generate_mock_exam_by_subject_name(
 					if q.question_type == 'MCQ':
 						options = q_data.get('options', [])
 						correct = q_data.get('correct_answer')
-						for opt in options:
+						correct_idx = q_data.get('correct_answer_index')
+						
+						for idx, opt in enumerate(options):
 							is_correct = False
-							try:
-								if isinstance(correct, int):
-									is_correct = (options.index(opt) == int(correct))
-							except Exception:
-								is_correct = False
-							if isinstance(correct, str):
-								is_correct = (opt.strip() == correct.strip())
+							# 1. Primary check: correct_answer_index
+							if correct_idx is not None:
+								try:
+									is_correct = (idx == int(correct_idx))
+								except (ValueError, TypeError):
+									pass
+							
+							# 2. Secondary check: correct_answer (string or int matching index)
+							if not is_correct and correct is not None:
+								if isinstance(correct, int) and 0 <= correct < len(options):
+									is_correct = (idx == correct)
+								elif isinstance(correct, str):
+									is_correct = (opt.strip().lower() == correct.strip().lower())
+
 							Answer.objects.create(
 								question=q,
 								content=opt,

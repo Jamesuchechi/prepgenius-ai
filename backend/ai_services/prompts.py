@@ -30,7 +30,11 @@ class PromptTemplates:
         Generate {count} {difficulty} questions on the topic '{topic}' for {q_type} format.
         Ensure the questions are at a {difficulty} level suitable for the relevant exam standards (e.g., JAMB, WAEC, SAT, IELTS, TOEFL, or GRE).
         
-        CRITICAL: Provide a DETAILED explanation for the correct answer. 
+        CRITICAL: Mathematical and logical accuracy is paramount. 
+        - Double-check all calculations. 
+        - Ensure that the options provided are correct and that only one is the correct answer.
+        - DO NOT invent arbitrary "scaling factors" or "multipliers" unless they are part of a standard formula.
+        - Provide a DETAILED explanation for the correct answer. 
         Where applicable (especially for calculations), include alternative methods or shortcuts to arrive at the answer.
         The explanation should be educational and help the student learn.
         

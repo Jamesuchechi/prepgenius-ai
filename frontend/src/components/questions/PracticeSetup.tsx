@@ -128,9 +128,23 @@ export default function PracticeSetup({ onStart }: PracticeSetupProps) {
                             className="w-full h-12 px-4 rounded-xl border-2 border-gray-100 focus:border-[var(--orange)] focus:outline-none transition-colors appearance-none bg-gray-50/50"
                         >
                             <option value="">Select Subject</option>
-                            {subjects.map((s) => (
-                                <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
-                            ))}
+                            {(() => {
+                                const examName = examTypes.find(et => et.id.toString() === selectedExamType)?.name.toUpperCase() || '';
+                                const isStandardized = ['IELTS', 'TOEFL', 'GRE', 'SAT'].some(name => examName.includes(name));
+
+                                return subjects
+                                    .filter(s => {
+                                        if (isStandardized) {
+                                            const standardizedName = ['IELTS', 'TOEFL', 'GRE', 'SAT'].find(n => examName.includes(n));
+                                            return s.name.toUpperCase().includes(standardizedName || '');
+                                        }
+                                        // For general exams (JAMB, WAEC, etc.), show regular subjects
+                                        return !['IELTS', 'TOEFL', 'GRE', 'SAT'].some(name => s.name.toUpperCase().includes(name));
+                                    })
+                                    .map((s) => (
+                                        <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+                                    ));
+                            })()}
                         </select>
                     </div>
 

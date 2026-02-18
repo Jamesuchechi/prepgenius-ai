@@ -80,26 +80,37 @@ class QuestionGenerationService:
 
     def _create_mcq_answers(self, question, data):
         options = data.get('options', [])
-        correct_answer = data.get('correct_answer', '')
+        correct = data.get('correct_answer')
+        correct_idx = data.get('correct_answer_index')
         explanation = data.get('explanation', '')
         
-        for option in options:
-            # Robust comparison: normalize strings
-            norm_option = str(option).strip().lower()
-            norm_correct = str(correct_answer).strip().lower()
+        for idx, option in enumerate(options):
+            is_correct = False
             
-            is_correct = (norm_option == norm_correct)
+            # 1. Primary check: correct_answer_index
+            if correct_idx is not None:
+                try:
+                    is_correct = (idx == int(correct_idx))
+                except (ValueError, TypeError):
+                    pass
             
-            if not is_correct and len(norm_correct) > 3:
-                 if norm_correct in norm_option:
-                     is_correct = True
+            # 2. Secondary check: correct_answer (string or index)
+            if not is_correct and correct is not None:
+                if isinstance(correct, int) and 0 <= correct < len(options):
+                    is_correct = (idx == correct)
+                elif isinstance(correct, str):
+                    norm_option = str(option).strip().lower()
+                    norm_correct = str(correct).strip().lower()
+                    is_correct = (norm_option == norm_correct)
+                    if not is_correct and len(norm_correct) > 3:
+                        if norm_correct in norm_option:
+                            is_correct = True
 
             Answer.objects.create(
                 question=question,
                 content=option,
                 is_correct=is_correct,
-                explanation=explanation 
-                if is_correct else "" 
+                explanation=explanation if is_correct else "" 
             )
 
     def _create_theory_answer(self, question, data):

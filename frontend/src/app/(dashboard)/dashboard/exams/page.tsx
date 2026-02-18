@@ -333,18 +333,50 @@ export default function ExamsPage() {
               {/* Subject (always shown) */}
               <div>
                 <label className="block text-sm text-gray-700 mb-1">Subject</label>
-                <input
-                  list="subjects-list"
-                  value={createSubjectName}
-                  onChange={(e) => setCreateSubjectName(e.target.value)}
-                  placeholder={createMode === 'past_questions' ? 'e.g. Biology, Mathematics' : 'Type a subject (e.g. Biology, World History)'}
-                  className="w-full border rounded-lg p-2"
-                />
-                <datalist id="subjects-list">
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.name} />
-                  ))}
-                </datalist>
+                {(() => {
+                  const examFormat = createExamFormat.toUpperCase();
+                  const isStandardized = ['IELTS', 'TOEFL', 'GRE', 'SAT'].some(name => examFormat.includes(name));
+
+                  const filteredSubjects = subjects.filter(s => {
+                    if (isStandardized) {
+                      const standardizedName = ['IELTS', 'TOEFL', 'GRE', 'SAT'].find(n => examFormat.includes(n));
+                      return s.name.toUpperCase().includes(standardizedName || '');
+                    }
+                    return !['IELTS', 'TOEFL', 'GRE', 'SAT'].some(name => s.name.toUpperCase().includes(name));
+                  });
+
+                  if (isStandardized) {
+                    return (
+                      <select
+                        value={createSubjectName}
+                        onChange={(e) => setCreateSubjectName(e.target.value)}
+                        className="w-full border rounded-lg p-2"
+                      >
+                        <option value="">Select a component</option>
+                        {filteredSubjects.map((s) => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <input
+                        list="subjects-list"
+                        value={createSubjectName}
+                        onChange={(e) => setCreateSubjectName(e.target.value)}
+                        placeholder={createMode === 'past_questions' ? 'e.g. Biology, Mathematics' : 'Type a subject (e.g. Biology, World History)'}
+                        className="w-full border rounded-lg p-2"
+                      />
+                      <datalist id="subjects-list">
+                        {filteredSubjects.map((s) => (
+                          <option key={s.id} value={s.name} />
+                        ))}
+                      </datalist>
+                    </>
+                  );
+                })()}
                 <p className="text-xs text-gray-400 mt-1">
                   {createMode === 'past_questions'
                     ? 'Select a subject to fetch past exam questions. If past questions are unavailable, AI-generated questions matching the format will be created instead.'
