@@ -2,17 +2,15 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/authStore'
 
 export default function Footer() {
-    const { isAuthenticated } = useAuthStore()
 
     const footerLinks = {
         product: [
             { name: 'Features', href: '/#features' },
-            { name: 'Pricing', href: isAuthenticated ? '/dashboard/pricing' : '/#pricing' },
-            { name: 'Mock Exams', href: isAuthenticated ? '/dashboard/exams' : '/exams' },
-            { name: 'AI Tutor', href: isAuthenticated ? '/dashboard/ai-tutor' : '/tutor' }
+            { name: 'Pricing', href: '/dashboard/pricing' },
+            { name: 'Mock Exams', href: '/dashboard/exams' },
+            { name: 'AI Tutor', href: '/dashboard/ai-tutor' }
         ],
         resources: [
             { name: 'Blog', href: '/blog' },

@@ -18,21 +18,21 @@ export default function StaticPageLayout({ title, subtitle, children }: StaticPa
     // Base content for the static page
     const content = (
         <div className="flex-1">
-            <header className="bg-gradient-to-br from-[var(--blue)] to-[var(--blue-darker)] py-20 px-8 text-center text-white">
-                <div className="max-w-[800px] mx-auto">
-                    <h1 className="font-display text-4xl md:text-5xl font-extrabold mb-6">
+            <header className="bg-blue-700 bg-gradient-to-br from-blue-700 to-blue-900 py-14 px-8 text-center text-white">
+                <div className="max-w-3xl mx-auto">
+                    <h1 className="font-display text-4xl md:text-5xl font-extrabold mb-4 text-white">
                         {title}
                     </h1>
                     {subtitle && (
-                        <p className="text-xl text-blue-100/80 leading-relaxed">
+                        <p className="text-lg text-white/90 leading-relaxed">
                             {subtitle}
                         </p>
                     )}
                 </div>
             </header>
 
-            <section className="py-20 px-8">
-                <div className="max-w-[800px] mx-auto prose prose-lg prose-slate max-w-none">
+            <section className="py-10 px-6 md:px-12">
+                <div className="max-w-7xl mx-auto">
                     {children}
                 </div>
             </section>

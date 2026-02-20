@@ -15,7 +15,8 @@ export default function ChatPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { activeSession, setActiveSession } = useChatStore();
+    const { sessions, activeSessionId, setActiveSessionId, setSessions } = useChatStore();
+    const activeSession = sessions.find(s => s.id === activeSessionId) ?? null;
 
     useEffect(() => {
         const initializeChat = async () => {
@@ -36,7 +37,8 @@ export default function ChatPage() {
                     });
                 }
 
-                setActiveSession(session);
+                setSessions(sessions.length > 0 ? sessions : [session]);
+                setActiveSessionId(session.id);
             } catch (err) {
                 console.error('Failed to initialize chat:', err);
                 setError('Failed to load chat. Please try again.');
@@ -46,7 +48,7 @@ export default function ChatPage() {
         };
 
         initializeChat();
-    }, [setActiveSession]);
+    }, [setActiveSessionId]);
 
     if (loading) {
         return (

@@ -53,8 +53,8 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
             border: '1px solid #ccc',
             borderRadius: '0.5rem',
           }}
-          formatter={(value, name, props) => [
-            `${value.toFixed(1)}%`,
+          formatter={(value) => [
+            `${typeof value === 'number' ? value.toFixed(1) : value}%`,
             'Mastery Level',
           ]}
         />

@@ -13,6 +13,8 @@ import Leaderboard from '@/components/gamification/Leaderboard'
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
 import { Trophy, Award } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
+import { studyPlanApi } from '@/services/study-plan'
+import type { StudyPlan } from '@/types/study-plan'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
@@ -24,6 +26,25 @@ export default function DashboardPage() {
     queryKey: ['gamification-profile'],
     queryFn: gamificationApi.getProfile
   });
+
+  // Fetch active study plan for exam countdown
+  const { data: activePlan } = useQuery<StudyPlan | null>({
+    queryKey: ['current-study-plan'],
+    queryFn: () => studyPlanApi.getCurrentPlan()
+  });
+
+  const getDaysUntil = (date: string) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return Math.max(0, Math.ceil((new Date(date).getTime() - today.getTime()) / 86400000));
+  };
+
+  const daysUntil = activePlan ? getDaysUntil(activePlan.exam_date) : null;
+  const prepPct = activePlan && activePlan.total_topics && activePlan.total_topics > 0
+    ? Math.round(((activePlan.completed_topics ?? 0) / activePlan.total_topics) * 100)
+    : 0;
+  const examLabel = activePlan
+    ? (typeof activePlan.exam_type === 'object' ? activePlan.exam_type?.full_name : activePlan.name)
+    : 'Your Exam';
 
   useEffect(() => {
     // Artificial delay to simulate loading or just until we have data
@@ -142,19 +163,30 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Exam Countdown */}
-          <div className="bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.8s_backwards]">
-            <h3 className="font-display text-xl font-bold mb-2">JAMB 2026</h3>
-            <div className="text-5xl font-display font-extrabold mb-2">89</div>
-            <p className="text-white/90">{t('dashboard.days_until_exam')}</p>
-            <div className="mt-4 pt-4 border-t border-white/20">
-              <div className="text-sm text-white/80 mb-1">{t('dashboard.prep_level')}</div>
-              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full w-[10%]"></div>
+          {/* Exam Countdown — driven by active study plan */}
+          {activePlan && daysUntil !== null ? (
+            <div className="bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.8s_backwards]">
+              <h3 className="font-display text-lg font-bold mb-1 truncate">{examLabel}</h3>
+              <div className="text-5xl font-display font-extrabold mb-1">{daysUntil}</div>
+              <p className="text-white/90 text-sm">{t('dashboard.days_until_exam')}</p>
+              <div className="mt-4 pt-4 border-t border-white/20">
+                <div className="text-sm text-white/80 mb-1">{t('dashboard.prep_level')}</div>
+                <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-white rounded-full transition-all" style={{ width: `${prepPct}%` }} />
+                </div>
+                <div className="text-right text-sm font-semibold mt-1">{prepPct}%</div>
               </div>
-              <div className="text-right text-sm font-semibold mt-1">10%</div>
             </div>
-          </div>
+          ) : (
+            <Link href="/dashboard/study-plan" className="block bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.8s_backwards] hover:opacity-90 transition-opacity">
+              <div className="text-3xl mb-2">📅</div>
+              <h3 className="font-display text-lg font-bold mb-1">No Active Study Plan</h3>
+              <p className="text-white/90 text-sm">Create a study plan to track your exam countdown and preparation level.</p>
+              <div className="mt-4 inline-block bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-4 py-2 rounded-full transition-colors">
+                Create Plan →
+              </div>
+            </Link>
+          )}
 
           {/* Badges Widget */}
           <div className="animate-[fadeInUp_0.6s_ease-out_0.9s_backwards]">
