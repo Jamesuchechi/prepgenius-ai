@@ -72,7 +72,7 @@ export default function AIGenerationForm({ onQuizGenerated }: AIGenerationFormPr
         if (!selectedSubjectId || !selectedTopic) return
         setLoading(true)
         try {
-            const quiz = await quizApi.generate({
+            const result = await quizApi.generate({
                 subject_id: Number(selectedSubjectId),
                 topic: topics.find(t => String(t.id) === selectedTopic)?.name || "General",
                 difficulty,
@@ -80,11 +80,33 @@ export default function AIGenerationForm({ onQuizGenerated }: AIGenerationFormPr
                 exam_type: questionType
             });
 
-            toast.success(`Quiz "${quiz.title}" generated and saved! ✨`)
-            onQuizGenerated(quiz)
-        } catch (err) {
+            if ('task_id' in result && result.task_id) {
+                // Background processing started, begin polling
+                const taskId = result.task_id;
+                let isComplete = false;
+
+                while (!isComplete) {
+                    await new Promise(resolve => setTimeout(resolve, 3000)); // poll every 3s
+                    const statusRes = await quizApi.getGenerationStatus(taskId);
+
+                    if (statusRes.status === 'success' && statusRes.quiz) {
+                        toast.success(`Quiz "${statusRes.quiz.title}" generated and saved! ✨`);
+                        onQuizGenerated(statusRes.quiz);
+                        isComplete = true;
+                    } else if (statusRes.status === 'failed') {
+                        throw new Error(statusRes.error || "Generation failed");
+                    }
+                    // if processing, continue loop
+                }
+            } else {
+                // Synchronous fallback just in case
+                const generatedQuiz = result as Quiz;
+                toast.success(`Quiz "${generatedQuiz.title}" generated and saved! ✨`)
+                onQuizGenerated(generatedQuiz)
+            }
+        } catch (err: any) {
             console.error("Failed to generate questions", err)
-            toast.error("AI Generation failed. Please try again.")
+            toast.error(err.message || "AI Generation failed. Please try again.")
         } finally {
             setLoading(false)
         }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { Camera, Save, User as UserIcon } from 'lucide-react'
+import Image from 'next/image'
 import { settingsApi } from '@/lib/api/settings'
 import { toast } from 'sonner'
 
@@ -40,9 +41,9 @@ export default function ProfileSettings() {
             <div className="flex flex-col md:flex-row items-start gap-8">
                 {/* Avatar Upload */}
                 <div className="relative group">
-                    <div className="w-32 h-32 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-3xl flex items-center justify-center text-white text-4xl font-bold shadow-xl">
+                    <div className="relative w-32 h-32 bg-gradient-to-br from-[var(--blue)] to-[var(--blue-light)] rounded-3xl flex items-center justify-center text-white text-4xl font-bold shadow-xl">
                         {user?.profile_picture ? (
-                            <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover rounded-3xl" />
+                            <Image src={user.profile_picture} alt="Profile" fill className="object-cover rounded-3xl" />
                         ) : (
                             <span>{user?.first_name?.[0]}{user?.last_name?.[0]}</span>
                         )}

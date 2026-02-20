@@ -1,9 +1,22 @@
 import type { Metadata } from 'next'
+import { Syne, Bricolage_Grotesque } from 'next/font/google'
 import './globals.css'
 import { LayoutClient } from '@/components/LayoutClient'
 import QueryProvider from '@/components/QueryProvider'
 import { AuthContextProvider } from '@/components/AuthContextProvider'
 import Script from 'next/script'
+
+const syne = Syne({
+  subsets: ['latin'],
+  variable: '--font-syne',
+  display: 'swap',
+})
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ['latin'],
+  variable: '--font-bricolage',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'PrepGenius AI - Master Your Exams with AI-Powered Learning',
@@ -16,10 +29,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_NG',
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PrepGenius',
+  },
+}
+
+export const viewport = {
+  themeColor: '#0F52BA',
 }
 
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { ThemeSync } from '@/components/theme/ThemeSync'
+import InstallPrompt from '@/components/pwa/InstallPrompt'
 
 export default function RootLayout({
   children,
@@ -27,12 +51,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${syne.variable} ${bricolage.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-
-        <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
+        <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
       </head>
       <body>
         <ThemeProvider
@@ -42,6 +63,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ThemeSync />
+          <InstallPrompt />
           <QueryProvider>
             <AuthContextProvider>
               <LayoutClient>{children}</LayoutClient>

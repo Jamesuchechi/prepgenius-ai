@@ -48,7 +48,7 @@ class ExamType(models.Model):
     max_score = models.IntegerField(null=True)
     description = models.TextField()
     exam_format = models.JSONField()
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -75,7 +75,7 @@ class Subject(models.Model):
     description = models.TextField()
     is_core = models.BooleanField(default=False)
     aliases = models.JSONField(default=list)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -108,12 +108,12 @@ class Topic(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='topics')
     name = models.CharField(max_length=200)
     order = models.IntegerField(default=0)
-    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES)
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, db_index=True)
     estimated_hours = models.DecimalField(max_digits=4, decimal_places=1)
     description = models.TextField()
     learning_objectives = models.JSONField(default=list)
     prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     exam_types = models.ManyToManyField(ExamType, through='TopicExamMapping')
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -132,7 +132,7 @@ class Subtopic(models.Model):
     key_concepts = models.JSONField(default=list)
     formulas = models.JSONField(default=list)
     examples = models.JSONField(default=list)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

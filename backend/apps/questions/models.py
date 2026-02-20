@@ -23,8 +23,8 @@ class Question(models.Model):
     exam_type = models.ForeignKey(ExamType, on_delete=models.SET_NULL, null=True, blank=True)
     
     content = models.TextField(help_text="The question text")
-    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='MCQ')
-    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_LEVELS, default='MEDIUM')
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='MCQ', db_index=True)
+    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_LEVELS, default='MEDIUM', db_index=True)
     
     guidance = models.TextField(blank=True, help_text="AI guidance/hint for solving")
     metadata = models.JSONField(default=dict, blank=True, help_text="Extra data like ordering sequence or matching pairs")

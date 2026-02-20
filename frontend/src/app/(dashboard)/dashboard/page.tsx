@@ -6,12 +6,23 @@ import { useAuthStore } from '@/store/authStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import { analyticsApi, ProgressTracker, TopicMastery } from '@/lib/api/analytics'
 import { gamificationApi } from '@/lib/api/gamification'
-import { AnalyticsDashboard } from '@/components/dashboard/AnalyticsDashboard'
-import LevelProgress from '@/components/gamification/LevelProgress'
-import BadgeGrid from '@/components/gamification/BadgeGrid'
-import Leaderboard from '@/components/gamification/Leaderboard'
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
 import { Trophy, Award } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+
+const AnalyticsDashboard = dynamic(() => import('@/components/dashboard/AnalyticsDashboard').then(mod => mod.AnalyticsDashboard), {
+  loading: () => <div className="h-64 rounded-xl bg-slate-100 animate-pulse" />
+})
+const LevelProgress = dynamic(() => import('@/components/gamification/LevelProgress'), {
+  loading: () => <div className="h-48 rounded-xl bg-slate-100 animate-pulse" />
+})
+const BadgeGrid = dynamic(() => import('@/components/gamification/BadgeGrid'), {
+  loading: () => <div className="h-48 rounded-xl bg-slate-100 animate-pulse" />
+})
+const Leaderboard = dynamic(() => import('@/components/gamification/Leaderboard'), {
+  loading: () => <div className="h-64 rounded-xl bg-slate-100 animate-pulse" />
+})
 import { useQuery } from '@tanstack/react-query'
 import { studyPlanApi } from '@/services/study-plan'
 import type { StudyPlan } from '@/types/study-plan'
@@ -75,7 +86,9 @@ export default function DashboardPage() {
 
       {/* Analytics Dashboard (Replaces old Stats Grid) */}
       <div className="mb-8">
-        <AnalyticsDashboard />
+        <Suspense fallback={<div className="h-64 rounded-xl bg-slate-100 animate-pulse" />}>
+          <AnalyticsDashboard />
+        </Suspense>
       </div>
 
       {/* Main Grid */}
@@ -147,7 +160,9 @@ export default function DashboardPage() {
               icon={<Trophy className="w-5 h-5" />}
               defaultOpen={false}
             >
-              <Leaderboard />
+              <Suspense fallback={<div className="h-64 rounded-xl bg-slate-100 animate-pulse" />}>
+                <Leaderboard />
+              </Suspense>
             </CollapsibleCard>
           </div>
 
@@ -159,7 +174,9 @@ export default function DashboardPage() {
           {/* Level Progress Widget */}
           {gamificationProfile && (
             <div className="animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
-              <LevelProgress profile={gamificationProfile} />
+              <Suspense fallback={<div className="h-48 rounded-xl bg-slate-100 animate-pulse" />}>
+                <LevelProgress profile={gamificationProfile} />
+              </Suspense>
             </div>
           )}
 
@@ -196,7 +213,9 @@ export default function DashboardPage() {
               icon={<Award className="w-5 h-5" />}
               defaultOpen={false}
             >
-              <BadgeGrid />
+              <Suspense fallback={<div className="h-48 rounded-xl bg-slate-100 animate-pulse" />}>
+                <BadgeGrid />
+              </Suspense>
             </CollapsibleCard>
           </div>
 

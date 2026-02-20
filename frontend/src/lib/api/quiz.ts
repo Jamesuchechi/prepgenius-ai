@@ -56,7 +56,12 @@ export const quizApi = {
     },
 
     generate: async (params: QuizGenerationParams) => {
-        const response = await axios.post<Quiz>(`/quiz/quizzes/generate/`, params);
+        const response = await axios.post<{ task_id?: string, status: string } | Quiz>(`/quiz/quizzes/generate/`, params);
+        return response.data;
+    },
+
+    getGenerationStatus: async (taskId: string) => {
+        const response = await axios.get<{ status: string, quiz?: Quiz, error?: string }>(`/quiz/quizzes/generate_status/?task_id=${taskId}`);
         return response.data;
     },
 

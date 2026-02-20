@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { QuizService, GenerateQuizPayload } from '../../services/quizService';
+import { quizApi } from '../../lib/api/quiz';
 import { studyService, Document } from '../../services/studyService';
 import { Button } from '../ui/Button';
 import Input from '../ui/Input';
@@ -64,11 +65,30 @@ const QuizWizard: React.FC = () => {
                 if (doc) payload.topic = doc.title;
             }
 
-            const quiz = await QuizService.generate(payload);
-            router.push(`/dashboard/quiz/${quiz.id}`);
+            const result = await quizApi.generate(payload as any);
+
+            if ('task_id' in result && result.task_id) {
+                const taskId = result.task_id;
+                let isComplete = false;
+
+                while (!isComplete) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    const statusRes = await quizApi.getGenerationStatus(taskId);
+
+                    if (statusRes.status === 'success' && statusRes.quiz) {
+                        isComplete = true;
+                        router.push(`/dashboard/quiz/${statusRes.quiz.id}`);
+                    } else if (statusRes.status === 'failed') {
+                        throw new Error(statusRes.error || "Generation failed");
+                    }
+                }
+            } else {
+                const quiz = result as any;
+                router.push(`/dashboard/quiz/${quiz.id}`);
+            }
         } catch (err: any) {
             console.error(err);
-            setError(err.response?.data?.error || 'Failed to generate quiz.');
+            setError(err.response?.data?.error || err.message || 'Failed to generate quiz.');
         } finally {
             setLoading(false);
         }

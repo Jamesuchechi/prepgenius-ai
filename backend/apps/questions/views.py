@@ -9,17 +9,18 @@ from .serializers import (
     GenerateQuestionSerializer, AttemptQuestionSerializer, QuestionAttemptSerializer
 )
 from .services.question_generator import QuestionGenerationService
+from .throttling import AIGenerationRateThrottle
 
 class QuestionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for viewing questions.
     Standard list/retrieve hides correct answers.
     """
-    queryset = Question.objects.all()
+    queryset = Question.objects.select_related('subject', 'topic', 'exam_type').prefetch_related('answers')
     serializer_class = QuestionSerializer
     permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], throttle_classes=[AIGenerationRateThrottle])
     def generate(self, request):
         serializer = GenerateQuestionSerializer(data=request.data)
         if serializer.is_valid():

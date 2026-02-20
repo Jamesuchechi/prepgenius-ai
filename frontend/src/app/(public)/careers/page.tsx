@@ -130,7 +130,7 @@ export default function CareersPage() {
             <section className="bg-gradient-to-br from-[var(--blue)] to-[var(--blue-darker)] text-white p-12 rounded-3xl text-center">
                 <div className="text-5xl mb-4">💌</div>
                 <h2 className="text-3xl font-bold mb-4">Don't See a Fit?</h2>
-                <p className="text-blue-100 mb-8 max-w-lg mx-auto">
+                <p className="text-gray-900 mb-8 max-w-lg mx-auto">
                     We're always on the lookout for exceptional talent. Send us your CV and tell us how you'd contribute to our mission.
                 </p>
                 <a

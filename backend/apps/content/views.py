@@ -5,6 +5,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import *
 from .serializers import *
 from .services.topic_generator import TopicGenerationService
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
+@method_decorator(cache_page(60 * 60 * 2), name='dispatch')
 
 class CountryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Country.objects.filter(is_active=True)
@@ -13,6 +17,7 @@ class CountryViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['name', 'code']
     filterset_fields = ['region', 'is_active']
 
+@method_decorator(cache_page(60 * 60 * 2), name='dispatch')
 class ExamBoardViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ExamBoard.objects.filter(is_active=True)
     serializer_class = ExamBoardSerializer
@@ -20,6 +25,7 @@ class ExamBoardViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ['country', 'is_international', 'is_active']
     search_fields = ['name', 'full_name']
 
+@method_decorator(cache_page(60 * 60 * 2), name='dispatch')
 class ExamTypeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ExamType.objects.filter(is_active=True).select_related('exam_board__country')
     serializer_class = ExamTypeSerializer
@@ -27,6 +33,7 @@ class ExamTypeViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ['exam_board__country__code', 'level']
     search_fields = ['name', 'full_name']
 
+@method_decorator(cache_page(60 * 60 * 2), name='dispatch')
 class SubjectViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Subject.objects.filter(is_active=True).prefetch_related('topics')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]

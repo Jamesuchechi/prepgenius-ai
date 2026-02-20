@@ -6,11 +6,22 @@ import { analyticsApi, SpacedRepetitionItem } from '@/lib/api/analytics';
 import { Loader2, TrendingUp, Clock, Target, Zap, Award, BookOpen, MessageSquare } from 'lucide-react';
 import PerformanceHistory from '@/components/analytics/PerformanceHistory';
 import PerformanceTimeline from '@/components/analytics/PerformanceTimeline';
-import TopicMasteryCard from '@/components/analytics/TopicMasteryCard';
-import WeakAreasList from '@/components/analytics/WeakAreasList';
-import ProgressChart from '@/components/analytics/ProgressChart';
 import SpacedRepetitionQueue from '@/components/analytics/SpacedRepetitionQueue';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+
+// Lazy loaded heavy components
+const ProgressChart = dynamic(() => import('@/components/analytics/ProgressChart'), {
+    loading: () => <div className="h-64 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-slate-400">Loading chart...</div>,
+    ssr: false
+});
+const TopicMasteryCard = dynamic(() => import('@/components/analytics/TopicMasteryCard'), {
+    loading: () => <div className="h-48 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-slate-400">Loading mastery...</div>
+});
+const WeakAreasList = dynamic(() => import('@/components/analytics/WeakAreasList'), {
+    loading: () => <div className="h-48 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-slate-400">Loading weak areas...</div>
+});
 
 export default function AnalyticsDashboard() {
     const { data: overview, isLoading: overviewLoading } = useQuery({
@@ -133,7 +144,9 @@ export default function AnalyticsDashboard() {
                                 icon={<Award className="w-5 h-5" />}
                                 defaultOpen={true}
                             >
-                                <TopicMasteryCard data={mastery} />
+                                <Suspense fallback={<div className="h-48 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-slate-400">Loading mastery...</div>}>
+                                    <TopicMasteryCard data={mastery} />
+                                </Suspense>
                             </CollapsibleCard>
                         )}
 
@@ -148,7 +161,9 @@ export default function AnalyticsDashboard() {
                                 icon={<Target className="w-5 h-5" />}
                                 defaultOpen={false}
                             >
-                                <ProgressChart data={overview} />
+                                <Suspense fallback={<div className="h-64 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-slate-400">Loading chart...</div>}>
+                                    <ProgressChart data={overview} />
+                                </Suspense>
                             </CollapsibleCard>
                         )}
 
@@ -164,7 +179,9 @@ export default function AnalyticsDashboard() {
                                 icon={<Zap className="w-5 h-5 text-orange-500" />}
                                 defaultOpen={true}
                             >
-                                <WeakAreasList data={weakAreas} />
+                                <Suspense fallback={<div className="h-48 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-slate-400">Loading weak areas...</div>}>
+                                    <WeakAreasList data={weakAreas} />
+                                </Suspense>
                             </CollapsibleCard>
                         )}
 

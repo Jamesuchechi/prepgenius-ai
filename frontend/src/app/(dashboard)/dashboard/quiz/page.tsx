@@ -46,12 +46,28 @@ export default function QuizDashboardPage() {
 
     const deleteMutation = useMutation({
         mutationFn: quizApi.delete,
+        onMutate: async (deletedId) => {
+            await queryClient.cancelQueries({ queryKey: ['quizzes'] });
+            const previousQuizzes = queryClient.getQueryData(['quizzes']);
+
+            // Optimistically update UI
+            queryClient.setQueryData(['quizzes'], (old: any) =>
+                old?.filter((q: Quiz) => q.id !== deletedId)
+            );
+
+            return { previousQuizzes };
+        },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['quizzes'] });
             toast.success("Quiz deleted successfully");
         },
-        onError: () => {
+        onError: (err, variables, context) => {
+            if (context?.previousQuizzes) {
+                queryClient.setQueryData(['quizzes'], context.previousQuizzes);
+            }
             toast.error("Failed to delete quiz");
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['quizzes'] });
         }
     });
 

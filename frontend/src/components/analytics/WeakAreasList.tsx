@@ -3,6 +3,7 @@
 import React from 'react';
 import { AlertCircle, Target, ChevronRight } from 'lucide-react';
 import { TopicMastery } from '@/lib/api/analytics';
+import Link from 'next/link';
 
 interface WeakAreasListProps {
     data: TopicMastery[];
@@ -19,7 +20,8 @@ export default function WeakAreasList({ data }: WeakAreasListProps) {
                 <div className="space-y-3 mt-2">
                     {data && data.length > 0 ? (
                         data.map((area: TopicMastery) => (
-                            <div
+                            <Link
+                                href={`/dashboard/quiz/new?topic=${encodeURIComponent(area.topic)}`}
                                 key={area.id}
                                 className="group flex items-center p-3 rounded-xl border border-transparent hover:border-red-100 hover:bg-red-50/30 transition-all duration-200"
                             >
@@ -47,7 +49,7 @@ export default function WeakAreasList({ data }: WeakAreasListProps) {
                                     </p>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-red-400 group-hover:translate-x-1 transition-all" />
-                            </div>
+                            </Link>
                         ))
                     ) : (
                         <div className="text-center text-muted-foreground py-12 flex flex-col items-center justify-center">
@@ -64,10 +66,10 @@ export default function WeakAreasList({ data }: WeakAreasListProps) {
             </div>
             {data && data.length > 0 && (
                 <div className="p-4 bg-gray-50/50 border-t mt-auto">
-                    <button className="w-full py-2 px-4 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-2">
+                    <Link href="/dashboard/quiz/new" className="w-full py-2 px-4 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-2">
                         Review Weak Areas
                         <ChevronRight className="w-3 h-3" />
-                    </button>
+                    </Link>
                 </div>
             )}
         </div>

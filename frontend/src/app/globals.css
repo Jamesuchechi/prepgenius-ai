@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -69,7 +68,7 @@
 }
 
 body {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: var(--font-bricolage), 'Bricolage Grotesque', sans-serif;
   background: var(--background);
   color: var(--foreground);
   overflow-x: hidden;
@@ -141,11 +140,11 @@ body {
 
 /* Typography */
 .font-display {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--font-syne), 'Syne', sans-serif;
 }
 
 .font-body {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: var(--font-bricolage), 'Bricolage Grotesque', sans-serif;
 }
 
 /* Smooth scrolling */

@@ -14,6 +14,7 @@ import PerformanceTimeline from '../analytics/PerformanceTimeline';
 import { CollapsibleCard } from '../ui/CollapsibleCard';
 import { Button } from '../ui/Button';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export const AnalyticsDashboard: React.FC = () => {
     const router = useRouter();
@@ -211,9 +212,13 @@ export const AnalyticsDashboard: React.FC = () => {
                             <div className="space-y-4">
                                 {summary.weak_topics.length > 0 ? (
                                     summary.weak_topics.map((t, i) => (
-                                        <div key={i} className="flex items-center justify-between group">
+                                        <Link 
+                                            href={`/dashboard/quiz/new?topic=${encodeURIComponent(t.topic)}`}
+                                            key={i} 
+                                            className="flex items-center justify-between group p-2 hover:bg-slate-50 rounded-lg transition-colors"
+                                        >
                                             <div className="space-y-1">
-                                                <p className="text-sm font-medium leading-none">{t.topic}</p>
+                                                <p className="text-sm font-medium leading-none group-hover:text-amber-600 transition-colors">{t.topic}</p>
                                                 <p className="text-xs text-muted-foreground">{Math.round(t.mastery_score)}% mastery</p>
                                             </div>
                                             <div className="h-2 w-24 bg-red-100 rounded-full overflow-hidden">
@@ -222,7 +227,7 @@ export const AnalyticsDashboard: React.FC = () => {
                                                     style={{ width: `${t.mastery_score}%` }}
                                                 />
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))
                                 ) : (
                                     <p className="text-sm text-muted-foreground text-center py-4">All topics looking good!</p>

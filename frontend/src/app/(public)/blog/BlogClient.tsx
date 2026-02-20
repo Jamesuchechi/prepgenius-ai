@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import StaticPageLayout from '@/components/layout/StaticPageLayout'
 import type { Article } from './fetchNews'
 
@@ -140,8 +141,8 @@ export default function BlogClient({ initialArticles, fetchedAt }: BlogClientPro
                                     className="bg-card border border-border rounded-3xl overflow-hidden hover:shadow-xl transition-all group flex flex-col"
                                 >
                                     {article.image ? (
-                                        <div className="h-44 overflow-hidden bg-muted">
-                                            <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                        <div className="relative h-44 overflow-hidden bg-muted">
+                                            <Image src={article.image} alt={article.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                                         </div>
                                     ) : (
                                         <div className={`bg-gradient-to-br ${categoryGradients[article.category] || 'from-slate-500 to-slate-700'} h-44 flex items-center justify-center text-5xl`}>

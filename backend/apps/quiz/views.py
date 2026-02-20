@@ -12,6 +12,8 @@ from .serializers import (
 )
 from .services import QuizService
 from apps.questions.models import Question, Answer
+from django_q.tasks import async_task
+from django_q.models import Task
 
 class QuizViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -41,18 +43,44 @@ class QuizViewSet(viewsets.ModelViewSet):
             subject_obj = get_object_or_404(Subject, id=subject_id)
 
         try:
-            quiz = QuizService.generate_quiz(
-                user=request.user,
-                subject=subject_obj, 
+            # Enqueue to background worker instead of blocking HTTP request
+            task_id = async_task(
+                'apps.quiz.tasks.generate_quiz_async',
+                user_id=request.user.id,
+                subject_id=subject_obj.id if subject_obj else None,
                 topic=data['topic'],
                 difficulty=data['difficulty'],
                 question_count=data['question_count'],
-                question_type=data['exam_type'], 
+                question_type=data['exam_type'],
                 document_id=data.get('document_id')
             )
-            return Response(QuizSerializer(quiz).data, status=status.HTTP_201_CREATED)
+            return Response({"task_id": task_id, "status": "processing"}, status=status.HTTP_202_ACCEPTED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def generate_status(self, request):
+        task_id = request.query_params.get('task_id')
+        if not task_id:
+            return Response({"error": "task_id required"}, status=400)
+            
+        task = Task.objects.filter(id=task_id).first()
+        if not task:
+            # Task might be in queue or very recently created
+            return Response({"status": "processing"})
+            
+        if task.success:
+            result = task.result
+            if isinstance(result, dict) and result.get("status") == "success":
+                quiz = Quiz.objects.get(id=result["quiz_id"])
+                return Response({
+                    "status": "success",
+                    "quiz": QuizSerializer(quiz).data
+                })
+            else:
+                return Response({"status": "failed", "error": result.get("error", "Unknown error")})
+        else:
+            return Response({"status": "failed", "error": "Task execution failed"})
 
     @action(detail=True, methods=['post'])
     def submit(self, request, pk=None):

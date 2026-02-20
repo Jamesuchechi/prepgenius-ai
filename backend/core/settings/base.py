@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "apps.study_tools",
     "apps.quiz",
     "apps.notifications",
+    "django_q",
 ]
 
 # ============================================================================
@@ -54,7 +55,9 @@ INSTALLED_APPS = [
 # ============================================================================
 
 MIDDLEWARE = [
+    "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -86,6 +89,19 @@ DATABASES = {
         os.getenv("DATABASE_URL", "sqlite:///db.sqlite3")
     )
 }
+
+# Apply conditional Database Concurrency optimizations
+_db_engine = DATABASES["default"].get("ENGINE", "")
+if "sqlite" in _db_engine:
+    # SQLite PRAGMAs for high concurrency (WAL mode, busy timeout)
+    DATABASES["default"]["OPTIONS"] = {
+        "timeout": 20,
+        "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=5000;"
+    }
+elif "postgresql" in _db_engine:
+    # Postgres persistent connections
+    DATABASES["default"]["CONN_MAX_AGE"] = int(os.getenv("CONN_MAX_AGE", 60))
+    DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 # ============================================================================
 # PASSWORD VALIDATION
@@ -133,6 +149,15 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "5000/day",
+        "ai_generation": "50/day",
+    },
 }
 
 # ============================================================================
@@ -211,6 +236,15 @@ STATIC_ROOT = BASE_DIR / "static"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 # ============================================================================
 # DEFAULT PRIMARY KEY
 # ============================================================================
@@ -282,21 +316,34 @@ PAYSTACK_TIMEOUT = int(os.getenv("PAYSTACK_TIMEOUT", 60))
 
 
 # ============================================================================
-# CELERY SETTINGS
+# DJANGO-Q2 SETTINGS (Background Tasks)
 # ============================================================================
 
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = "UTC"
+Q_CLUSTER = {
+    'name': 'prepgenius_cluster',
+    'workers': 2,
+    'recycle': 500,
+    'timeout': 60,
+    'compress': True,
+    'save_limit': 250,
+    'queue_limit': 500,
+    'cpu_affinity': 1,
+    'label': 'Django Q',
+    'orm': 'default' # Uses SQLite/Postgres as the message broker (no Redis required)
+}
 
 # ============================================================================
-# REDIS SETTINGS
+# REDIS SETTINGS & CACHES
 # ============================================================================
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+    }
+}
 
 # ============================================================================
 # LOGGING

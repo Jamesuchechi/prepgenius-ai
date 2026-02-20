@@ -55,13 +55,12 @@ const PricingCardNew: React.FC<PricingCardNewProps> = ({
 
   return (
     <div
-      className={`relative rounded-3xl border-2 transition-all duration-300 animate-fadeInUp ${
-        isFeatured
+      className={`relative rounded-3xl border-2 transition-all duration-300 animate-fadeInUp ${isFeatured
           ? 'border-orange bg-white shadow-2xl shadow-orange/20 scale-105 lg:scale-100'
           : isCurrentPlan
-          ? 'border-blue bg-white shadow-2xl shadow-blue/20'
-          : 'border-gray-200 bg-white hover:shadow-lg hover:-translate-y-1'
-      }`}
+            ? 'border-blue bg-white shadow-2xl shadow-blue/20'
+            : 'border-gray-200 bg-white hover:shadow-lg hover:-translate-y-1'
+        }`}
       style={{ animationDelay: `${baseDelayMap[name] || 0.4}s` }}
     >
       {/* Badge */}
@@ -88,7 +87,7 @@ const PricingCardNew: React.FC<PricingCardNewProps> = ({
           ) : (
             <>
               <div className="flex items-baseline gap-2">
-                <span className="font-display text-6xl font-bold text-black">
+                <span className="font-display text-4xl xl:text-5xl font-bold text-black tracking-tight">
                   ₦{price.toLocaleString()}
                 </span>
               </div>
@@ -128,11 +127,10 @@ const PricingCardNew: React.FC<PricingCardNewProps> = ({
           <button
             onClick={onSelect}
             disabled={isLoading}
-            className={`w-full font-semibold py-3 px-4 rounded-xl transition-all ${
-              isFeatured
+            className={`w-full font-semibold py-3 px-4 rounded-xl transition-all ${isFeatured
                 ? 'bg-gradient-to-r from-orange to-orange-light text-white hover:shadow-2xl hover:shadow-orange/30 disabled:opacity-50'
                 : 'bg-white text-black border-2 border-gray-200 hover:border-orange hover:bg-orange/5 disabled:opacity-50'
-            }`}
+              }`}
           >
             {isLoading ? 'Processing...' : isFeatured ? 'Upgrade to Annual' : 'Choose Plan'}
           </button>

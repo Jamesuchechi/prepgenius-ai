@@ -23,6 +23,23 @@ class QuestionGenerationService:
         exam_name = exam_type.name if exam_type else "General"
         context = f"Exam Type: {exam_name}. Subject: {subject.name}. Target Audience: Nigerian students."
         
+        # Exact-match caching: check if we already have enough questions
+        existing_q_qs = Question.objects.filter(
+            subject=subject,
+            topic=topic,
+            difficulty=difficulty,
+            question_type=question_type
+        )
+        if exam_type:
+            existing_q_qs = existing_q_qs.filter(exam_type=exam_type)
+        else:
+            existing_q_qs = existing_q_qs.filter(exam_type__isnull=True)
+            
+        if existing_q_qs.count() >= count:
+            logger.info("Serving exact match questions from DB cache.")
+            return list(existing_q_qs.order_by('?')[:count])
+        
+        
         try:
             generated_data = self.ai_router.generate_questions(
                 topic=topic.name,

@@ -43,13 +43,13 @@ const stats = [
 ]
 
 const team = [
-    { name: 'Adebayo Okonkwo', role: 'CEO & Co-Founder', emoji: '👨‍💼', bg: 'bg-blue-100', detail: 'Former Google AI researcher with 10 years in EdTech.' },
-    { name: 'Chidinma Nwosu', role: 'Head of Education', emoji: '👩‍🏫', bg: 'bg-orange-100', detail: 'Ex-JAMB examiner and curriculum expert.' },
-    { name: 'Emeka Okafor', role: 'CTO', emoji: '👨‍💻', bg: 'bg-purple-100', detail: 'Full-stack architect with a passion for scalable AI systems.' },
+    { name: 'James Uchechi', role: 'CEO & Founder', emoji: '👨‍💼', bg: 'bg-blue-100', detail: 'Software engineer turned Data Scientist with 3 years in EdTech.' },
+    { name: 'NaN', role: 'Head of Education', emoji: '👩‍🏫', bg: 'bg-orange-100', detail: 'Ex-JAMB examiner and curriculum expert.' },
+    { name: 'NaN', role: 'CTO', emoji: '👨‍💻', bg: 'bg-purple-100', detail: 'Full-stack architect with a passion for scalable AI systems.' },
 ]
 
 const timeline = [
-    { year: '2023', event: 'PrepGenius AI founded in Lagos with a mission to democratize education' },
+    { year: '2023', event: 'PrepGenius AI founded by James Uchechi with a mission to democratize education' },
     { year: 'Q1 2024', event: 'Beta launch with 1,000 students. 92% pass rate improvement reported' },
     { year: 'Q3 2024', event: 'AI Tutor launched — 24/7 support for all Nigerian exam formats' },
     { year: '2025', event: 'Expanded to 36 states. 50,000+ active learners on the platform' },

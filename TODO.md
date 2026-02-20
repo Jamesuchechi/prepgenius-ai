@@ -441,7 +441,6 @@ POST /api/webhooks/paystack/
 ### TODO #13: Performance Optimization
 **Status**: 🔴 Not Started  
 **Priority**: HIGH  
-**Estimated Time**: 3-4 days
 
 **Backend:**
 - [ ] Implement database query optimization
@@ -468,7 +467,6 @@ POST /api/webhooks/paystack/
 ### TODO #14: Mobile Responsiveness & PWA
 **Status**: 🔴 Not Started  
 **Priority**: HIGH  
-**Estimated Time**: 3 days
 
 **Tasks:**
 - [ ] Ensure full mobile responsiveness

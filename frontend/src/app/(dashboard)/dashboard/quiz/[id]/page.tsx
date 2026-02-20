@@ -33,15 +33,47 @@ export default function QuizDetailsPage() {
     // Submit Mutation
     const submitMutation = useMutation({
         mutationFn: (submission: QuizSubmission) => QuizService.submit(id, submission),
+        onMutate: async (newSubmission) => {
+            await queryClient.cancelQueries({ queryKey: ['quiz-attempts'] });
+            const previousAttempts = queryClient.getQueryData(['quiz-attempts']);
+
+            // Optimistically update
+            const optimisticAttempt = {
+                id: Math.random(), // Temp ID
+                quiz: id,
+                score: 0,
+                total_questions: quiz?.questions?.length || 0,
+                correct_answers: 0,
+                status: 'COMPLETED',
+                completed_at: new Date().toISOString()
+            };
+
+            queryClient.setQueryData(['quiz-attempts'], (old: any) => {
+                return old ? [optimisticAttempt, ...old] : [optimisticAttempt];
+            });
+
+            // Instantly jump to results (though score is pending actual data)
+            setView('RESULTS');
+            setCurrentAttempt(optimisticAttempt as any);
+
+            return { previousAttempts };
+        },
         onSuccess: (data: QuizAttempt) => {
             setCurrentAttempt(data);
-            setView('RESULTS');
             toast.success("Quiz submitted successfully!");
-            queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
         },
-        onError: (error: any) => {
+        onError: (error: any, _, context) => {
+            if (context?.previousAttempts) {
+                queryClient.setQueryData(['quiz-attempts'], context.previousAttempts);
+            }
+            setView('PLAYER'); // Rollback view
             console.error(error);
             toast.error("Failed to submit quiz.");
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
+            // Also invalidate quiz list to update metrics
+            queryClient.invalidateQueries({ queryKey: ['quizzes'] });
         }
     });
 
