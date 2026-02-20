@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>We have received your message</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            padding: 40px 32px;
+            text-align: center;
+        }
+
+        .logo {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin: 0;
+        }
+
+        .logo span {
+            color: #93c5fd;
+        }
+
+        .content {
+            padding: 40px 32px;
+            color: #374151;
+        }
+
+        h1 {
+            font-size: 22px;
+            color: #111827;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .highlight {
+            font-weight: 600;
+            color: #2563eb;
+        }
+
+        .quote-box {
+            background-color: #f3f4f6;
+            border-left: 4px solid #3b82f6;
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 32px 0;
+        }
+
+        .quote-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .quote-text {
+            margin: 0;
+            color: #4b5563;
+            font-style: italic;
+            white-space: pre-wrap;
+            font-size: 15px;
+        }
+
+        .footer {
+            background-color: #f8fafc;
+            padding: 32px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .socials {
+            margin-bottom: 16px;
+        }
+
+        .socials a {
+            color: #64748b;
+            text-decoration: none;
+            margin: 0 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .footer-text {
+            margin: 0;
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 class="logo">Prep<span>Genius</span></h2>
+        </div>
+        <div class="content">
+            <h1>Hi {{ first_name }},</h1>
+            <p>Thank you for reaching out to us! We're writing to let you know that we've received your message
+                regarding <span class="highlight">"{{ subject }}"</span>.</p>
+            <p>Our support team is already on it. We review all inquiries carefully and aim to get back to you within
+                <strong>1 business day</strong>.</p>
+
+            <div class="quote-box">
+                <div class="quote-label">Your Message</div>
+                <div class="quote-text">{{ message }}</div>
+            </div>
+
+            <p>If you have any urgent updates or additional information you'd like to share, simply reply directly to
+                this email.</p>
+
+            <p style="margin-bottom: 0;">Best regards,<br><strong>The PrepGenius Team</strong></p>
+        </div>
+        <div class="footer">
+            <div class="socials">
+                <a href="https://prepgenius.ai">Website</a> •
+                <a href="https://prepgenius.ai/faq">FAQ</a> •
+                <a href="https://prepgenius.ai/help">Help Center</a>
+            </div>
+            <p class="footer-text">
+                © {% now "Y" %} PrepGenius AI. All rights reserved.<br>
+                Tech Hub, Victoria Island, Lagos, Nigeria
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

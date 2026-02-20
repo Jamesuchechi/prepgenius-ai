@@ -120,9 +120,17 @@ export default function Sidebar({
                          ${isCollapsed ? 'p-4' : 'p-6'}
                     `}>
                         <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
-                            <div className="min-w-[3rem] w-12 h-12 bg-gradient-to-br from-secondary to-secondary/60 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                {user?.first_name?.[0]}{user?.last_name?.[0]}
-                            </div>
+                            {user?.profile_picture ? (
+                                <img
+                                    src={user.profile_picture}
+                                    alt={`${user.first_name} ${user.last_name}`}
+                                    className="min-w-[3rem] w-12 h-12 rounded-full object-cover border-2 border-primary/20 bg-muted"
+                                />
+                            ) : (
+                                <div className="min-w-[3rem] w-12 h-12 bg-gradient-to-br from-secondary to-secondary/60 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    {user?.first_name?.[0]}{user?.last_name?.[0]}
+                                </div>
+                            )}
                             {!isCollapsed && (
                                 <div className="overflow-hidden">
                                     <h3 className="font-semibold text-foreground truncate">

@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/subscriptions/', include('apps.subscriptions.urls', namespace='subscriptions')),
     path('api/institutions/', include('apps.institutions.urls', namespace='institutions')),
     path('api/webhooks/', include('apps.subscriptions.webhooks_urls', namespace='webhooks')),
+    path('api/v1/contact/', include('api.v1.urls')),
 ]
 
 # Serve media files in development

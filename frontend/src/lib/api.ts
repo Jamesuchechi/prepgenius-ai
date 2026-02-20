@@ -383,3 +383,17 @@ export async function attemptQuestion(
     body: JSON.stringify(body)
   })
 }
+
+// Contact APIs
+export async function submitContactForm(data: {
+  firstName: string
+  lastName: string
+  email: string
+  subject: string
+  message: string
+}): Promise<{ success: boolean; message: string }> {
+  return apiCall<{ success: boolean; message: string }>('/v1/contact/', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  })
+}

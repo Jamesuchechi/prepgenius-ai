@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import StaticPageLayout from '@/components/layout/StaticPageLayout'
+import { submitContactForm } from '@/lib/api'
 
 const contactMethods = [
     {
@@ -51,13 +52,20 @@ export default function ContactPage() {
     const [submitted, setSubmitted] = useState(false)
     const [sending, setSending] = useState(false)
 
+    const [error, setError] = useState<string | null>(null)
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setSending(true)
-        // Simulate API call
-        await new Promise(r => setTimeout(r, 1200))
-        setSending(false)
-        setSubmitted(true)
+        setError(null)
+        try {
+            await submitContactForm(formState)
+            setSubmitted(true)
+        } catch (err: any) {
+            setError(err.message || 'Something went wrong. Please try again.')
+        } finally {
+            setSending(false)
+        }
     }
 
     return (
@@ -124,6 +132,11 @@ export default function ContactPage() {
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-3xl p-8 shadow-lg space-y-5">
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm mb-4">
+                                    {error}
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-bold text-foreground mb-2">First Name</label>
