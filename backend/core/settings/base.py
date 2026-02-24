@@ -261,6 +261,7 @@ EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
     "utils.email.ResendEmailBackend"
 )
+
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 
 # SMTP SETTINGS (No longer used by default, but kept for reference)
@@ -276,7 +277,7 @@ else:
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", 15))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Acme <onboarding@resend.dev>")
 
 # ============================================================================
 # GOOGLE OAUTH SETTINGS

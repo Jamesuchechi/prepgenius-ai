@@ -97,3 +97,4 @@ credentials/
 # Logs
 logs/
 *.log
+backend/resend.test.py
