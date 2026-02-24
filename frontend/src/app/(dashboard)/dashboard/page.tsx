@@ -97,22 +97,22 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
 
           {/* Continue Learning */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden animate-[fadeInUp_0.6s_ease-out_0.5s_backwards] shadow-xl">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-5 md:p-8 text-white relative overflow-hidden animate-[fadeInUp_0.6s_ease-out_0.5s_backwards] shadow-xl max-w-full">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-20 translate-x-20 pointer-events-none"></div>
             <div className="relative z-10">
-              <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <div className="inline-block bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold mb-4">
                 📚 {t('sidebar.ai_practice')}
               </div>
-              <h2 className="font-display text-3xl font-extrabold mb-3">
+              <h2 className="font-display text-2xl md:text-3xl font-extrabold mb-3 break-words">
                 {t('dashboard.ready_to_practice')}
               </h2>
-              <p className="text-white/90 mb-6 font-medium">
+              <p className="text-white/90 mb-6 font-medium text-sm md:text-base">
                 {t('dashboard.practice_desc')}
               </p>
 
               <Link
                 href="/practice"
-                className="inline-block bg-white text-[var(--blue)] px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors shadow-lg"
+                className="inline-block bg-white text-[var(--blue)] px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors shadow-lg text-sm md:text-base"
               >
                 {t('dashboard.start_practice')}
               </Link>
@@ -120,33 +120,33 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid md:grid-cols-2 gap-4 animate-[fadeInUp_0.6s_ease-out_0.6s_backwards]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-[fadeInUp_0.6s_ease-out_0.6s_backwards]">
             <Link
               href="/dashboard/ai-tutor"
-              className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-purple-500 hover:shadow-lg transition-all duration-300 group"
+              className="bg-white rounded-2xl p-5 md:p-6 border-2 border-gray-200 hover:border-purple-500 hover:shadow-lg transition-all duration-300 group max-w-full"
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-xl flex items-center justify-center text-xl md:text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
                 🤖
               </div>
-              <h3 className="font-display text-xl font-bold text-[var(--black)] mb-2">
+              <h3 className="font-display text-lg md:text-xl font-bold text-[var(--black)] mb-2 break-words">
                 {t('dashboard.ask_ai_tutor')}
               </h3>
-              <p className="text-sm text-[var(--gray-dark)]">
+              <p className="text-xs md:text-sm text-[var(--gray-dark)]">
                 {t('dashboard.ask_ai_desc')}
               </p>
             </Link>
 
             <Link
               href="/dashboard/quiz"
-              className="bg-white rounded-2xl p-6 border-2 border-gray-200 hover:border-[var(--orange)] hover:shadow-lg transition-all duration-300 group"
+              className="bg-white rounded-2xl p-5 md:p-6 border-2 border-gray-200 hover:border-[var(--orange)] hover:shadow-lg transition-all duration-300 group max-w-full"
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--orange)]/10 to-[var(--orange)]/5 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[var(--orange)]/10 to-[var(--orange)]/5 rounded-xl flex items-center justify-center text-xl md:text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
                 🎯
               </div>
-              <h3 className="font-display text-xl font-bold text-[var(--black)] mb-2">
+              <h3 className="font-display text-lg md:text-xl font-bold text-[var(--black)] mb-2 break-words">
                 {t('dashboard.take_quiz')}
               </h3>
-              <p className="text-sm text-[var(--gray-dark)]">
+              <p className="text-xs md:text-sm text-[var(--gray-dark)]">
                 {t('dashboard.take_quiz_desc')}
               </p>
             </Link>

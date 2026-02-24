@@ -74,13 +74,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Main Content */}
       <main
-        className={` min-h-screen w-full transition-all duration-300 ease-in-out
+        className={` min-h-screen w-full transition-all duration-300 ease-in-out overflow-x-hidden
           ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}
         `}
       >
         {/* Top Bar */}
-        <header className="bg-card border-b border-border sticky top-0 z-20">
-          <div className="px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+        <header className="bg-card border-b border-border sticky top-0 z-20 w-full">
+          <div className="px-4 md:px-8 py-4 flex items-center justify-between gap-4 max-w-full">
             {/* Search Bar - Hidden on mobile, visible on lg */}
             <div className="hidden sm:flex flex-1 max-w-xl">
               <div className="relative w-full">
@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <div className="p-4 md:p-8">
+        <div className="p-4 md:p-8 max-w-full">
           {children}
         </div>
         <Footer />

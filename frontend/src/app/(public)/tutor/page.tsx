@@ -40,7 +40,7 @@ export default function TutorPage() {
                             <p className="text-slate-600"><span className="font-bold text-slate-900">Step-by-Step Solving:</span> Master Mathematics and Sciences with guided solutions.</p>
                         </div>
                     </div>
-                    <Button variant="primary" size="lg" className="mt-10 px-10">Chat with Tutor</Button>
+                    <Button variant="primary" size="lg" className="mt-10 px-10" href="/dashboard/ai-tutor">Chat with Tutor</Button>
                 </div>
             </div>
 

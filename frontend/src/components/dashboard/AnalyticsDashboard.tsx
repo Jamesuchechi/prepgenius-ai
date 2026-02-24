@@ -100,67 +100,67 @@ export const AnalyticsDashboard: React.FC = () => {
             animate="visible"
             className="space-y-6 w-full"
         >
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <motion.div variants={itemVariants}>
-                    <h1 className="text-3xl font-bold tracking-tight">Performance Analytics</h1>
-                    <p className="text-muted-foreground">Real-time insights across all your study activities.</p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 max-w-full">
+                <motion.div variants={itemVariants} className="max-w-full">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight break-words">Performance Analytics</h1>
+                    <p className="text-sm text-muted-foreground">Real-time insights across all your study activities.</p>
                 </motion.div>
                 <motion.div
                     variants={itemVariants}
-                    className="flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full border border-orange-100"
+                    className="flex items-center gap-2 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100"
                 >
-                    <Flame className="h-5 w-5 text-orange-500 fill-orange-500" />
-                    <span className="font-bold text-orange-700">{summary.streak} Day Streak!</span>
+                    <Flame className="h-4 w-4 md:h-5 md:w-5 text-orange-500 fill-orange-500" />
+                    <span className="text-sm font-bold text-orange-700">{summary.streak} Day Streak!</span>
                 </motion.div>
             </div>
 
             {/* key Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-full">
                 <motion.div variants={itemVariants}>
-                    <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+                    <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Questions</CardTitle>
+                            <CardTitle className="text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">Questions</CardTitle>
                             <BookOpen className="h-4 w-4 text-blue-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summary.total_questions}</div>
-                            <p className="text-xs text-muted-foreground mt-1">Answered across all quizzes</p>
+                            <div className="text-xl md:text-2xl font-bold">{summary.total_questions}</div>
+                            <p className="text-[10px] text-muted-foreground mt-1">Answered across all quizzes</p>
                         </CardContent>
                     </Card>
                 </motion.div>
                 <motion.div variants={itemVariants}>
-                    <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
+                    <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Mock Exams</CardTitle>
+                            <CardTitle className="text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">Mock Exams</CardTitle>
                             <Award className="h-4 w-4 text-purple-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summary.total_exams}</div>
-                            <p className="text-xs text-muted-foreground mt-1">Full-length JAMB exams</p>
+                            <div className="text-xl md:text-2xl font-bold">{summary.total_exams}</div>
+                            <p className="text-[10px] text-muted-foreground mt-1">Full-length JAMB exams</p>
                         </CardContent>
                     </Card>
                 </motion.div>
                 <motion.div variants={itemVariants}>
-                    <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+                    <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">AI Tutor</CardTitle>
+                            <CardTitle className="text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">AI Tutor</CardTitle>
                             <MessageSquare className="h-4 w-4 text-green-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summary.tutor_interactions}</div>
-                            <p className="text-xs text-muted-foreground mt-1">Messages exchanged</p>
+                            <div className="text-xl md:text-2xl font-bold">{summary.tutor_interactions}</div>
+                            <p className="text-[10px] text-muted-foreground mt-1">Messages exchanged</p>
                         </CardContent>
                     </Card>
                 </motion.div>
                 <motion.div variants={itemVariants}>
-                    <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow-md transition-shadow">
+                    <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow-md transition-shadow h-full">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Accuracy</CardTitle>
+                            <CardTitle className="text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">Accuracy</CardTitle>
                             <Target className="h-4 w-4 text-amber-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{Math.round(summary.accuracy_percentage)}%</div>
-                            <p className="text-xs text-muted-foreground mt-1">Global average accuracy</p>
+                            <div className="text-xl md:text-2xl font-bold">{Math.round(summary.accuracy_percentage)}%</div>
+                            <p className="text-[10px] text-muted-foreground mt-1">Global average accuracy</p>
                         </CardContent>
                     </Card>
                 </motion.div>

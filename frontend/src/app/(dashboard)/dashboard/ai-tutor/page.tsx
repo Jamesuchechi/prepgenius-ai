@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { ChatHistory } from '@/components/chat/ChatHistory';
 import { StudySidebar } from '@/components/study/StudySidebar';
@@ -30,7 +30,7 @@ export default function AITutorPage() {
         clearMessages,
     } = useChatStore();
 
-    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const searchParams = useSearchParams();
     const initialTopic = searchParams?.get('topic');
     const initialSubject = searchParams?.get('subject');
     const initialPrompt = searchParams?.get('prompt');
