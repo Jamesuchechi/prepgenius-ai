@@ -7,7 +7,7 @@ anyio==4.3.0
 asgiref==3.8.1
 attrs==23.2.0
 autobahn==24.4.2
-Automat==22.10.0
+Automat==24.8.1
 billiard==4.2.4
 brotli==1.2.0
 cachetools==5.5.2
@@ -51,7 +51,7 @@ hf-xet==1.2.0
 httpcore==1.0.9
 httptools==0.7.1
 httpx==0.28.1
-huggingface_hub==1.4.1
+huggingface_hub==0.23.0
 hyperlink==21.0.0
 idna==3.11
 importlib_metadata==8.7.1
@@ -77,12 +77,12 @@ msgpack==1.1.2
 multidict==6.7.1
 networkx==3.6.1
 numpy==1.26.4
-opentelemetry-api==1.22.0
-opentelemetry-exporter-otlp-proto-common==1.22.0
-opentelemetry-exporter-otlp-proto-http==1.22.0
-opentelemetry-proto==1.22.0
-opentelemetry-sdk==1.22.0
-opentelemetry-semantic-conventions==0.43b0
+opentelemetry-api==1.38.0
+opentelemetry-exporter-otlp-proto-common==1.38.0
+opentelemetry-exporter-otlp-proto-http==1.38.0
+opentelemetry-proto==1.38.0
+opentelemetry-sdk==1.38.0
+opentelemetry-semantic-conventions==0.59b0
 orjson==3.11.7
 ormsgpack==1.12.2
 packaging==26.0
@@ -98,8 +98,8 @@ py-ubjson==0.16.1
 pyasn1==0.6.2
 pyasn1_modules==0.4.2
 pycparser==3.0
-pydantic==2.8.2
-pydantic_core==2.20.1
+pydantic==2.12.5
+pydantic_core==2.41.5
 pydyf==0.12.1
 Pygments==2.19.2
 PyJWT==2.8.0
