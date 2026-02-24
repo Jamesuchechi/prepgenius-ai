@@ -12,6 +12,22 @@ if not ALLOWED_HOSTS or ALLOWED_HOSTS == [""]:
     # Fallback to local if not set, but warn in logs
     ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
+# Automatic Detection of Render External Hostname
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# ============================================================================
+# CSRF SETTINGS
+# ============================================================================
+
+# Ensure CSRF trusted origins include the CORS origins
+CSRF_TRUSTED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS if origin]
+
+# Also trust the backend domain itself for CSRF if on Render
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+
 # ============================================================================
 # SECURITY SETTINGS
 # ============================================================================
