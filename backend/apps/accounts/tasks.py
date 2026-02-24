@@ -11,6 +11,9 @@ def send_verification_email_task(user_email, user_name, token):
     Task to send verification email.
     Called via async_task from views.
     """
+    logger.info(f"Preparing to send verification email to {user_email}")
+    logger.debug(f"Email Settings: HOST={settings.EMAIL_HOST}, PORT={settings.EMAIL_PORT}, TLS={settings.EMAIL_USE_TLS}, SSL={settings.EMAIL_USE_SSL}, TIMEOUT={settings.EMAIL_TIMEOUT}")
+    
     try:
         context = {
             'user_name': user_name,
