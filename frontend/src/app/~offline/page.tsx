@@ -1,9 +1,7 @@
+'use client';
+
 import React from 'react';
 import { WifiOff } from 'lucide-react';
-
-export const metadata = {
-    title: 'Offline | PrepGenius AI',
-};
 
 export default function OfflineFallback() {
     return (

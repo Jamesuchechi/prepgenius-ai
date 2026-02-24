@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { XCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-const PaymentFailurePage: React.FC = () => {
+const PaymentFailureContent: React.FC = () => {
   const searchParams = useSearchParams();
   const reference = searchParams.get('reference');
   const reason = searchParams.get('reason') || 'Your payment could not be processed';
@@ -71,6 +71,21 @@ const PaymentFailurePage: React.FC = () => {
         </p>
       </div>
     </div>
+  );
+};
+
+const PaymentFailurePage = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
+        </div>
+      </div>
+    }>
+      <PaymentFailureContent />
+    </Suspense>
   );
 };
 
