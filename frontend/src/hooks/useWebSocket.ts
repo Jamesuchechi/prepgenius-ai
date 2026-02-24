@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { WS_BASE_URL } from '@/lib/api-config';
 
 export interface WebSocketMessage {
     type: 'connection' | 'chat_message' | 'chat_chunk' | 'chat_stream_start' | 'typing' | 'error' | 'message_saved';
@@ -69,8 +70,7 @@ export const useWebSocket = ({
         setIsConnecting(true);
 
         // Construct WebSocket URL
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
-        const baseUrl = wsUrl.endsWith('/') ? wsUrl.slice(0, -1) : wsUrl;
+        const baseUrl = WS_BASE_URL.endsWith('/') ? WS_BASE_URL.slice(0, -1) : WS_BASE_URL;
 
         // Ensure we have a valid path
         const path = `/ws/chat/${sessionId}/`;

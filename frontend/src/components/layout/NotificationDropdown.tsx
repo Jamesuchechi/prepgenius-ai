@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { Notification, notificationsApi } from '@/lib/api/notifications'
 import useWebSocket from 'react-use-websocket'
 import { useAuthStore } from '@/store/authStore'
+import { WS_BASE_URL } from '@/lib/api-config'
 
 export default function NotificationDropdown() {
     const [notifications, setNotifications] = useState<Notification[]>([])
@@ -15,8 +16,7 @@ export default function NotificationDropdown() {
     const { user, tokens } = useAuthStore()
 
     // WebSocket connection
-    const baseUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'
-    const WS_URL = `${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}/ws/notifications/`
+    const WS_URL = `${WS_BASE_URL.endsWith('/') ? WS_BASE_URL.slice(0, -1) : WS_BASE_URL}/ws/notifications/`
     const { lastJsonMessage } = useWebSocket(user ? WS_URL : null, {
         shouldReconnect: () => true,
         queryParams: tokens?.access ? { token: tokens.access } : {},

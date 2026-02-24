@@ -75,6 +75,9 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+from django_q.tasks import async_task
+from .tasks import send_verification_email_task
+
 class UserRegistrationView(generics.CreateAPIView):
     """Registration endpoint for new users."""
     
@@ -91,17 +94,19 @@ class UserRegistrationView(generics.CreateAPIView):
         token = str(secrets.randbelow(1000000)).zfill(6)
         expires_at = timezone.now() + timedelta(hours=24)
         
-        # Deactivate existing tokens if any (though OneToOne handles this, create() might error if exists)
-        # Since it's OneToOne, we should use update_or_create or delete old one first if we are re-registering?
-        # But this is registration, so user is new.
         EmailVerificationToken.objects.create(
             user=user,
             token=token,
             expires_at=expires_at
         )
         
-        # Send verification email
-        self._send_verification_email(user, token)
+        # Send verification email asynchronously
+        async_task(
+            'apps.accounts.tasks.send_verification_email_task',
+            user.email,
+            user.get_full_name() or user.email,
+            token
+        )
         
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
@@ -114,31 +119,6 @@ class UserRegistrationView(generics.CreateAPIView):
                 'access': str(refresh.access_token),
             }
         }, status=status.HTTP_201_CREATED)
-    
-    def _send_verification_email(self, user, token):
-        """Send verification email to user."""
-        # verification_url = f"{settings.FRONTEND_URL}/auth/verify-email/{token}"
-        
-        context = {
-            'user_name': user.get_full_name() or user.email,
-            'verification_code': token, # Using code instead of URL
-            'expires_in_hours': 24
-        }
-        
-        html_message = render_to_string(
-            'email/verify_email.html',
-            context
-        )
-        plain_message = strip_tags(html_message)
-        
-        send_mail(
-            subject='Verify your PrepGenius account',
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=True
-        )
 
 
 class UserLoginView(generics.GenericAPIView):
@@ -235,23 +215,12 @@ class ResendVerificationView(views.APIView):
             }
         )
         
-        # Send email (Reusing logic from UserRegistrationView, duplicated for now for decoupling)
-        context = {
-            'user_name': user.get_full_name() or user.email,
-            'verification_code': token,
-            'expires_in_hours': 24
-        }
-        
-        html_message = render_to_string('email/verify_email.html', context)
-        plain_message = strip_tags(html_message)
-        
-        send_mail(
-            subject='Resend: Verify your PrepGenius account',
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=True
+        # Send email asynchronously
+        async_task(
+            'apps.accounts.tasks.send_verification_email_task',
+            user.email,
+            user.get_full_name() or user.email,
+            token
         )
         
         return Response({
@@ -287,37 +256,18 @@ class PasswordResetRequestView(generics.GenericAPIView):
             expires_at=expires_at
         )
         
-        # Send reset email
-        self._send_reset_email(user, token)
+        # Send reset email asynchronously
+        reset_url = f"{settings.FRONTEND_URL}/auth/reset-password/{token}"
+        async_task(
+            'apps.accounts.tasks.send_password_reset_email_task',
+            user.email,
+            user.get_full_name() or user.email,
+            reset_url
+        )
         
         return Response({
             'detail': 'Password reset link has been sent to your email.'
         }, status=status.HTTP_200_OK)
-    
-    def _send_reset_email(self, user, token):
-        """Send password reset email."""
-        reset_url = f"{settings.FRONTEND_URL}/auth/reset-password/{token}"
-        
-        context = {
-            'user_name': user.get_full_name() or user.email,
-            'reset_url': reset_url,
-            'expires_in_hours': 1
-        }
-        
-        html_message = render_to_string(
-            'email/reset_password.html',
-            context
-        )
-        plain_message = strip_tags(html_message)
-        
-        send_mail(
-            subject='Reset your PrepGenius password',
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=True
-        )
 
 
 class PasswordResetConfirmView(generics.GenericAPIView):
