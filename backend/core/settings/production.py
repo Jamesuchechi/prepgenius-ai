@@ -80,5 +80,5 @@ STORAGES = {
 # LOGGING (PRODUCTION)
 # ============================================================================
 
-LOGGING["root"]["level"] = "ERROR"
-LOGGING["handlers"]["console"]["level"] = "ERROR"
+LOGGING["root"]["level"] = "INFO"
+LOGGING["handlers"]["console"]["level"] = "INFO"
