@@ -12,9 +12,19 @@ if not ALLOWED_HOSTS or ALLOWED_HOSTS == [""]:
     # Fallback to local if not set, but warn in logs
     ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
+# Hardcoded fallbacks for the known deployment URLs to ensure they always work
+VERCEL_FRONTEND = "https://prepgenius-ai-eta.vercel.app"
+RENDER_BACKEND = "prepgenius-ai.onrender.com"
+
+if VERCEL_FRONTEND not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(VERCEL_FRONTEND)
+
+if RENDER_BACKEND not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_BACKEND)
+
 # Automatic Detection of Render External Hostname
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # ============================================================================
@@ -24,7 +34,9 @@ if RENDER_EXTERNAL_HOSTNAME:
 # Ensure CSRF trusted origins include the CORS origins
 CSRF_TRUSTED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS if origin]
 
-# Also trust the backend domain itself for CSRF if on Render
+# Also trust the backend domain itself for CSRF
+if RENDER_BACKEND:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_BACKEND}")
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
