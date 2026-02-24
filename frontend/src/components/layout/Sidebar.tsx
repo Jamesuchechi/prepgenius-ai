@@ -18,10 +18,13 @@ import {
     Search,
     Bell,
     Settings as SettingsIcon,
+    Menu,
+    X,
     Trophy,
     DollarSign,
     Building2
 } from 'lucide-react'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
 
 interface SidebarProps {
     isCollapsed: boolean
@@ -91,7 +94,11 @@ export default function Sidebar({
                 <div className="flex flex-col h-full overflow-hidden">
                     {/* Logo */}
                     <div className={`p-6 border-b border-border flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-                        <Link href="/dashboard" className="flex items-center gap-2 group overflow-hidden">
+                        <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2 group overflow-hidden"
+                            onClick={closeMobileSidebar}
+                        >
                             <div className="min-w-[2.5rem] w-10 h-10 bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-xl flex items-center justify-center text-xl -rotate-6 group-hover:rotate-0 transition-transform duration-300">
                                 🎓
                             </div>
@@ -120,17 +127,12 @@ export default function Sidebar({
                          ${isCollapsed ? 'p-4' : 'p-6'}
                     `}>
                         <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
-                            {user?.profile_picture ? (
-                                <img
-                                    src={user.profile_picture}
-                                    alt={`${user.first_name} ${user.last_name}`}
-                                    className="min-w-[3rem] w-12 h-12 rounded-full object-cover border-2 border-primary/20 bg-muted"
-                                />
-                            ) : (
-                                <div className="min-w-[3rem] w-12 h-12 bg-gradient-to-br from-secondary to-secondary/60 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            <Avatar className="min-w-[3rem] w-12 h-12 border-2 border-primary/20">
+                                <AvatarImage src={user?.profile_picture} alt={user?.first_name} />
+                                <AvatarFallback className="bg-gradient-to-br from-secondary to-secondary/60 text-white font-bold text-lg">
                                     {user?.first_name?.[0]}{user?.last_name?.[0]}
-                                </div>
-                            )}
+                                </AvatarFallback>
+                            </Avatar>
                             {!isCollapsed && (
                                 <div className="overflow-hidden">
                                     <h3 className="font-semibold text-foreground truncate">
@@ -142,12 +144,10 @@ export default function Sidebar({
                                 </div>
                             )}
                         </div>
-
-
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 p-4 overflow-y-auto overflow-x-hidden">
+                    <nav className="flex-1 p-4 overflow-y-auto overflow-x-hidden" role="navigation" aria-label="Main Navigation">
                         <ul className="space-y-1">
                             {navigation.map((item) => {
                                 const isActive = pathname === item.href
@@ -155,6 +155,8 @@ export default function Sidebar({
                                     <li key={item.name}>
                                         <Link
                                             href={item.href}
+                                            onClick={closeMobileSidebar}
+                                            aria-label={item.name}
                                             className={`
                                                 flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300
                                                 ${isActive
@@ -184,7 +186,10 @@ export default function Sidebar({
                     {/* Logout */}
                     <div className="p-4 border-t border-border">
                         <button
-                            onClick={handleLogout}
+                            onClick={() => {
+                                handleLogout()
+                                closeMobileSidebar()
+                            }}
                             className={`
                                 w-full flex items-center gap-3 px-4 py-3 text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300
                                 ${isCollapsed ? 'justify-center' : ''}

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Progress } from "@/components/ui/Progress";
-import { GamificationProfile } from '@/lib/api/gamification';
+import { Progress } from "../ui/Progress";
+import { GamificationProfile } from '../../lib/api/gamification';
 import { Star, Zap, TrendingUp } from 'lucide-react';
 
 interface LevelProgressProps {

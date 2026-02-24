@@ -1,5 +1,7 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent, useEffect } from 'react';
-import { Send, Image as ImageIcon, X, Mic, MicOff, Loader2, Headphones } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
+import { ImageIcon, Mic, MicOff, Send, X, Loader2, Headphones, Download, Copy } from 'lucide-react';
 import api from '@/lib/axios';
 
 interface ChatInputProps {
@@ -280,102 +282,127 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const showCharCount = message.length > maxLength * 0.8;
 
     return (
-        <div className="border-t border-gray-100 bg-white p-4">
-            {/* Image Preview */}
-            {imagePreview && (
-                <div className="mb-3 relative inline-block">
-                    <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="h-20 w-20 object-cover rounded-lg border border-gray-200 shadow-sm"
-                    />
-                    <button
-                        onClick={removeImage}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
-                        aria-label="Remove image"
-                    >
-                        <X size={12} />
-                    </button>
-                </div>
-            )}
-
-            <div className="flex gap-2 items-end">
-                {/* Image Upload Button */}
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={disabled}
-                    className="flex-shrink-0 w-12 h-12 rounded-full border border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-200 flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Upload image"
-                >
-                    <ImageIcon size={20} />
-                </button>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                />
-
-                {/* Voice Mode Button */}
-                {onVoiceMode && (
-                    <button
-                        onClick={onVoiceMode}
-                        disabled={disabled}
-                        className="flex-shrink-0 w-12 h-12 rounded-full border border-gray-200 text-gray-400 hover:text-purple-500 hover:border-purple-200 flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Enter Voice Mode"
-                    >
-                        <Headphones size={20} />
-                    </button>
+        <div className="border-t border-gray-100 bg-white p-4 md:p-6">
+            <div className="max-w-4xl mx-auto">
+                {/* Image Preview */}
+                {imagePreview && (
+                    <div className="mb-4 relative inline-block animate-[fadeInUp_0.3s_ease-out]">
+                        <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="h-24 w-24 md:h-32 md:w-32 object-cover rounded-2xl border-2 border-primary/20 shadow-md"
+                        />
+                        <button
+                            onClick={removeImage}
+                            className="absolute -top-3 -right-3 bg-destructive text-white rounded-full p-1.5 shadow-lg hover:scale-110 transition-transform"
+                            aria-label="Remove image"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
                 )}
 
-                {/* Voice Input Button */}
-                <button
-                    onClick={toggleListening}
-                    disabled={disabled || isTranscribing}
-                    className={`flex-shrink-0 w-12 h-12 rounded-full border flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isListening
-                        ? 'bg-red-50 border-red-200 text-red-500 animate-pulse'
-                        : 'border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-200'
-                        }`}
-                    title={isListening ? 'Stop listening' : 'Speak message'}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className="relative group bg-gray-50 rounded-[2rem] border-2 border-gray-100 focus-within:border-primary/30 focus-within:bg-white focus-within:shadow-xl transition-all duration-300 p-2 md:p-3"
                 >
-                    {isTranscribing ? <Loader2 size={20} className="animate-spin text-blue-500" /> : (isListening ? <MicOff size={20} /> : <Mic size={20} />)}
-                </button>
+                    <div className="flex gap-2 items-end">
+                        {/* Action Buttons Group */}
+                        <div className="flex items-center pb-1 pl-1">
+                            <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={disabled}
+                                className="w-10 h-10 md:w-12 md:h-12 rounded-full text-gray-400 hover:text-primary hover:bg-primary/5 flex items-center justify-center transition-all disabled:opacity-50"
+                                title="Upload image"
+                            >
+                                <ImageIcon size={22} />
+                            </motion.button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="hidden"
+                            />
 
-                <div className="flex-1 relative">
-                    <textarea
-                        ref={textareaRef}
-                        value={message}
-                        onChange={handleChange}
-                        onKeyDown={handleKeyDown}
-                        placeholder={isListening ? 'Listening...' : (isTranscribing ? 'Transcribing...' : placeholder)}
-                        disabled={disabled}
-                        rows={1}
-                        className="w-full px-4 py-3 pr-12 rounded-2xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
-                        style={{ minHeight: '48px', maxHeight: '150px' }}
-                    />
+                            {onVoiceMode && (
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={onVoiceMode}
+                                    disabled={disabled}
+                                    className="w-10 h-10 md:w-12 md:h-12 rounded-full text-gray-400 hover:text-secondary hover:bg-secondary/5 flex items-center justify-center transition-all disabled:opacity-50"
+                                    title="Voice Mode"
+                                >
+                                    <Headphones size={22} />
+                                </motion.button>
+                            )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                            <textarea
+                                ref={textareaRef}
+                                value={message}
+                                onChange={handleChange}
+                                onKeyDown={handleKeyDown}
+                                placeholder={isListening ? 'Listening...' : (isTranscribing ? 'Transcribing...' : placeholder)}
+                                disabled={disabled}
+                                rows={1}
+                                className="w-full px-2 py-3 md:py-4 bg-transparent text-gray-900 placeholder-gray-400 focus:outline-none resize-none disabled:opacity-50 text-base md:text-lg leading-relaxed"
+                                style={{ minHeight: '48px', maxHeight: '200px' }}
+                            />
+                        </div>
+
+                        {/* Control Buttons Group */}
+                        <div className="flex items-center gap-2 pb-1 pr-1">
+                            <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={toggleListening}
+                                disabled={disabled || isTranscribing}
+                                className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${isListening
+                                    ? 'bg-destructive/10 text-destructive'
+                                    : 'text-gray-400 hover:text-primary hover:bg-primary/5'
+                                    }`}
+                                title={isListening ? 'Stop listening' : 'Speak message'}
+                            >
+                                {isTranscribing ? <Loader2 size={22} className="animate-spin" /> : (isListening ? <MicOff size={22} /> : <Mic size={22} />)}
+                            </motion.button>
+
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleSend}
+                                disabled={disabled || (!message.trim() && !image)}
+                                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary hover:bg-primary/90 disabled:bg-gray-200 text-white flex items-center justify-center transition-all shadow-lg hover:shadow-primary/30 disabled:shadow-none"
+                                aria-label="Send message"
+                            >
+                                <Send size={22} />
+                            </motion.button>
+                        </div>
+                    </div>
 
                     {showCharCount && (
-                        <span className={`absolute bottom-2 right-2 text-xs ${remainingChars < 100 ? 'text-red-500' : 'text-gray-400'
-                            }`}>
-                            {remainingChars}
-                        </span>
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="absolute -top-6 right-8 text-[10px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100 shadow-sm"
+                        >
+                            {remainingChars} characters left
+                        </motion.div>
                     )}
+                </motion.div>
+
+                <div className="flex justify-center mt-3 gap-4">
+                    <p className="text-[10px] md:text-xs text-gray-400 font-medium">
+                        {isListening ? 'Listening... Speak clearly' : (isTranscribing ? 'AI is processing...' : 'Press Enter to send, Shift+Enter for new line')}
+                    </p>
                 </div>
-
-                <button
-                    onClick={handleSend}
-                    disabled={disabled || (!message.trim() && !image)}
-                    className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white flex items-center justify-center transition-all disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                    aria-label="Send message"
-                >
-                    <Send size={20} />
-                </button>
             </div>
-
-            <p className="text-xs text-gray-400 mt-2 text-center font-medium">
-                {isListening ? 'AI is listening... speak clearly' : (isTranscribing ? 'Processing audio...' : 'Press Enter to send, Shift+Enter for new line')}
-            </p>
         </div>
     );
 };

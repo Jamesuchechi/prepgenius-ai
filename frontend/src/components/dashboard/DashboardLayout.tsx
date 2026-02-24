@@ -45,11 +45,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile Menu Button - Only visible on mobile */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-card rounded-xl shadow-lg border border-border"
+        className="lg:hidden fixed top-4 left-4 z-[51] w-12 h-12 flex items-center justify-center bg-card rounded-xl shadow-lg border border-border group"
+        aria-label="Toggle menu"
       >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
+        <div className="relative w-6 h-5">
+          <span
+            className={`absolute left-0 top-0 h-0.5 w-full bg-foreground transition-all duration-300 rounded-full ${isSidebarOpen ? 'rotate-45 top-2' : ''
+              }`}
+          />
+          <span
+            className={`absolute left-0 top-2 h-0.5 w-full bg-foreground transition-all duration-300 rounded-full ${isSidebarOpen ? 'opacity-0' : ''
+              }`}
+          />
+          <span
+            className={`absolute left-0 top-4 h-0.5 w-full bg-foreground transition-all duration-300 rounded-full ${isSidebarOpen ? '-rotate-45 top-2' : ''
+              }`}
+          />
+        </div>
       </button>
 
       {/* Sidebar Component */}
@@ -66,11 +78,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}
         `}
       >
-        {/* Top Bar - Simplified for reusability if needed, or kept here */}
+        {/* Top Bar */}
         <header className="bg-card border-b border-border sticky top-0 z-20">
-          <div className="px-4 md:px-8 py-4 flex items-center justify-between">
-            <div className="flex-1 max-w-xl">
-              <div className="relative">
+          <div className="px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+            {/* Search Bar - Hidden on mobile, visible on lg */}
+            <div className="hidden sm:flex flex-1 max-w-xl">
+              <div className="relative w-full">
                 <input
                   type="search"
                   placeholder="Search topics, questions..."
@@ -82,14 +95,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              {/* Theme Toggle */}
+            {/* Mobile Search Icon Placeholder / Spacer */}
+            <div className="sm:hidden flex-1" />
+
+            <div className="flex items-center gap-2 md:gap-4 shrink-0">
               <ThemeToggle />
-
-              {/* Notifications */}
               <NotificationDropdown />
-
-              {/* Settings */}
               <Link
                 href="/dashboard/settings"
                 className="p-2 hover:bg-muted rounded-lg transition-colors group"

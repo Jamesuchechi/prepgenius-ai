@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { PredictedScore } from '@/lib/api/analytics';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
+import { PredictedScore } from '../../lib/api/analytics';
 import { Target } from 'lucide-react';
-import { Progress } from "@/components/ui/Progress";
+import { Progress } from "../ui/Progress";
 
 interface PredictedScoreCardProps {
     data: PredictedScore;

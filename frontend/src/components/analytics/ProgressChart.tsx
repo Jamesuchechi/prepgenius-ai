@@ -8,7 +8,7 @@ import {
     ResponsiveContainer,
     Tooltip
 } from 'recharts';
-import { ProgressTracker } from '@/lib/api/analytics';
+import { ProgressTracker } from '../../lib/api/analytics';
 
 interface ProgressChartProps {
     data: ProgressTracker;

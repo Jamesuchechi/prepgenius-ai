@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ReadinessScore } from '@/lib/api/analytics';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
+import { ReadinessScore } from '../../lib/api/analytics';
 import { Target, TrendingUp, Zap, CheckCircle2 } from 'lucide-react';
 
 interface ReadinessCardProps {

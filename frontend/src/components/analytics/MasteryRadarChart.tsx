@@ -3,8 +3,8 @@ import React from 'react';
 import {
     Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { SubjectMasteryChart } from '@/lib/api/analytics';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
+import { SubjectMasteryChart } from '../../lib/api/analytics';
 
 interface MasteryRadarChartProps {
     data: SubjectMasteryChart[];

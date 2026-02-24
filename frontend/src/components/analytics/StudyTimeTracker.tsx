@@ -11,7 +11,7 @@ import {
     ResponsiveContainer,
     Cell
 } from 'recharts';
-import { StudySession } from '@/lib/api/analytics';
+import { StudySession } from '../../lib/api/analytics';
 
 interface StudyTimeTrackerProps {
     data: StudySession[];

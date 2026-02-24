@@ -4,6 +4,7 @@ import './globals.css'
 import { LayoutClient } from '@/components/LayoutClient'
 import QueryProvider from '@/components/QueryProvider'
 import { AuthContextProvider } from '@/components/AuthContextProvider'
+import { Toaster } from 'sonner'
 import Script from 'next/script'
 
 const syne = Syne({
@@ -19,21 +20,30 @@ const bricolage = Bricolage_Grotesque({
 })
 
 export const metadata: Metadata = {
-  title: 'PrepGenius AI - Master Your Exams with AI-Powered Learning',
-  description: 'AI-powered study and exam preparation platform for Nigerian students. Personalized learning for JAMB, WAEC, NECO, and more.',
-  keywords: ['JAMB', 'WAEC', 'NECO', 'exam preparation', 'AI tutor', 'Nigeria', 'education'],
-  authors: [{ name: 'PrepGenius AI' }],
+  title: 'PrepGenius AI - Master Your Exams with AI-Tutors',
+  description: 'The #1 AI-powered study platform for Nigerian students. Personalized learning for JAMB, WAEC, and NECO with real-time feedback.',
+  keywords: ['JAMB 2026', 'WAEC prep', 'NECO past questions', 'AI Tutor Nigeria', 'PrepGenius', 'Exam Success'],
+  authors: [{ name: 'PrepGenius AI Team' }],
   openGraph: {
-    title: 'PrepGenius AI - Master Your Exams with AI-Powered Learning',
-    description: 'Personalized AI-powered exam preparation for Nigerian students',
-    type: 'website',
+    title: 'PrepGenius AI - Your Personal Exam Success Partner',
+    description: 'Master any subject with our AI-powered tutoring system tailored for the Nigerian curriculum.',
+    url: 'https://prepgenius.ai',
+    siteName: 'PrepGenius AI',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
     locale: 'en_NG',
+    type: 'website',
   },
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'PrepGenius',
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PrepGenius AI - Master Your Exams with AI',
+    description: 'Join thousands of students using AI to ace their JAMB and WAEC exams.',
+    images: ['/og-image.png'],
   },
 }
 
@@ -66,6 +76,7 @@ export default function RootLayout({
           <InstallPrompt />
           <QueryProvider>
             <AuthContextProvider>
+              <Toaster position="top-center" expand={false} richColors closeButton />
               <LayoutClient>{children}</LayoutClient>
             </AuthContextProvider>
           </QueryProvider>

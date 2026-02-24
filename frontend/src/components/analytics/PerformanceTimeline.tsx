@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { StudySession } from '@/lib/api/analytics';
+import { StudySession } from '../../lib/api/analytics';
 import { Calendar, Clock, CheckCircle2, XCircle, ChevronRight, History, BookOpen, Brain, Zap } from 'lucide-react';
-import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
+import { CollapsibleCard } from '../ui/CollapsibleCard';
 
 interface PerformanceTimelineProps {
     data: StudySession[];
