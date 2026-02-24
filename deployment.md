@@ -40,8 +40,8 @@ You will need:
 2. Under "Root Directory", enter `backend`.
 3. Set the Environment to `Python`.
 4. Configure Build and Start commands:
-   - **Build Command:** `pip install -r requirements.txt && python manage.py collectstatic --noinput`
-   - **Start Command (ASGI for WebSockets):** `daphne -b 0.0.0.0 -p $PORT core.asgi:application` OR `uvicorn core.asgi:application --host 0.0.0.0 --port $PORT`
+   - **Build Command:** `./build.sh`
+   - **Start Command:** `./start.sh`
 5. Configure the essential Environment Variables for Production:
    ```env
    # Core
@@ -54,6 +54,11 @@ You will need:
    # Databases
    DATABASE_URL=postgres://user:password@hostname:5432/dbname
    REDIS_URL=rediss://user:password@hostname:6379/
+   
+   # Superuser (Optional: Defaults are already set in script)
+   # DJANGO_SUPERUSER_USERNAME=jamesuchi
+   # DJANGO_SUPERUSER_EMAIL=jamesuchechi27@gmail.com
+   # DJANGO_SUPERUSER_PASSWORD=admin
    
    # Email
    EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
@@ -78,45 +83,29 @@ You will need:
    GOOGLE_CLIENT_SECRET=your_google_secret
    ```
 
-### 3. Background Worker Deployment (Django-Q)
-Because PrepGenius delegates tasks via Django-Q (background clustering), you must spin up a separate Background Worker associated with the backend.
+---
 
-1. Create a **Background Worker** project on Render (using the same repository and `backend` root dir).
-2. Use the following commands:
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `python manage.py qcluster`
-3. Duplicate the EXACT same environment variables used in the Web Service (especially `DATABASE_URL` and `REDIS_URL`).
+## 🗄️ 3. Post-Deployment Commands (Migrations & Seeding)
+
+On platforms like Render free tier where shell access is restricted, the automation scripts I've created handle everything during the build process.
+
+**The `build.sh` script automatically performs:**
+1. Database Migrations (`python manage.py migrate`)
+2. Static File Collection (`python manage.py collectstatic`)
+3. Data Seeding:
+   - `load_countries`
+   - `load_nigeria_data`
+   - `seed_standardized_subjects`
+   - `load_math_topics`
+   - `seed_badges`
+   - `seed_subscription_plans`
+4. Automated Admin Creation (Default: `jamesuchi`/`jamesuchechi27@gmail.com`/`admin`)
+
+**Note:** The `start.sh` script starts both the **Daphne server** and the **Django-Q worker** in a single process to save resources on free tiers.
 
 ---
 
-## 🗄️ 4. Post-Deployment Commands (Migrations & Seeding)
-
-Once your Web Service is live, you must run migrations to set up the Postgres tables. On platforms like Render, you can use the interactive "Shell" tab to execute CLI commands.
-
-1. **Run Migrations:**
-   ```bash
-   python manage.py migrate
-   ```
-
-2. **Create Superuser Admin:**
-   ```bash
-   python manage.py createsuperuser
-   ```
-   *(Follow the prompt to set up an email and password to access the `/admin/` panel).*
-
-3. **Seed Initial Data:**
-   If you have `.json` fixtures or python scripts for seeding (e.g., standard exam types, subjects, and topics), run them now:
-   ```bash
-   # Example if using fixtures
-   python manage.py loaddata exam_types.json subjects.json
-   
-   # Example if using custom scripts
-   python manage.py shell < scripts/seed_database.py
-   ```
-
----
-
-## 🚀 5. Final Checklist
+## 🚀 4. Final Checklist
 - [ ] Ensure the Vercel frontend `NEXT_PUBLIC_API_URL` points exactly to the deployed Render backend URL.
 - [ ] Ensure the Render backend `CORS_ALLOWED_ORIGINS` strictly contains the Vercel frontend domain.
 - [ ] Confirm the database has run all migrations successfully.
