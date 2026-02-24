@@ -37,11 +37,14 @@ You will need:
 
 ### Render Web Service Deployment:
 1. Create a new **Web Service** on Render connected to your repository.
-2. Under "Root Directory", enter `backend`.
+2. Under "Root Directory", enter **`backend`**.
 3. Set the Environment to `Python`.
 4. Configure Build and Start commands:
    - **Build Command:** `./build.sh`
    - **Start Command:** `./start.sh`
+
+> [!NOTE]
+> Because you set the **Root Directory** to `backend`, Render will run these commands from inside that folder. Since both `build.sh` and `start.sh` are located inside `backend/`, the `./` prefix is exactly what you need.
 5. Configure the essential Environment Variables for Production:
    ```env
    # Core
