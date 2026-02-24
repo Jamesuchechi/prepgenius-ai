@@ -26,7 +26,7 @@ export const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
         <div className="rounded-2xl border border-white bg-white/60 backdrop-blur-md text-card-foreground shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full text-left p-6 flex items-center justify-between group transition-colors hover:bg-white/40"
+                className="w-full text-left p-4 md:p-6 flex items-center justify-between group transition-colors hover:bg-white/40"
             >
                 <div className="flex items-center gap-4">
                     {icon && (
@@ -54,7 +54,7 @@ export const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
             <div
                 className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}
             >
-                <div className="p-6 pt-0 border-t border-white/40 bg-white/20">
+                <div className="p-4 md:p-6 pt-0 border-t border-white/40 bg-white/20">
                     {children}
                 </div>
             </div>

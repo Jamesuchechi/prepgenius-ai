@@ -19,10 +19,10 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({ className }) => {
     const totalCount = badges?.length || 0;
 
     return (
-        <div className={cn("relative group overflow-hidden rounded-3xl border border-white bg-white/60 backdrop-blur-xl p-8 shadow-sm transition-all duration-300 hover:shadow-xl h-full", className)}>
+        <div className={cn("relative group overflow-hidden rounded-3xl border border-white bg-white/60 backdrop-blur-xl p-4 md:p-8 shadow-sm transition-all duration-300 hover:shadow-xl h-full", className)}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-100/30 rounded-full blur-3xl -z-10 -mr-16 -mt-16" />
 
-            <div className="flex justify-between items-start mb-8">
+            <div className="flex justify-between items-start mb-4 md:mb-8">
                 <div className="space-y-1">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 border border-purple-100 text-purple-600 text-[10px] font-bold uppercase tracking-wider mb-2">
                         <Sparkles className="w-3 h-3" />

@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <div className="p-4 md:p-8 max-w-full">
+        <div className="p-3 md:p-8 max-w-full">
           {children}
         </div>
         <Footer />

@@ -27,10 +27,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ className }) => {
     };
 
     return (
-        <div className={cn("relative group overflow-hidden rounded-3xl border border-white bg-white/60 backdrop-blur-xl p-8 shadow-sm transition-all duration-300 hover:shadow-xl h-full flex flex-col", className)}>
+        <div className={cn("relative group overflow-hidden rounded-3xl border border-white bg-white/60 backdrop-blur-xl p-4 md:p-8 shadow-sm transition-all duration-300 hover:shadow-xl h-full flex flex-col", className)}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/30 rounded-full blur-3xl -z-10 -mr-16 -mt-16" />
 
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 md:mb-8">
                 <div className="space-y-1">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider mb-2">
                         <Users className="w-3 h-3" />

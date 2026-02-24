@@ -153,7 +153,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Leaderboard placed in main column for better visibility on mobile/tablet */}
-          <div className="animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
+          <div className="animate-[fadeInUp_0.6s_ease-out_0.7s_backwards] overflow-hidden max-w-full">
             <CollapsibleCard
               title={t('dashboard.leaderboard_title')}
               description={t('dashboard.leaderboard_desc')}
@@ -173,7 +173,7 @@ export default function DashboardPage() {
 
           {/* Level Progress Widget */}
           {gamificationProfile && (
-            <div className="animate-[fadeInUp_0.6s_ease-out_0.7s_backwards]">
+            <div className="animate-[fadeInUp_0.6s_ease-out_0.7s_backwards] overflow-hidden max-w-full">
               <Suspense fallback={<div className="h-48 rounded-xl bg-slate-100 animate-pulse" />}>
                 <LevelProgress profile={gamificationProfile} />
               </Suspense>
@@ -182,10 +182,10 @@ export default function DashboardPage() {
 
           {/* Exam Countdown — driven by active study plan */}
           {activePlan && daysUntil !== null ? (
-            <div className="bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.8s_backwards]">
+            <div className="bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.8s_backwards] overflow-hidden max-w-full">
               <h3 className="font-display text-lg font-bold mb-1 truncate">{examLabel}</h3>
-              <div className="text-5xl font-display font-extrabold mb-1">{daysUntil}</div>
-              <p className="text-white/90 text-sm">{t('dashboard.days_until_exam')}</p>
+              <div className="text-4xl md:text-5xl font-display font-extrabold mb-1">{daysUntil}</div>
+              <p className="text-white/90 text-sm whitespace-normal">{t('dashboard.days_until_exam')}</p>
               <div className="mt-4 pt-4 border-t border-white/20">
                 <div className="text-sm text-white/80 mb-1">{t('dashboard.prep_level')}</div>
                 <div className="h-2 bg-white/20 rounded-full overflow-hidden">
@@ -195,18 +195,18 @@ export default function DashboardPage() {
               </div>
             </div>
           ) : (
-            <Link href="/dashboard/study-plan" className="block bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.8s_backwards] hover:opacity-90 transition-opacity">
+            <Link href="/dashboard/study-plan" className="block bg-gradient-to-br from-[var(--orange)] to-[var(--orange-light)] rounded-2xl p-6 text-white animate-[fadeInUp_0.6s_ease-out_0.8s_backwards] hover:opacity-90 transition-opacity overflow-hidden max-w-full">
               <div className="text-3xl mb-2">📅</div>
-              <h3 className="font-display text-lg font-bold mb-1">No Active Study Plan</h3>
-              <p className="text-white/90 text-sm">Create a study plan to track your exam countdown and preparation level.</p>
-              <div className="mt-4 inline-block bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-4 py-2 rounded-full transition-colors">
+              <h3 className="font-display text-lg font-bold mb-1 break-words">No Active Study Plan</h3>
+              <p className="text-white/90 text-sm whitespace-normal">Create a study plan to track your exam countdown and preparation level.</p>
+              <div className="mt-4 inline-block bg-white/20 hover:bg-white/30 text-white text-sm font-bold px-4 py-2 rounded-full transition-colors whitespace-nowrap">
                 Create Plan →
               </div>
             </Link>
           )}
 
           {/* Badges Widget */}
-          <div className="animate-[fadeInUp_0.6s_ease-out_0.9s_backwards]">
+          <div className="animate-[fadeInUp_0.6s_ease-out_0.9s_backwards] overflow-hidden max-w-full">
             <CollapsibleCard
               title={t('dashboard.achievements_title')}
               description={t('dashboard.achievements_desc')}
