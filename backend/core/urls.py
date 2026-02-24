@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.urls import path, include
+from .views import health_check
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('', health_check, name='health_check'),
     path('admin/', admin.site.urls),
     path('api/v1/accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('api/content/', include('apps.content.urls')),
