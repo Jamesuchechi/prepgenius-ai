@@ -39,6 +39,10 @@ env/
 .env.local
 .env.*.local
 *.env
+venv_verify_ultimate/
+venv_verify_final/
+venv_verify_all_final/
+venv_verify_all/
 
 # IDEs
 .vscode/
