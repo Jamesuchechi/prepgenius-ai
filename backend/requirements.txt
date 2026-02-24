@@ -158,7 +158,7 @@ weasyprint==68.1
 webencodings==0.5.1
 websockets==16.0
 whitenoise==6.6.0
-xxhash==3.4.1
+xxhash==3.5.0
 yarl==1.18.3
 zipp==3.20.2
 zope.interface==6.1
