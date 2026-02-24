@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+import { API_BASE_URL } from './api-config'
 
 // Types
 export interface ApiResponse<T> {
@@ -55,7 +55,7 @@ function getAuthHeaders(): HeadersInit {
   }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+    headers['Authorization'] = `Bearer ${token} `
   }
 
   return headers
@@ -66,7 +66,7 @@ export async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_URL}${endpoint}`
+  const url = `${API_BASE_URL}${endpoint} `
 
   try {
     const defaultHeaders: Record<string, string> = {
@@ -95,7 +95,7 @@ export async function apiCall<T>(
           if (refreshToken) {
             // Try to get new access token
             // We use direct fetch here to avoid circular dependency/recursion with apiCall
-            const refreshResponse = await fetch(`${API_URL}/auth/refresh/`, {
+            const refreshResponse = await fetch(`${API_BASE_URL} /auth/refresh / `, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -108,7 +108,7 @@ export async function apiCall<T>(
               if (data.access) {
                 // Update storage
                 localStorage.setItem('access_token', data.access);
-                document.cookie = `token=${data.access}; path=/; max-age=${60 * 60 * 24 * 7}`;
+                document.cookie = `token = ${data.access}; path =/; max-age=${60 * 60 * 24 * 7}`;
 
                 // Retry original request with new token
                 return apiCall<T>(endpoint, {

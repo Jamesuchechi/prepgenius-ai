@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuthStore } from '@/store/authStore'
+import { API_BASE_URL } from '@/lib/api-config'
 
 interface SubscriptionPlan {
     name: string;
@@ -32,7 +33,7 @@ export default function ProfilePage() {
             if (!user) return;
             try {
                 const token = localStorage.getItem('access_token');
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+                const apiUrl = API_BASE_URL;
 
                 if (token) {
                     const response = await fetch(`${apiUrl}/subscriptions/my-subscription/`, {

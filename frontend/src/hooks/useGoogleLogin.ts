@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { API_BASE_URL } from '@/lib/api-config'
 import { useAuthStore } from '@/store/authStore'
 
 export function useGoogleLogin() {
@@ -8,7 +9,7 @@ export function useGoogleLogin() {
 
     const handleGoogleLogin = useCallback(async (credential: string) => {
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+            const API_URL = API_BASE_URL
             const response = await fetch(`${API_URL}/auth/google/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

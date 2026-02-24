@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { API_BASE_URL } from '@/lib/api-config'
 
 export interface User {
   id: string
@@ -116,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
 
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+          const API_URL = API_BASE_URL
           const response = await fetch(`${API_URL}/v1/accounts/login/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -153,7 +154,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
 
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+          const API_URL = API_BASE_URL
           const response = await fetch(`${API_URL}/v1/accounts/register/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -191,7 +192,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           if (tokens?.refresh) {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+            const API_URL = API_BASE_URL
             await fetch(`${API_URL}/v1/accounts/logout/`, {
               method: 'POST',
               headers: {
@@ -223,7 +224,7 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+          const API_URL = API_BASE_URL
           const response = await fetch(`${API_URL}/v1/accounts/refresh/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -266,7 +267,7 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+          const API_URL = API_BASE_URL
           const response = await fetch(`${API_URL}/v1/accounts/users/me/`, {
             headers: {
               'Authorization': `Bearer ${tokens.access}`

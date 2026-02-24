@@ -21,6 +21,7 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    const BACKEND_URL = process.env.BACKEND_API_URL || 'http://127.0.0.1:8000';
     return {
       beforeFiles: [
         // Internal Next.js API routes — must come BEFORE the Django proxy catch-all
@@ -31,11 +32,11 @@ const nextConfig = {
         // All other /api/* calls are proxied to Django backend
         {
           source: '/api/:path*',
-          destination: 'http://127.0.0.1:8000/api/:path*/',
+          destination: `${BACKEND_URL}/api/:path*/`,
         },
         {
           source: '/media/:path*',
-          destination: 'http://127.0.0.1:8000/media/:path*',
+          destination: `${BACKEND_URL}/media/:path*`,
         },
       ],
     };

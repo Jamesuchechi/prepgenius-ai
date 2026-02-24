@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { Bot, User, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Volume2, VolumeX } from 'lucide-react';
 import { copyToClipboard } from '@/utils/exportUtils';
 import { useChatStore } from '@/store/chatStore';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface MessageBubbleProps {
     id: string;
@@ -149,13 +150,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                     <div className="mb-2 rounded-xl overflow-hidden border border-gray-100 shadow-sm transition-all hover:shadow-md max-w-full">
                         <img
                             src={image.startsWith('/media/')
-                                ? `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000'}${image}`
+                                ? `${API_BASE_URL.replace('/api', '')}${image}`
                                 : image
                             }
                             alt="Attachment"
                             className="max-h-72 w-auto object-contain cursor-zoom-in"
                             onClick={() => window.open(image.startsWith('/media/')
-                                ? `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000'}${image}`
+                                ? `${API_BASE_URL.replace('/api', '')}${image}`
                                 : image, '_blank')}
                         />
                     </div>
