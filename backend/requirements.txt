@@ -99,8 +99,8 @@ py-ubjson==0.16.1
 pyasn1==0.6.2
 pyasn1_modules==0.4.2
 pycparser==3.0
-pydantic==2.6.3
-pydantic_core==2.16.3
+pydantic==2.8.2
+pydantic_core==2.20.1
 pydyf==0.12.1
 Pygments==2.19.2
 PyJWT==2.11.0

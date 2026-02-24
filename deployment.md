@@ -48,6 +48,7 @@ You will need:
 5. Configure the essential Environment Variables for Production:
    ```env
    # Core
+   PYTHON_VERSION=3.12.3  # CRITICAL: Forces Render to use a stable version
    DEBUG=False
    SECRET_KEY=your_secure_random_string_here
    ALLOWED_HOSTS=your-backend-url.onrender.com,your-frontend-url.vercel.app
