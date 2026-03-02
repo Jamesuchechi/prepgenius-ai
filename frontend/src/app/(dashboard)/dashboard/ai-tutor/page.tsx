@@ -4,7 +4,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { ChatHistory } from '@/components/chat/ChatHistory';
@@ -13,7 +13,7 @@ import { chatService, ChatSession } from '@/services/chatService';
 import { useChatStore } from '@/store/chatStore';
 import { Loader2, Menu, X } from 'lucide-react';
 
-export default function AITutorPage() {
+function AITutorContent() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -124,14 +124,7 @@ export default function AITutorPage() {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-gray-50">
-                <div className="text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
-                    <p className="text-gray-600">Loading AI Tutor...</p>
-                </div>
-            </div>
-        );
+        return <LoadingState />;
     }
 
     if (error && sessions.length === 0) {
@@ -256,3 +249,23 @@ export default function AITutorPage() {
         </div>
     );
 }
+
+function LoadingState() {
+    return (
+        <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-gray-50">
+            <div className="text-center">
+                <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+                <p className="text-gray-600">Loading AI Tutor...</p>
+            </div>
+        </div>
+    );
+}
+
+export default function AITutorPage() {
+    return (
+        <Suspense fallback={<LoadingState />}>
+            <AITutorContent />
+        </Suspense>
+    );
+}
+
